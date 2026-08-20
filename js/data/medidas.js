@@ -9,15 +9,22 @@ export async function getMedidas(db) {
   if (perfis.length === 0) return [];
   const perfil = perfis[0];
 
-  const linhaInicial = { data: perfil.dataAtualizacao };
+  const gordura = perfil.composicaoCorporal?.historico?.at(-1);
+  const cintura = perfil.medidas?.cintura_cm?.historico?.at(-1);
+
+  const data = [gordura?.data, cintura?.data, perfil.dataAtualizacao]
+    .filter((d) => d != null)
+    .sort()
+    .at(-1);
+  if (data == null) return [];
+
+  const linhaInicial = { data };
   if (perfil.dadosBasicos?.peso_kg != null) {
     linhaInicial.peso_kg = perfil.dadosBasicos.peso_kg;
   }
-  const gordura = perfil.composicaoCorporal?.historico?.[0];
   if (gordura?.percentualGordura != null) {
     linhaInicial.percentualGordura = gordura.percentualGordura;
   }
-  const cintura = perfil.medidas?.cintura_cm?.historico?.[0];
   if (cintura?.valor != null) {
     linhaInicial.cintura_cm = cintura.valor;
   }

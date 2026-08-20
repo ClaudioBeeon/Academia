@@ -80,3 +80,51 @@ test("getMedidas retorna array vazio sem lançar erro se não houver perfil salv
   assert.deepEqual(linhas, []);
   db.close();
 });
+
+test("getMedidas usa o ponto mais recente do histórico (não o primeiro) e a data mais recente entre os pontos", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "perfil");
+  await clearStore(db, "medidasCorporais");
+  const perfil = {
+    versao: "1.0",
+    dataAtualizacao: "2026-08-19",
+    dadosBasicos: { peso_kg: 71 },
+    composicaoCorporal: {
+      historico: [
+        { data: "2026-01-01", percentualGordura: 25 },
+        { data: "2026-08-20", percentualGordura: 18 },
+      ],
+    },
+    medidas: {
+      cintura_cm: {
+        historico: [
+          { data: "2026-01-01", valor: 70 },
+          { data: "2026-08-15", valor: 61 },
+        ],
+      },
+    },
+  };
+  await put(db, "perfil", perfil);
+
+  const linhas = await getMedidas(db);
+  assert.equal(linhas.length, 1);
+  assert.equal(linhas[0].percentualGordura, 18);
+  assert.equal(linhas[0].cintura_cm, 61);
+  assert.equal(linhas[0].data, "2026-08-20");
+  db.close();
+});
+
+test("getMedidas retorna array vazio sem lançar erro se o perfil não tiver nenhuma data utilizável", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "perfil");
+  await clearStore(db, "medidasCorporais");
+  const perfil = {
+    versao: "1.0",
+    dadosBasicos: { peso_kg: 71 },
+  };
+  await put(db, "perfil", perfil);
+
+  const linhas = await getMedidas(db);
+  assert.deepEqual(linhas, []);
+  db.close();
+});

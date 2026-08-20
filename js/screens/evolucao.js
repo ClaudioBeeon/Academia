@@ -4,6 +4,14 @@ import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engin
 import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
 
+function obterDataLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 export async function montarTelaEvolucao(db) {
   const root = document.createElement("div");
   root.className = "tela-evolucao";
@@ -250,7 +258,7 @@ function montarSecaoMedidas(main, db, linhasIniciais) {
   main.appendChild(card);
 
   const form = card.querySelector(".medidas-form");
-  form.querySelector('input[name="data"]').valueAsDate = new Date();
+  form.querySelector('input[name="data"]').value = obterDataLocal();
   const status = card.querySelector(".medidas-status");
   const graficosContainer = card.querySelector(".medidas-graficos");
 

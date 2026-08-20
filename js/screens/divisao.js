@@ -2,6 +2,8 @@
 import { getAll } from "../data/db.js";
 import { getUltimaSerieGeral, getSeriesDoDia } from "../data/historico.js";
 import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
+import { getCheckinsRecentes } from "../data/checkin.js";
+import { avaliarAlertasRecuperacao } from "../engine/alertasRecuperacao.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -24,19 +26,44 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
     getSeriesDoDia(db, hoje),
+    getCheckinsRecentes(db),
   ]);
 
   const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
+  const alertas = avaliarAlertasRecuperacao(checkinsRecentes);
 
+  if (alertas.length > 0) {
+    main.appendChild(montarCardAlertas(alertas));
+  }
   main.appendChild(montarCardHoje(tituloGrupo));
   main.appendChild(montarCardHistorico(todasAsSeries));
 
   return root;
+}
+
+function montarCardAlertas(alertas) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Alertas</div></div>`;
+
+  const lista = document.createElement("div");
+  lista.className = "sets";
+  lista.style.padding = "0 18px 18px";
+
+  for (const alerta of alertas) {
+    const linha = document.createElement("div");
+    linha.className = "prev-hint";
+    linha.textContent = `⚠️ ${alerta.mensagem}`;
+    lista.appendChild(linha);
+  }
+
+  card.appendChild(lista);
+  return card;
 }
 
 function montarCardHoje(tituloGrupo) {

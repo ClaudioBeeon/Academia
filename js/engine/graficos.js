@@ -18,7 +18,7 @@ export function calcularProgressao1RM(seriesDoExercicio) {
     .sort((a, b) => a.data.localeCompare(b.data));
 }
 
-function semanaISO(dataStr) {
+export function semanaISO(dataStr) {
   const [ano, mes, dia] = dataStr.split("-").map(Number);
   const data = new Date(Date.UTC(ano, mes - 1, dia));
   const diaSemana = (data.getUTCDay() + 6) % 7; // segunda=0 ... domingo=6

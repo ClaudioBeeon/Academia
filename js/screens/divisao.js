@@ -1,15 +1,26 @@
 // js/screens/divisao.js
 import { getAll } from "../data/db.js";
-import { getUltimaSerieGeral, getSeriesDoDia } from "../data/historico.js";
+import { getUltimaSerieGeral, getSeriesDoDia, getUltimasSessoesPorExercicio, getSeriesDesde } from "../data/historico.js";
 import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
 import { avaliarAlertasRecuperacao } from "../engine/alertasRecuperacao.js";
+import { avaliarAlertasDesempenho } from "../engine/alertasDesempenho.js";
+import { avaliarAlertasVolume } from "../engine/alertasVolume.js";
 
 function obterDataLocal() {
   const agora = new Date();
   const ano = agora.getFullYear();
   const mes = String(agora.getMonth() + 1).padStart(2, "0");
   const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function subtrairDias(dataISO, dias) {
+  const d = new Date(`${dataISO}T00:00:00`);
+  d.setDate(d.getDate() - dias);
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
 }
 
@@ -26,19 +37,36 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
     getSeriesDoDia(db, hoje),
     getCheckinsRecentes(db),
+    getUltimasSessoesPorExercicio(db),
+    getSeriesDesde(db, subtrairDias(hoje, 6)),
+    getAll(db, "exercicios"),
   ]);
 
   const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
-  const alertas = avaliarAlertasRecuperacao(checkinsRecentes);
 
-  if (alertas.length > 0) {
-    main.appendChild(montarCardAlertas(alertas));
+  const exercicioPorId = new Map(exercicios.map((e) => [e.id, e]));
+  const alertasRecuperacao = avaliarAlertasRecuperacao(checkinsRecentes);
+  const alertasDesempenho = avaliarAlertasDesempenho(sessoesPorExercicio);
+  const musculosComDesempenhoCaindo = new Set(
+    alertasDesempenho.map((a) => exercicioPorId.get(a.exercicioId)?.musculoPrimario).filter(Boolean)
+  );
+  const alertasVolume = avaliarAlertasVolume({
+    seriesUltimos7Dias,
+    seriesHoje: seriesDeHoje,
+    sessoesPorExercicio,
+    musculosComDesempenhoCaindo,
+    hoje,
+  });
+
+  const todosAlertas = [...alertasRecuperacao, ...alertasDesempenho, ...alertasVolume];
+  if (todosAlertas.length > 0) {
+    main.appendChild(montarCardAlertas(todosAlertas, exercicioPorId));
   }
   main.appendChild(montarCardHoje(tituloGrupo));
   main.appendChild(montarCardHistorico(todasAsSeries));
@@ -46,7 +74,7 @@ export async function montarTelaDivisao(db) {
   return root;
 }
 
-function montarCardAlertas(alertas) {
+function montarCardAlertas(alertas, exercicioPorId) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Alertas</div></div>`;
@@ -56,9 +84,10 @@ function montarCardAlertas(alertas) {
   lista.style.padding = "0 18px 18px";
 
   for (const alerta of alertas) {
+    const nomeExercicio = alerta.exercicioId ? exercicioPorId.get(alerta.exercicioId)?.nome : undefined;
     const linha = document.createElement("div");
     linha.className = "prev-hint";
-    linha.textContent = `⚠️ ${alerta.mensagem}`;
+    linha.textContent = `⚠️ ${nomeExercicio ? `${nomeExercicio}: ` : ""}${alerta.mensagem}`;
     lista.appendChild(linha);
   }
 

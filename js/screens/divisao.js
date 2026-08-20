@@ -6,7 +6,7 @@ import { getCheckinsRecentes } from "../data/checkin.js";
 import { avaliarAlertasRecuperacao } from "../engine/alertasRecuperacao.js";
 import { avaliarAlertasDesempenho } from "../engine/alertasDesempenho.js";
 import { avaliarAlertasVolume } from "../engine/alertasVolume.js";
-import { registrarCardio, getCardioRecente } from "../data/cardio.js";
+import { registrarCardio, getCardioRecente, getCardioDesde } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 
@@ -83,25 +83,25 @@ export async function montarTelaDivisao(db) {
     main.appendChild(montarCardAlertas(todosAlertas, exercicioPorId));
   }
   main.appendChild(montarCardHoje(diaInfo));
-  main.appendChild(montarCardCardio(db, hoje, diaInfo, cardioRecente));
+  main.appendChild(montarCardCardio(db, hoje, diaInfo, cardioRecente, seriesDeHoje));
   main.appendChild(montarCardHistorico(todasAsSeries));
 
   return root;
 }
 
-function montarCardCardio(db, hoje, diaInfo, cardioRecente) {
+function montarCardCardio(db, hoje, diaInfo, cardioRecente, seriesDeHoje) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Cardio</div></div>`;
 
   const corpo = document.createElement("div");
   card.appendChild(corpo);
-  renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, null);
+  renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, [], seriesDeHoje);
 
   return card;
 }
 
-function renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, avisoRecente) {
+function renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, avisosRecentes, seriesDeHoje) {
   corpo.innerHTML = "";
 
   const form = document.createElement("form");
@@ -136,22 +136,32 @@ function renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, avisoRecente)
     const modalidade = form.modalidade.value;
     const duracaoMinutos = Number(form.duracaoMinutos.value) || undefined;
     const intensidadePercebida = Number(form.intensidadePercebida.value);
+    const mesmoDiaDeTreino = seriesDeHoje.length > 0;
 
-    await registrarCardio(db, { data: hoje, modalidade, duracaoMinutos, intensidadePercebida });
+    await registrarCardio(db, { data: hoje, modalidade, duracaoMinutos, intensidadePercebida, mesmoDiaDeTreino });
 
-    const avisoCardio = avaliarCardio({ modalidade, ehDiaDePernas: diaInfo.musculos.includes("quadriceps") });
+    const seteDiasAtras = subtrairDias(hoje, 6);
+    const cardiosRecentes = await getCardioDesde(db, seteDiasAtras);
+    const cardiosIntensosUltimos7Dias = cardiosRecentes.filter((r) => r.intensidadePercebida >= 3).length;
+
+    const avisosCardio = avaliarCardio({
+      modalidade,
+      intensidadePercebida,
+      ehDiaDePernas: diaInfo.musculos.includes("quadriceps"),
+      cardiosIntensosUltimos7Dias,
+    });
     const atualizado = await getCardioRecente(db);
-    renderizarCardio(corpo, db, hoje, diaInfo, atualizado, avisoCardio);
+    renderizarCardio(corpo, db, hoje, diaInfo, atualizado, avisosCardio, seriesDeHoje);
   });
 
   corpo.appendChild(form);
 
-  if (avisoRecente) {
-    const aviso = document.createElement("div");
-    aviso.className = "prev-hint";
-    aviso.style.padding = "0 18px 18px";
-    aviso.textContent = `⚠️ ${avisoRecente.mensagem}`;
-    corpo.appendChild(aviso);
+  for (const aviso of avisosRecentes) {
+    const linhaAviso = document.createElement("div");
+    linhaAviso.className = "prev-hint";
+    linhaAviso.style.padding = "0 18px 18px";
+    linhaAviso.textContent = `⚠️ ${aviso.mensagem}`;
+    corpo.appendChild(linhaAviso);
   }
 
   const lista = document.createElement("div");

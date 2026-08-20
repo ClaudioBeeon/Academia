@@ -83,7 +83,10 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   }
 
   if (exerciciosHoje.length === 0) {
-    main.innerHTML = `<p class="vazio">Nenhum exercício de ${tituloGrupo.toLowerCase()} cadastrado ainda.</p>`;
+    const vazio = document.createElement("p");
+    vazio.className = "vazio";
+    vazio.textContent = `Nenhum exercício de ${tituloGrupo.toLowerCase()} cadastrado ainda.`;
+    main.appendChild(vazio);
   }
 
   await atualizarResumo();
@@ -101,10 +104,10 @@ async function montarCardCheckin(db, hoje) {
   card.appendChild(corpo);
 
   const checkinExistente = await getCheckin(db, hoje);
-  if (checkinExistente) {
+  if (checkinExistente?.qualidadePercebida !== undefined) {
     renderizarResumoCheckin(corpo, db, hoje, checkinExistente);
   } else {
-    renderizarFormularioCheckin(corpo, db, hoje);
+    renderizarFormularioCheckin(corpo, db, hoje, checkinExistente);
   }
 
   return card;

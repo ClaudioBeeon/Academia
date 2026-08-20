@@ -44,6 +44,7 @@ export function sugerirCarga(amostras, rirAlvo) {
 
   const intercepto = mediaRir - inclinacao * mediaCarga;
   const carga = (rirAlvo - intercepto) / inclinacao;
+  const cargaLimitada = Math.min(mediaCarga * 1.2, Math.max(mediaCarga * 0.8, carga));
 
-  return { cargaSugerida: arredondarMeioKg(carga), confianca, principio: "cargas", secao: "prompt-original" };
+  return { cargaSugerida: arredondarMeioKg(cargaLimitada), confianca, principio: "cargas", secao: "prompt-original" };
 }

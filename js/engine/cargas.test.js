@@ -60,3 +60,20 @@ test("mesmo RIR relatado em cargas diferentes (inclinação zero): não retorna 
   );
   assert.ok(Number.isFinite(resultado.cargaSugerida));
 });
+
+test("regressão quase plana com RIR-alvo distante da média é limitada a ±20% da carga média", () => {
+  const resultado = sugerirCarga(
+    [
+      { carga: 14, reps: 10, rir_relatado: 2.0 },
+      { carga: 20, reps: 8, rir_relatado: 2.1 },
+    ],
+    0
+  );
+  const mediaCarga = 17;
+  // Tolerância de 0.5kg: a rodada final pro incremento mais próximo de
+  // meio quilo pode empurrar o resultado ligeiramente além do limite de
+  // ±20% antes do arredondamento — isso é aceitável, o que importa é que
+  // a regressão bruta (-106kg) nunca escape da vizinhança da média.
+  assert.ok(resultado.cargaSugerida >= mediaCarga * 0.8 - 0.5);
+  assert.ok(resultado.cargaSugerida <= mediaCarga * 1.2 + 0.5);
+});

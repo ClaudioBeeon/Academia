@@ -28,3 +28,9 @@ test("exercício inexistente retorna lista vazia", () => {
   const resultado = sugerirSubstitutos("nao_existe", exercicios);
   assert.deepEqual(resultado, []);
 });
+
+test("inclui alternativas do mesmo músculo mesmo com tipo diferente (sem dado de padrão de movimento ainda)", () => {
+  const resultado = sugerirSubstitutos("supino_inclinado_halteres", exercicios);
+  const ids = resultado.map((e) => e.id);
+  assert.ok(ids.includes("supino_reto_maquina"));
+});

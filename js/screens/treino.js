@@ -5,13 +5,32 @@ import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
 import { criarCronometro } from "./timer.js";
 
-const HOJE = new Date().toISOString().slice(0, 10);
-const FAIXA_REPS = { min: 8, max: 12 };
-const RIR_ALVO = 2;
-const DESCANSO_PADRAO_SEGUNDOS = 90;
+const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
+
+function obterDataLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function obterConfigExercicio(protocolo, exercicio) {
+  const config = protocolo?.tiposDeExercicio?.[exercicio.tipo];
+  if (!config) return CONFIG_PADRAO;
+  return {
+    repsMin: config.faixaRepeticoes.min,
+    repsMax: config.faixaRepeticoes.max,
+    rirAlvo: (config.rirAlvo.min + config.rirAlvo.max) / 2,
+    descansoSegundos: config.descansoSegundos.min,
+  };
+}
 
 export async function montarTelaTreino(db) {
+  const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
+  const protocolos = await getAll(db, "protocolo");
+  const protocolo = protocolos[0] ?? null;
   const exerciciosHoje = todosExercicios.filter((e) => e.musculoPrimario === "peito");
 
   const root = document.createElement("div");
@@ -30,7 +49,7 @@ export async function montarTelaTreino(db) {
 
   for (let i = 0; i < exerciciosHoje.length; i++) {
     const exercicio = exerciciosHoje[i];
-    const card = await montarCardExercicio(db, exercicio, todosExercicios);
+    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje);
     main.appendChild(card);
     if (i < exerciciosHoje.length - 1) {
       main.appendChild(criarPlaceholderDescanso());
@@ -54,11 +73,12 @@ function criarPlaceholderDescanso() {
   return div;
 }
 
-async function montarCardExercicio(db, exercicio, todosExercicios) {
-  const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, HOJE);
-  const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, HOJE);
+async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje) {
+  const cfg = obterConfigExercicio(protocolo, exercicio);
+  const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
+  const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
   const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
-  const sugestao = sugerirCarga(amostras, RIR_ALVO);
+  const sugestao = sugerirCarga(amostras, cfg.rirAlvo);
 
   const card = document.createElement("section");
   card.className = "exercise-card";
@@ -67,11 +87,12 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
   head.className = "exercise-head";
   head.innerHTML = `
     <div>
-      <div class="exercise-name">${exercicio.nome}</div>
-      <div class="exercise-meta">${FAIXA_REPS.min}–${FAIXA_REPS.max} reps · RIR ${RIR_ALVO}</div>
+      <div class="exercise-name"></div>
+      <div class="exercise-meta">${cfg.repsMin}–${cfg.repsMax} reps · RIR ${cfg.rirAlvo}</div>
     </div>
     <button class="swap-pill" type="button">Trocar</button>
   `;
+  head.querySelector(".exercise-name").textContent = exercicio.nome;
   card.appendChild(head);
 
   const setsContainer = document.createElement("div");
@@ -81,12 +102,12 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
   const placeholderCarga = sugestao.cargaSugerida != null
     ? `${sugestao.cargaSugerida} kg`
     : (ultimaAnterior ? `${ultimaAnterior.carga} kg` : "—");
-  const placeholderReps = ultimaAnterior ? String(ultimaAnterior.reps) : String(FAIXA_REPS.min);
+  const placeholderReps = ultimaAnterior ? String(ultimaAnterior.reps) : String(cfg.repsMin);
 
   const totalSeriesAlvo = 3;
   for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
     const jaFeita = seriesHoje[numero - 1];
-    setsContainer.appendChild(criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps }));
+    setsContainer.appendChild(criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps, rirAlvo: cfg.rirAlvo }));
     if (numero < totalSeriesAlvo) {
       setsContainer.appendChild(criarPlaceholderDescanso());
     }
@@ -114,13 +135,13 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
 
     await registrarSerie(db, {
       exercicioId: exercicio.id,
-      data: HOJE,
+      data: hoje,
       musculo: exercicio.musculoPrimario,
       contribuicao: 1.0,
       tipoSerie: "normal",
       carga,
       reps,
-      rir: rirInput === "" || Number.isNaN(rirDigitado) ? RIR_ALVO : rirDigitado,
+      rir: rirInput === "" || Number.isNaN(rirDigitado) ? cfg.rirAlvo : rirDigitado,
     });
 
     linha.classList.add("done");
@@ -136,7 +157,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
     const restBar = linha.nextElementSibling && linha.nextElementSibling.classList.contains("rest-bar")
       ? linha.nextElementSibling
       : card.nextElementSibling;
-    iniciarDescanso(restBar);
+    iniciarDescanso(restBar, cfg.descansoSegundos);
   });
 
   card.querySelector(".swap-pill").addEventListener("click", () => {
@@ -148,7 +169,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
   return card;
 }
 
-function criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps }) {
+function criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps, rirAlvo }) {
   const form = document.createElement("form");
   form.className = "set-row" + (jaFeita ? " done" : "");
   const ringHtml = jaFeita
@@ -158,19 +179,19 @@ function criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps })
     ${ringHtml}
     <div class="set-field"><label>Carga</label><input name="carga" type="number" step="0.5" placeholder="${placeholderCarga}" value="${jaFeita ? jaFeita.carga : ""}" ${jaFeita ? "disabled" : ""} /></div>
     <div class="set-field"><label>Reps</label><input name="reps" type="number" placeholder="${placeholderReps}" value="${jaFeita ? jaFeita.reps : ""}" ${jaFeita ? "disabled" : ""} /></div>
-    <div class="set-field"><label>RIR</label><input name="rir" type="number" step="0.5" placeholder="${RIR_ALVO}" value="${jaFeita ? jaFeita.rir : ""}" ${jaFeita ? "disabled" : ""} /></div>
+    <div class="set-field"><label>RIR</label><input name="rir" type="number" step="0.5" placeholder="${rirAlvo}" value="${jaFeita ? jaFeita.rir : ""}" ${jaFeita ? "disabled" : ""} /></div>
   `;
   return form;
 }
 
-function iniciarDescanso(restBar) {
+function iniciarDescanso(restBar, descansoSegundos) {
   if (!restBar || !restBar.classList || !restBar.classList.contains("rest-bar")) return;
 
   restBar.classList.remove("rest-bar-hidden");
   const timeEl = restBar.querySelector(".time");
 
   const cronometro = criarCronometro({
-    duracaoInicialSegundos: DESCANSO_PADRAO_SEGUNDOS,
+    duracaoInicialSegundos: descansoSegundos,
     aoAtualizar: (restante) => {
       const min = String(Math.floor(restante / 60)).padStart(2, "0");
       const seg = String(restante % 60).padStart(2, "0");

@@ -378,10 +378,10 @@ function iniciarDescanso(restBar, descansoSegundos) {
 
 function mostrarToastRir(mensagem) {
   const toast = document.createElement("div");
-  toast.className = "rest-bar";
+  toast.className = "rest-bar toast-flutuante";
   toast.style.position = "fixed";
   toast.style.left = "50%";
-  toast.style.bottom = "108px";
+  toast.style.bottom = `${proximoOffsetToast()}px`;
   toast.style.transform = "translateX(-50%)";
   toast.style.width = "calc(100% - 44px)";
   toast.style.maxWidth = "398px";
@@ -393,10 +393,10 @@ function mostrarToastRir(mensagem) {
 
 function mostrarToastPR(prs) {
   const toast = document.createElement("div");
-  toast.className = "rest-bar";
+  toast.className = "rest-bar toast-flutuante";
   toast.style.position = "fixed";
   toast.style.left = "50%";
-  toast.style.bottom = "108px";
+  toast.style.bottom = `${proximoOffsetToast()}px`;
   toast.style.transform = "translateX(-50%)";
   toast.style.width = "calc(100% - 44px)";
   toast.style.maxWidth = "398px";
@@ -404,4 +404,9 @@ function mostrarToastPR(prs) {
   toast.innerHTML = `<div><div class="label">🏆 Recorde pessoal</div><div class="time" style="font-size:1rem;">${prs.map((p) => p.mensagem).join(" ")}</div></div>`;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
+}
+
+function proximoOffsetToast() {
+  const existentes = document.querySelectorAll(".toast-flutuante").length;
+  return 108 + existentes * 64;
 }

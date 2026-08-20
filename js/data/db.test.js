@@ -41,7 +41,8 @@ test("um banco academiaDB criado na v1 (sem índices) ganha os índices ao abrir
   const nomes = Array.from(dbNovo.objectStoreNames).sort();
   assert.deepEqual(nomes, [
     "cargas", "config", "dietaBase", "exercicios",
-    "historicoSeries", "medidasCorporais", "perfil", "protocolo", "registrosDiarios",
+    "historicoSeries", "medidasCorporais", "perfil", "protocolo",
+    "registrosCardio", "registrosDiarios",
   ]);
   dbNovo.close();
 });
@@ -51,7 +52,8 @@ test("openDatabase creates all expected object stores", async () => {
   const names = Array.from(db.objectStoreNames).sort();
   assert.deepEqual(names, [
     "cargas", "config", "dietaBase", "exercicios",
-    "historicoSeries", "medidasCorporais", "perfil", "protocolo", "registrosDiarios",
+    "historicoSeries", "medidasCorporais", "perfil", "protocolo",
+    "registrosCardio", "registrosDiarios",
   ]);
   db.close();
 });
@@ -127,5 +129,46 @@ test("um banco academiaDB criado na v2 (sem medidasCorporais) ganha a store nova
   });
   assert.equal(perfilRegistros.length, 1);
   assert.equal(perfilRegistros[0].dadosBasicos.peso_kg, 71);
+  dbNovo.close();
+});
+
+test("registrosCardio store has a data index", async () => {
+  const db = await openDatabase();
+  const tx = db.transaction("registrosCardio", "readonly");
+  const store = tx.objectStore("registrosCardio");
+  assert.ok(store.indexNames.contains("data"));
+  db.close();
+});
+
+test("um banco academiaDB criado na v3 (sem registrosCardio) ganha a store nova ao abrir com a openDatabase() real, sem perder dados", async () => {
+  const dbAtual = await openDatabase();
+  dbAtual.close();
+  indexedDB.deleteDatabase("academiaDB");
+
+  const dbV3 = await new Promise((resolve, reject) => {
+    const req = indexedDB.open("academiaDB", 3);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore("perfil", { keyPath: "versao" });
+      req.result.createObjectStore("historicoSeries", { keyPath: "id", autoIncrement: true });
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  await new Promise((resolve, reject) => {
+    const tx = dbV3.transaction("perfil", "readwrite");
+    tx.objectStore("perfil").add({ versao: "1.0", dadosBasicos: { peso_kg: 71 } });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  dbV3.close();
+
+  const dbNovo = await openDatabase();
+  assert.ok(dbNovo.objectStoreNames.contains("registrosCardio"));
+  const perfilRegistros = await new Promise((resolve, reject) => {
+    const req = dbNovo.transaction("perfil", "readonly").objectStore("perfil").getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  assert.equal(perfilRegistros.length, 1);
   dbNovo.close();
 });

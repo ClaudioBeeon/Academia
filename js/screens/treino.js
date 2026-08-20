@@ -1,9 +1,9 @@
 // js/screens/treino.js
 import { get, getAll } from "../data/db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
-import { getGrupoForcado, definirGrupoForcado } from "../data/grupoForcado.js";
+import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
 import { avaliarProgressao } from "../engine/progressao.js";
@@ -11,7 +11,7 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
-import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
+import { DIAS_SEQUENCIA, obterDiaPorNumero, obterMusculosDoDia, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { validarRir } from "../engine/rir.js";
 import { gerarSessaoDoDia } from "../engine/sessaoGerada.js";
 import { criarCronometro } from "./timer.js";
@@ -55,24 +55,26 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries, grupoForcado, cardioRecente] = await Promise.all([
-    getUltimaSerieGeral(db),
+  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
-    getGrupoForcado(db, hoje),
+    getUltimoDiaRegistrado(db),
     getCardioRecente(db, 1),
   ]);
-  const grupoDeHoje = grupoForcado ?? determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
-  const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
+  const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+  if (!ultimoDiaRegistrado || ultimoDiaRegistrado.data !== hoje) {
+    await registrarDiaDaSessao(db, diaDaSessao, hoje);
+  }
+  const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
   const ultimoCardio = cardioRecente[0] ?? null;
+  const TODOS_MUSCULOS_MAPEADOS = new Set(DIAS_SEQUENCIA.flatMap((d) => d.musculos));
   const exerciciosDoGrupo = todosExercicios.filter((e) => {
-    const grupo = obterGrupoDoMusculo(e.musculoPrimario);
-    return grupo === null || grupo === grupoDeHoje;
+    return diaInfo.musculos.includes(e.musculoPrimario) || !TODOS_MUSCULOS_MAPEADOS.has(e.musculoPrimario);
   });
   const sessoesAnterioresDoGrupo = new Set(
     todasAsSeries
-      .filter((s) => s.data !== hoje && obterGrupoDoMusculo(s.musculo) === grupoDeHoje)
+      .filter((s) => s.data !== hoje && diaInfo.musculos.includes(s.musculo))
       .map((s) => s.data)
   ).size;
   const definicaoFase = protocolo?.volumeSemanalPorFase?.definicao;
@@ -103,7 +105,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
   planoCard.className = "plano-hero";
   planoCard.innerHTML = `
     <div class="rotulo">Treino de hoje</div>
-    <h2>${tituloGrupo}</h2>
+    <h2>${diaInfo.titulo}</h2>
     <div class="meta">
       <span><b>${exerciciosHoje.length}</b> exercícios</span>
       <span><b>${totalSeriesPrevistas}</b> séries</span>
@@ -111,23 +113,25 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
     </div>
     <button type="button">Começar treino</button>
   `;
-  planoCard.querySelector("button").addEventListener("click", () => {
+  planoCard.classList.add("clicavel");
+  planoCard.addEventListener("click", () => {
     main.querySelector(".exercise-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   if (seriesDeHoje.length === 0) {
-    const grupoOposto = grupoDeHoje === "superior" ? "inferior" : "superior";
-    const tituloOposto = grupoOposto === "superior" ? "Superior" : "Inferior";
-    const trocarBtn = document.createElement("button");
-    trocarBtn.type = "button";
-    trocarBtn.className = "trocar-grupo-link";
-    trocarBtn.style.cssText = "background:none;border:none;color:var(--ink-2);text-decoration:underline;font-size:0.85rem;padding:8px 0 0;cursor:pointer;display:block;";
-    trocarBtn.textContent = `Não é isso? Trocar para ${tituloOposto}`;
-    trocarBtn.addEventListener("click", async () => {
-      await definirGrupoForcado(db, hoje, grupoOposto);
+    const seletorDia = document.createElement("select");
+    seletorDia.className = "trocar-dia-select";
+    seletorDia.style.cssText = "background:var(--accent-ink); color:var(--accent); border:none; border-radius:8px; font-size:0.85rem; padding:6px 8px; margin-top:8px; cursor:pointer; font-family:inherit;";
+    seletorDia.innerHTML = DIAS_SEQUENCIA.map((d) =>
+      `<option value="${d.numero}">Dia ${d.numero}: ${d.titulo}</option>`
+    ).join("");
+    seletorDia.value = String(diaDaSessao);
+    seletorDia.addEventListener("click", (event) => event.stopPropagation());
+    seletorDia.addEventListener("change", async () => {
+      await registrarDiaDaSessao(db, Number(seletorDia.value), hoje);
       window.location.reload();
     });
-    planoCard.insertBefore(trocarBtn, planoCard.querySelector("button"));
+    planoCard.insertBefore(seletorDia, planoCard.querySelector("button"));
   }
 
   const carrossel = document.createElement("div");
@@ -158,7 +162,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
   if (exerciciosHoje.length === 0) {
     const vazio = document.createElement("p");
     vazio.className = "vazio";
-    vazio.textContent = `Nenhum exercício de ${tituloGrupo.toLowerCase()} cadastrado ainda.`;
+    vazio.textContent = `Nenhum exercício de ${diaInfo.titulo} cadastrado ainda.`;
     main.appendChild(vazio);
   }
 

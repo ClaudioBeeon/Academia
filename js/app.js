@@ -29,13 +29,14 @@ function renderShell(db) {
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
     try {
-      if (tabName === "treino") {
+      if (tabName === "hoje") {
         content.textContent = "";
         content.appendChild(await montarTelaTreino(db, {
           onAbrirHistorico: async (exercicio) => {
             content.textContent = "";
-            content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("treino")));
+            content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("hoje")));
           },
+          onIrParaCardio: () => renderTab("divisao"),
         }));
         return;
       }
@@ -70,7 +71,7 @@ function renderShell(db) {
     button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
 
-  renderTab("treino");
+  renderTab("hoje");
 }
 
 bootstrap().catch((err) => {

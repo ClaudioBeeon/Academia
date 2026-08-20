@@ -1,0 +1,233 @@
+{
+  "versao": "1.0",
+  "dataAtualizacao": "2026-08-19",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa",
+  "exercicios": [
+    {
+      "id": "supino_inclinado_halteres",
+      "nome": "Supino inclinado com halteres (~30°)",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [
+        { "musculo": "triceps", "contribuicao": 0.5 },
+        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "banco entre 30-45°, foco na porção clavicular (superior) do peito. Descida completa até sentir alongamento."
+    },
+    {
+      "id": "supino_reto_maquina",
+      "nome": "Supino reto na máquina",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [
+        { "musculo": "triceps", "contribuicao": 0.5 },
+        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+      ],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "foco na porção esternocostal (média/inferior) do peito. Curva de resistência estável, bom pra chegar perto da falha com segurança."
+    },
+    {
+      "id": "crucifixo_cabo_cross",
+      "nome": "Crucifixo no cabo (cross-over)",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "abertura horizontal, carrega o peito na posição alongada. Não deixar os ombros irem muito pra frente no início do movimento."
+    },
+    {
+      "id": "puxada_frente_pegada_aberta",
+      "nome": "Puxada frente (pegada aberta)",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        { "musculo": "biceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "puxar até a altura do queixo/peito, sem balançar o corpo. Controlar a volta (fase excêntrica)."
+    },
+    {
+      "id": "remada_baixa_maquina",
+      "nome": "Remada baixa na máquina/cabo",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        { "musculo": "biceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "maquina",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "cotovelos próximos ao corpo, apertar as escápulas no final do movimento."
+    },
+    {
+      "id": "remada_curvada_barra",
+      "nome": "Remada curvada com barra",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        { "musculo": "biceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_pesado",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "tronco inclinado, costas neutras. Exercício de maior demanda técnica — usar com moderação, RIR mais alto se preferir menos carga."
+    },
+    {
+      "id": "desenvolvimento_maquina",
+      "nome": "Desenvolvimento de ombro na máquina",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [
+        { "musculo": "triceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "não travar os cotovelos no topo, descida controlada."
+    },
+    {
+      "id": "elevacao_lateral_cabo",
+      "nome": "Elevação lateral no cabo",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "cabo passando por trás do corpo mantém tensão na posição alongada, melhor que halteres nesse quesito."
+    },
+    {
+      "id": "rosca_direta_barra_w",
+      "nome": "Rosca direta com barra W",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "cotovelos fixos ao lado do corpo, sem balançar."
+    },
+    {
+      "id": "rosca_scott_maquina",
+      "nome": "Rosca Scott na máquina",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "apoio do braço evita compensação com o corpo, boa pra chegar perto da falha com segurança."
+    },
+    {
+      "id": "triceps_pulley_corda",
+      "nome": "Tríceps pulley com corda",
+      "musculoPrimario": "triceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "cotovelos fixos, abrir a corda no final do movimento."
+    },
+    {
+      "id": "triceps_testa_barra_w",
+      "nome": "Tríceps testa com barra W",
+      "musculoPrimario": "triceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "barra",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "carrega o tríceps na posição alongada, controlar bem a descida perto da testa."
+    },
+    {
+      "id": "leg_press_45",
+      "nome": "Leg press 45°",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        { "musculo": "gluteo", "contribuicao": 0.5 },
+        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 10,
+      "observacoesExecucao": "amplitude completa sem tirar o quadril do banco, joelhos não travam no topo."
+    },
+    {
+      "id": "cadeira_extensora",
+      "nome": "Cadeira extensora",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "controlar a descida, não deixar a carga bater no início da série."
+    },
+    {
+      "id": "mesa_flexora",
+      "nome": "Mesa flexora",
+      "musculoPrimario": "posterior_coxa",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "quadril colado no banco, evitar impulso."
+    },
+    {
+      "id": "cadeira_abdutora",
+      "nome": "Cadeira abdutora",
+      "musculoPrimario": "gluteo",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "tronco levemente inclinado à frente aumenta ênfase no glúteo."
+    },
+    {
+      "id": "panturrilha_em_pe_maquina",
+      "nome": "Panturrilha em pé na máquina",
+      "musculoPrimario": "panturrilha",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "amplitude completa, pausa breve no alongamento embaixo."
+    },
+    {
+      "id": "abdominal_maquina",
+      "nome": "Abdominal na máquina",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "flexão do tronco vindo do abdômen, não puxando com o pescoço/braços."
+    },
+    {
+      "id": "prancha_isometrica",
+      "nome": "Prancha isométrica",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "peso_corporal",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 0,
+      "observacoesExecucao": "quadril alinhado (nem subido, nem caído), progressão é tempo sustentado em vez de carga."
+    }
+  ]
+}

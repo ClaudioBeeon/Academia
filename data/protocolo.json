@@ -1,0 +1,252 @@
+{
+  "versao": "1.0",
+  "dataAtualizacao": "2026-08-19",
+  "baseadoEm": "base-cientifica-hipertrofia-forca.md (documento completo, especialmente seções 21 e 22)",
+
+  "contagemDeVolume": {
+    "pesoTrabalhoDireto": 1.0,
+    "pesoTrabalhoIndireto": 0.5,
+    "baseadoEm": "seção 1, P1"
+  },
+
+  "volumeSemanalPorFase": {
+    "definicao": {
+      "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico). Peito em manutenção, demais músculos em faixa padrão de intermediário — não maximizada, porque recuperação está reduzida pelo déficit.",
+      "musculoPriorizadoCrescimento": [],
+      "musculoEmManutencao": ["peito"],
+      "faixasPadrao": {
+        "min": 8,
+        "alvo_min": 10,
+        "alvo_max": 16,
+        "max": 18,
+        "manutencao_min": 6,
+        "manutencao_max": 8
+      },
+      "faixasManutencao": {
+        "min": 6,
+        "alvo_min": 6,
+        "alvo_max": 9,
+        "max": 10
+      }
+    },
+    "hipertrofia_peito": {
+      "obs": "fase futura, sugerida quando a tendência de bioimpedância/cintura indicar que a gordura abdominal cedeu o suficiente. Usuário confirma a virada; nunca é automática.",
+      "musculoPriorizadoCrescimento": ["peito"],
+      "musculoEmManutencao": [],
+      "faixasPadrao": {
+        "min": 8,
+        "alvo_min": 10,
+        "alvo_max": 16,
+        "max": 18,
+        "manutencao_min": 6,
+        "manutencao_max": 8
+      },
+      "faixasPriorizado": {
+        "min": 12,
+        "alvo_min": 15,
+        "alvo_max": 20,
+        "max": 22
+      }
+    },
+    "baseadoEm": "P1, seção 15 (faixas de intermediário: 10-18 séries/semana), seção 20 (peito priorizado: 15-20 séries/semana)"
+  },
+
+  "limiteSeriesDiretas": {
+    "porMusculoPorSessao": {
+      "min": 5,
+      "max": 8,
+      "obs": "acima disso a qualidade cai claramente (seção 13, P3)"
+    },
+    "baseadoEm": "P3, seção 13"
+  },
+
+  "tiposDeExercicio": {
+    "composto_pesado": {
+      "faixaRepeticoes": { "min": 5, "max": 8 },
+      "rirAlvo": { "min": 2, "max": 4 },
+      "descansoSegundos": { "min": 150, "max": 240 },
+      "obs": "usar com moderação — usuário prefere não pegar muito pesado. RIR do lado mais alto da faixa (3-4) é aceitável e ainda funcional.",
+      "baseadoEm": "seção 3, 17, P5, P6"
+    },
+    "composto_moderado": {
+      "faixaRepeticoes": { "min": 8, "max": 12 },
+      "rirAlvo": { "min": 1, "max": 2 },
+      "descansoSegundos": { "min": 90, "max": 150 },
+      "baseadoEm": "seção 3, P5, P6"
+    },
+    "isolador": {
+      "faixaRepeticoes": { "min": 10, "max": 15 },
+      "rirAlvo": { "min": 0, "max": 2 },
+      "permiteFalhaNaUltimaSerie": true,
+      "descansoSegundos": { "min": 60, "max": 90 },
+      "baseadoEm": "seção 3, 4, 16, P4, P5, P6"
+    },
+    "maquina": {
+      "faixaRepeticoes": { "min": 8, "max": 15 },
+      "rirAlvo": { "min": 1, "max": 2 },
+      "descansoSegundos": { "min": 60, "max": 120 },
+      "baseadoEm": "seção 7, 16, P8"
+    },
+    "obs_geral": "faixa-alvo padrão do usuário é 1-2 RIR (P4); falha total reservada para última série de isoladores/máquinas de baixo custo, nunca em compostos pesados"
+  },
+
+  "regraProgressaoDupla": {
+    "descricao": "Escolha uma faixa de reps. Trabalhe com peso que permita chegar ao mínimo da faixa com o RIR-alvo. A cada sessão, tente adicionar repetições. Quando todas as séries prescritas atingirem o topo da faixa dentro do RIR-alvo, aumente a carga no menor incremento disponível e volte ao fundo da faixa.",
+    "incrementoCarga": {
+      "membrosSuperiores": { "min_percentual": 2.5, "max_percentual": 5 },
+      "membrosInferiores": { "min_percentual": 5, "max_percentual": 10 },
+      "obs": "em exercícios pequenos, usar o menor incremento disponível na academia"
+    },
+    "regraReducao": "se alguma série ficar abaixo do mínimo de repetições da faixa por 2 sessões consecutivas, reduzir carga em ~5%",
+    "baseadoEm": "seção 10, P10, seção 22.3"
+  },
+
+  "estruturaMesociclo": {
+    "duracaoSemanas": 5,
+    "semanas": [
+      { "semana": 1, "volume": "base_do_bloco", "rirAlvo": 3, "obs": "semana de entrada, sentir as cargas" },
+      { "semana": 2, "volume": "+1_serie_musculos_priorizados", "rirAlvo": 2, "obs": "" },
+      { "semana": 3, "volume": "+1_serie_musculos_priorizados", "rirAlvo": [1, 2], "obs": "" },
+      { "semana": 4, "volume": "mantem", "rirAlvo": 1, "obs": "semana mais exigente do bloco" },
+      { "semana": 5, "volume": "50_por_cento_do_volume", "rirAlvo": 4, "obs": "deload" }
+    ],
+    "posDeload": "novo bloco começa com volume base recalculado a partir do que funcionou no bloco anterior",
+    "prioridadeDeloadReativo": "deload reativo tem prioridade sobre o calendário — se os gatilhos aparecerem na semana 3, o deload acontece na semana 3, não espera a semana 5",
+    "baseadoEm": "estrutura definida pelo usuário, seção 11 (periodização simples o suficiente para hipertrofia), seção 14"
+  },
+
+  "gatilhosDeloadReativo": {
+    "condicoes": [
+      "desempenho caindo em 2+ sessões consecutivas com o mesmo peso",
+      "RIR percebido subindo sem mudança de carga",
+      "dor articular ou tendínea persistente",
+      "queda de motivação, sono ruim ou irritabilidade sustentada",
+      "dor muscular ainda presente na sessão seguinte do mesmo músculo"
+    ],
+    "formatoDeload": {
+      "opcaoA": "1 semana com ~50% do volume, mantendo a carga",
+      "opcaoB": "manter volume, reduzir RIR-alvo para 4-5 (mais longe da falha)"
+    },
+    "baseadoEm": "seção 14, P12, seção 22.4, 22.6"
+  },
+
+  "regrasAjusteVolume": {
+    "descricao": "regra 22.4 da pesquisa, aplicada mensalmente ou por bloco",
+    "regras": [
+      {
+        "condicao": "volume atual < faixa-alvo E recuperação boa E progresso presente",
+        "acao": "sugerir +1 a 2 séries semanais no músculo priorizado"
+      },
+      {
+        "condicao": "progresso ausente E volume < limite superior E recuperação boa",
+        "acao": "sugerir +2 séries semanais"
+      },
+      {
+        "condicao": "desempenho caindo por 2+ semanas OU RIR percebido subindo OU dor articular",
+        "acao": "sugerir redução de 30-50% do volume por 1 semana (deload reativo)"
+      },
+      {
+        "condicao": "volume >= limite superior da faixa E sem progresso",
+        "acao": "NÃO aumentar volume — sugerir revisar seleção de exercícios, sono e alimentação"
+      }
+    ],
+    "baseadoEm": "seção 22.4"
+  },
+
+  "validacaoRir": {
+    "regra": "se usuário declara RIR <= 2 e na série seguinte consegue MAIS repetições com a mesma carga, marcar RIR declarado como provavelmente superestimado e exibir feedback educativo sobre calibração de esforço",
+    "baseadoEm": "seção 4, seção 22.5"
+  },
+
+  "alertas": {
+    "condicoes": [
+      "volume abaixo do mínimo efetivo (< 4 séries diretas/semana) em algum músculo",
+      "volume acima de 22 séries/semana com desempenho em queda",
+      "mais de 8 séries diretas do mesmo músculo em uma sessão",
+      "ausência de progressão em um exercício por 4+ semanas (sugerir troca de exercício ou revisão de recuperação)",
+      "sequência de sessões com qualidade percebida <= 2"
+    ],
+    "baseadoEm": "seção 22.6"
+  },
+
+  "recuperacao": {
+    "intervaloMinimoEntreSessoesMesmoMusculo_horas": 48,
+    "intervaloRecomendadoGruposCastigados_horas": 72,
+    "domsNaoEIndicadorDeSucesso": true,
+    "baseadoEm": "seção 12, seção 22.7"
+  },
+
+  "regrasCardio": {
+    "modalidadesPreferidas": ["bicicleta", "eliptico", "escada", "caminhada"],
+    "modalidadeEvitarSeForemPernasFoco": "corrida",
+    "separacaoTemporalHoras": 6,
+    "seNaMesmaSessao": "musculacao_primeiro",
+    "caminhadaBaixaIntensidade": "não gera interferência mensurável, excelente ferramenta de gasto calórico para o objetivo de gordura abdominal",
+    "baseadoEm": "seção 18, P14"
+  },
+
+  "regrasNutricao": {
+    "formulaGastoEnergetico": "mifflin_st_jeor",
+    "faseCalibracao": {
+      "duracaoSemanas": "2-3",
+      "obs": "nas primeiras 2-3 semanas, usar fórmula padrão com aviso claro de que a estimativa ainda está se calibrando"
+    },
+    "metaAdaptativa": {
+      "descricao": "após a fase de calibração, estimar gasto energético real cruzando tendência de peso (média móvel) com ingestão registrada, recalibrando semanalmente com explicação em texto",
+      "baseadoEm": "seção 19, nível 3 do prompt original (referência MacroFactor)"
+    },
+    "deficit": {
+      "tipo": "moderado",
+      "percentualMaximoAbaixoDaManutencao": 25,
+      "obs": "acima de ~20-25% abaixo da manutenção estimada, avisar que o déficit está agressivo"
+    },
+    "pisoCaloricoSeguranca": {
+      "formula": "max(1500, taxaMetabolicaBasal_mifflin)",
+      "obs": "se o cálculo de meta cair abaixo do piso, mostrar aviso em vez de aceitar o valor"
+    },
+    "proteina": {
+      "faixa_g_por_kg": { "min": 1.6, "max": 2.2 },
+      "faixaEmDeficit_g_por_kg": { "min": 1.8, "max": 2.2 },
+      "baseadoEm": "seção 19"
+    },
+    "gordura": {
+      "pisoMinimo_g_por_kg": 0.5,
+      "faixaRazoavel_g_por_kg": { "min": 0.5, "max": 1.0 },
+      "baseadoEm": "adendo do usuário sobre checagem de adequação nutricional"
+    },
+    "checagemTresEixos": {
+      "eixo1_calorias": "comparar total vs. meta; avisar se déficit real está muito além do moderado",
+      "eixo2_gordura": "sinalizar se abaixo da faixa mínima razoável (~0.5-1g/kg/dia)",
+      "eixo3_fibraEVariedade": "sinalizar ausência de vegetais/fontes de fibra como lacuna",
+      "regra": "apenas sinalizar com explicação simples do porquê importa — nunca reescrever a dieta do usuário, nunca prescrever substituições específicas, sempre recomendar conversa com nutricionista para ajustes reais",
+      "baseadoEm": "adendo do usuário"
+    },
+    "conexaoTreinoDieta": {
+      "seAderenciaBoaEDesempenhoSobe": "liberar aumento de volume normalmente",
+      "seDeficitConsistenteEDesempenhoCai": "NÃO aumentar volume; manter ou reduzir; explicar que déficit é o provável motivo",
+      "seProteinaAbaixoDaMetaRecorrente": "avisar — em déficit isso custa massa magra",
+      "sePerdaDePesoMuitoRapidaVariasSemanas": "sinalizar déficit agressivo demais, sugerir suavizar",
+      "nuncaFazer": [
+        "mudar exercícios ou séries por causa de um único dia fora da dieta",
+        "sugerir compensar comida com treino ou cardio extra",
+        "tratar dia acima da meta como falha ou usar linguagem de culpa",
+        "aceitar meta calórica abaixo do piso de segurança",
+        "tratar estimativas de calorias como precisas — tendência ao longo de semanas é o que importa"
+      ],
+      "baseadoEm": "adendo do usuário, seção 19"
+    }
+  },
+
+  "guardaCorpos": {
+    "regras": [
+      "nunca exigir aumento de carga a cada sessão — estagnação de 2-3 semanas é normal",
+      "nunca tratar dor muscular como métrica de sucesso",
+      "nunca prometer perda de gordura localizada por exercício",
+      "nunca sugerir déficit calórico agressivo — usar déficit moderado e piso de segurança",
+      "nunca tratar RIR declarado como número exato — aplicar validação cruzada",
+      "nunca aumentar volume quando já no teto da faixa sem progresso — sugerir revisar exercícios, sono, alimentação",
+      "IA nunca decide séries, carga, RIR ou deload; nunca define meta calórica; nunca altera este arquivo sozinha"
+    ],
+    "baseadoEm": "seção 22.7, guarda-corpos do prompt original"
+  }
+}

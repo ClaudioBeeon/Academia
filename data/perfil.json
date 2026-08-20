@@ -1,0 +1,72 @@
+{
+  "versao": "1.0",
+  "dataAtualizacao": "2026-08-19",
+  "dadosBasicos": {
+    "sexo": "masculino",
+    "altura_cm": 170,
+    "peso_kg": 71,
+    "experiencia": "intermediario",
+    "experienciaObs": "1-3 anos de treino consistente (seção 15 da pesquisa)"
+  },
+  "composicaoCorporal": {
+    "historico": [
+      {
+        "data": "2026-08-19",
+        "percentualGordura": 20,
+        "origem": "estimativa_usuario",
+        "confianca": "baixa",
+        "obs": "único ponto inicial; mais pontos entram conforme novos exames de bioimpedância forem enviados"
+      }
+    ]
+  },
+  "medidas": {
+    "cintura_cm": {
+      "historico": [
+        {
+          "data": "2026-08-19",
+          "valor": 62,
+          "faixaInformadaPeloUsuario": [60, 64],
+          "confianca": "baixa",
+          "obs": "medida inicial, ponto de partida para acompanhar tendência — métrica mais importante para o objetivo de gordura abdominal"
+        }
+      ]
+    }
+  },
+  "fase": {
+    "atual": "definicao",
+    "historico": [
+      {
+        "data": "2026-08-19",
+        "fase": "definicao",
+        "motivo": "prioridade 1 declarada: reduzir gordura abdominal"
+      }
+    ],
+    "regrasDeMudanca": "sugestão de trocar de fase vem da tendência de bioimpedância/cintura ao longo do tempo (não de data fixa) e é sempre uma sugestão para o usuário confirmar, nunca uma troca automática"
+  },
+  "prioridades": {
+    "prioridade1": "reducao_gordura_abdominal",
+    "prioridade2": "peito",
+    "musculosEmVolumeDeCrescimento": [],
+    "musculosEmVolumeDeManutencao": ["peito"],
+    "obs": "durante a fase 'definicao', peito fica em volume de manutenção, não de crescimento máximo. Quando a fase mudar para 'hipertrofia_peito', peito entra em musculosEmVolumeDeCrescimento."
+  },
+  "disponibilidade": {
+    "diasPorSemana": 5,
+    "duracaoSessaoMin": {
+      "tipico_min": 45,
+      "tipico_max": 60,
+      "obs": "pode estender além disso nos fins de semana se necessário"
+    }
+  },
+  "local": {
+    "tipo": "academia_completa",
+    "equipamentosDisponiveis": ["halteres", "barras", "maquinas", "cabos_polias"]
+  },
+  "restricoes": {
+    "fisicasConhecidas": [],
+    "preferencias": [
+      "evitar_cargas_muito_altas",
+      "preferir_RIR_confortavel_2_em_vez_de_falha"
+    ]
+  }
+}

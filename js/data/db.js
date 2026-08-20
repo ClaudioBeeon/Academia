@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
   perfil: "versao",
@@ -16,17 +16,29 @@ export function openDatabase(indexedDBImpl = globalThis.indexedDB) {
   return new Promise((resolve, reject) => {
     const request = indexedDBImpl.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      const tx = event.target.transaction;
       for (const [name, keyPathSpec] of Object.entries(STORES)) {
-        if (db.objectStoreNames.contains(name)) continue;
-        const options = typeof keyPathSpec === "string"
-          ? { keyPath: keyPathSpec }
-          : keyPathSpec;
-        const store = db.createObjectStore(name, options);
+        let store;
+        if (!db.objectStoreNames.contains(name)) {
+          const options = typeof keyPathSpec === "string"
+            ? { keyPath: keyPathSpec }
+            : keyPathSpec;
+          store = db.createObjectStore(name, options);
+        } else {
+          // Loja já existe de uma versão anterior do banco — reabre-la pela
+          // transação de upgrade em vez de recriá-la, pra poder acrescentar
+          // índices novos sem perder os dados já gravados.
+          store = tx.objectStore(name);
+        }
         if (name === "historicoSeries") {
-          store.createIndex("exercicioId", "exercicioId", { unique: false });
-          store.createIndex("data", "data", { unique: false });
+          if (!store.indexNames.contains("exercicioId")) {
+            store.createIndex("exercicioId", "exercicioId", { unique: false });
+          }
+          if (!store.indexNames.contains("data")) {
+            store.createIndex("data", "data", { unique: false });
+          }
         }
       }
     };

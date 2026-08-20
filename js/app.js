@@ -2,6 +2,9 @@
 import { openDatabase } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
 import { montarTelaTreino } from "./screens/treino.js";
+import { montarTelaBiblioteca } from "./screens/biblioteca.js";
+import { montarTelaHistorico } from "./screens/historico.js";
+import { montarTelaConfig } from "./screens/config.js";
 
 async function bootstrap() {
   if ("serviceWorker" in navigator) {
@@ -26,10 +29,25 @@ function renderShell(db) {
     try {
       if (tabName === "treino") {
         content.textContent = "";
-        content.appendChild(await montarTelaTreino(db));
+        content.appendChild(await montarTelaTreino(db, {
+          onAbrirHistorico: async (exercicio) => {
+            content.textContent = "";
+            content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("treino")));
+          },
+        }));
         return;
       }
-      content.textContent = `Tela "${tabName}" ainda não implementada (vem no Nível 1b ou depois).`;
+      if (tabName === "config") {
+        content.textContent = "";
+        content.appendChild(await montarTelaConfig(db, {
+          onAbrirBiblioteca: async () => {
+            content.textContent = "";
+            content.appendChild(await montarTelaBiblioteca(db, { aoVoltar: () => renderTab("config") }));
+          },
+        }));
+        return;
+      }
+      content.textContent = `Tela "${tabName}" ainda não implementada (vem depois).`;
     } catch (err) {
       console.error(`Falha ao renderizar a aba "${tabName}":`, err);
       content.textContent = "Não foi possível carregar esta tela. Tente novamente ou importe seu último backup nas Configurações.";

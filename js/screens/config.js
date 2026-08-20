@@ -1,6 +1,7 @@
 // js/screens/config.js
 import { exportarTudo, importarTudo, historicoParaCsv } from "../data/exportImport.js";
 import { getAll } from "../data/db.js";
+import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -27,6 +28,8 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
     const historicoSeries = await getAll(db, "historicoSeries");
     baixarArquivo(`historico-${dataDeHoje()}.csv`, historicoParaCsv(historicoSeries), "text/csv");
   }));
+
+  main.appendChild(await criarSecaoEquipamento(db));
 
   const importCard = document.createElement("section");
   importCard.className = "exercise-card";
@@ -82,4 +85,49 @@ function baixarArquivo(nomeArquivo, conteudo, tipo) {
 function dataDeHoje() {
   const agora = new Date();
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+}
+
+async function criarSecaoEquipamento(db) {
+  const equipamento = await getEquipamento(db);
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Equipamento (barra e anilhas)</div></div>`;
+
+  const form = document.createElement("form");
+  form.className = "sets";
+  form.style.padding = "0 18px 18px";
+  form.innerHTML = `
+    <div class="set-field" style="grid-column:1/-1;">
+      <label>Peso da barra (kg)</label>
+      <input name="pesoBarra" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+    <div class="set-field" style="grid-column:1/-1;">
+      <label>Anilhas disponíveis (kg, separadas por vírgula)</label>
+      <input name="anilhas" type="text" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+    <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
+    <div class="prev-hint equipamento-status" style="grid-column:1/-1;"></div>
+  `;
+  form.pesoBarra.value = equipamento.pesoBarra;
+  form.anilhas.value = equipamento.anilhasDisponiveis.join(", ");
+  card.appendChild(form);
+
+  const status = form.querySelector(".equipamento-status");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const pesoBarra = Number(form.pesoBarra.value);
+    const anilhasDisponiveis = form.anilhas.value
+      .split(",")
+      .map((v) => Number(v.trim()))
+      .filter((v) => Number.isFinite(v) && v > 0);
+    if (!pesoBarra || anilhasDisponiveis.length === 0) {
+      status.textContent = "Preencha o peso da barra e ao menos uma anilha válida.";
+      return;
+    }
+    await salvarEquipamento(db, { pesoBarra, anilhasDisponiveis });
+    status.textContent = "Salvo.";
+  });
+
+  return card;
 }

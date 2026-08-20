@@ -32,3 +32,12 @@ test("putAll then getAll returns every stored value", async () => {
   assert.equal(all.length, 2);
   db.close();
 });
+
+test("historicoSeries store has exercicioId and data indexes", async () => {
+  const db = await openDatabase();
+  const tx = db.transaction("historicoSeries", "readonly");
+  const store = tx.objectStore("historicoSeries");
+  const indexNames = Array.from(store.indexNames).sort();
+  assert.deepEqual(indexNames, ["data", "exercicioId"]);
+  db.close();
+});

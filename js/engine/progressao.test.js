@@ -38,3 +38,12 @@ test("não reduz na primeira sessão abaixo do mínimo (precisa de 2 seguidas)",
   });
   assert.equal(resultado.acao, "manter");
 });
+
+test("mantém quando não há séries registradas (não infere aumento por lista vazia)", () => {
+  const resultado = avaliarProgressao({
+    faixaMin: 8, faixaMax: 12, rirAlvo: 2,
+    sessaoAtual: [],
+    sessaoAnterior: null,
+  });
+  assert.equal(resultado.acao, "manter");
+});

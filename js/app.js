@@ -30,4 +30,8 @@ function renderPlaceholderShell() {
   renderTab("treino");
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error("Falha ao iniciar o app:", err);
+  const content = document.getElementById("tab-content");
+  content.textContent = "Não foi possível carregar seus dados. Tente importar seu último backup JSON nas Configurações.";
+});

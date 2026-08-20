@@ -23,12 +23,17 @@ export function openDatabase(indexedDBImpl = globalThis.indexedDB) {
         const options = typeof keyPathSpec === "string"
           ? { keyPath: keyPathSpec }
           : keyPathSpec;
-        db.createObjectStore(name, options);
+        const store = db.createObjectStore(name, options);
+        if (name === "historicoSeries") {
+          store.createIndex("exercicioId", "exercicioId", { unique: false });
+          store.createIndex("data", "data", { unique: false });
+        }
       }
     };
 
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Abertura do banco bloqueada — feche outras abas do app e tente novamente."));
   });
 }
 

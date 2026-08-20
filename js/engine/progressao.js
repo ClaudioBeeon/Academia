@@ -4,6 +4,15 @@ function abaixoDoMinimo(sessao, faixaMin) {
 }
 
 export function avaliarProgressao({ faixaMin, faixaMax, rirAlvo, sessaoAtual, sessaoAnterior }) {
+  if (!sessaoAtual || sessaoAtual.length === 0) {
+    return {
+      acao: "manter",
+      motivo: "Nenhuma série registrada nesta sessão ainda.",
+      principio: "P10",
+      secao: "22.3",
+    };
+  }
+
   const todasNoTopoComRir = sessaoAtual.every(
     (serie) => serie.reps >= faixaMax && serie.rir >= rirAlvo
   );

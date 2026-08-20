@@ -62,9 +62,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
     getCardioRecente(db, 1),
   ]);
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
-  if (!ultimoDiaRegistrado || ultimoDiaRegistrado.data !== hoje) {
-    await registrarDiaDaSessao(db, diaDaSessao, hoje);
-  }
+  const diaJaPersistidoHoje = Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
   const ultimoCardio = cardioRecente[0] ?? null;
@@ -145,14 +143,19 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
   main.appendChild(await montarCardCheckin(db, hoje));
 
   const resumoCard = montarCardResumoSessao();
-  const atualizarResumo = async () => {
+  let diaPersistido = diaJaPersistidoHoje;
+  const aoRegistrarSerie = async () => {
+    if (!diaPersistido) {
+      await registrarDiaDaSessao(db, diaDaSessao, hoje);
+      diaPersistido = true;
+    }
     const seriesDoDia = await getSeriesDoDia(db, hoje);
     atualizarResumoSessao(resumoCard, calcularEstatisticasSessao(seriesDoDia));
   };
 
   for (let i = 0; i < exerciciosHoje.length; i++) {
     const exercicio = exerciciosHoje[i];
-    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento, atualizarResumo);
+    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento, aoRegistrarSerie);
     main.appendChild(card);
     if (i < exerciciosHoje.length - 1) {
       main.appendChild(criarPlaceholderDescanso());
@@ -166,7 +169,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
     main.appendChild(vazio);
   }
 
-  await atualizarResumo();
+  await aoRegistrarSerie();
   main.appendChild(resumoCard);
 
   return root;

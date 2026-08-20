@@ -8,6 +8,7 @@ import { avaliarAlertasDesempenho } from "../engine/alertasDesempenho.js";
 import { avaliarAlertasVolume } from "../engine/alertasVolume.js";
 import { registrarCardio, getCardioRecente } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
+import { getGrupoForcado } from "../data/grupoForcado.js";
 
 const MODALIDADES_CARDIO = ["bicicleta", "eliptico", "escada", "caminhada", "corrida"];
 const NOME_MODALIDADE = {
@@ -48,7 +49,7 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente, grupoForcado] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
     getSeriesDoDia(db, hoje),
@@ -57,9 +58,10 @@ export async function montarTelaDivisao(db) {
     getSeriesDesde(db, subtrairDias(hoje, 6)),
     getAll(db, "exercicios"),
     getCardioRecente(db),
+    getGrupoForcado(db, hoje),
   ]);
 
-  const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
+  const grupoDeHoje = grupoForcado ?? determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
 
   const exercicioPorId = new Map(exercicios.map((e) => [e.id, e]));

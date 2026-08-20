@@ -3,6 +3,7 @@ import { get, getAll } from "../data/db.js";
 import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
+import { getGrupoForcado, definirGrupoForcado } from "../data/grupoForcado.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
 import { avaliarProgressao } from "../engine/progressao.js";
@@ -52,12 +53,13 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries] = await Promise.all([
+  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries, grupoForcado] = await Promise.all([
     getUltimaSerieGeral(db),
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
+    getGrupoForcado(db, hoje),
   ]);
-  const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
+  const grupoDeHoje = grupoForcado ?? determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
   const exerciciosDoGrupo = todosExercicios.filter((e) => {
     const grupo = obterGrupoDoMusculo(e.musculoPrimario);
@@ -107,6 +109,22 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   planoCard.querySelector("button").addEventListener("click", () => {
     main.querySelector(".exercise-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+
+  if (seriesDeHoje.length === 0) {
+    const grupoOposto = grupoDeHoje === "superior" ? "inferior" : "superior";
+    const tituloOposto = grupoOposto === "superior" ? "Superior" : "Inferior";
+    const trocarBtn = document.createElement("button");
+    trocarBtn.type = "button";
+    trocarBtn.className = "trocar-grupo-link";
+    trocarBtn.style.cssText = "background:none;border:none;color:var(--ink-2);text-decoration:underline;font-size:0.85rem;padding:8px 0 0;cursor:pointer;display:block;";
+    trocarBtn.textContent = `Não é isso? Trocar para ${tituloOposto}`;
+    trocarBtn.addEventListener("click", async () => {
+      await definirGrupoForcado(db, hoje, grupoOposto);
+      window.location.reload();
+    });
+    planoCard.insertBefore(trocarBtn, planoCard.querySelector("button"));
+  }
+
   main.appendChild(planoCard);
 
   main.appendChild(await montarCardCheckin(db, hoje));

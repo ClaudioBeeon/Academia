@@ -1,8 +1,12 @@
 // js/screens/treino.js
 import { get, getAll } from "../data/db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio } from "../data/historico.js";
+import { getEquipamento } from "../data/equipamento.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
+import { calcularAnilhas } from "../engine/anilhas.js";
+import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
+import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
@@ -31,6 +35,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
+  const equipamento = await getEquipamento(db);
   const exerciciosHoje = todosExercicios.filter((e) => e.musculoPrimario === "peito");
 
   const root = document.createElement("div");
@@ -49,7 +54,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
 
   for (let i = 0; i < exerciciosHoje.length; i++) {
     const exercicio = exerciciosHoje[i];
-    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico);
+    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento);
     main.appendChild(card);
     if (i < exerciciosHoje.length - 1) {
       main.appendChild(criarPlaceholderDescanso());
@@ -73,7 +78,7 @@ function criarPlaceholderDescanso() {
   return div;
 }
 
-async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico) {
+async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento) {
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
@@ -136,6 +141,9 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
     const rirDigitado = Number(rirInput);
     if (!carga || !reps) return;
 
+    const seriesAnteriores = await getHistoricoCompletoDoExercicio(db, exercicio.id);
+    const prs = detectarPRs({ carga, reps }, seriesAnteriores.map((s) => ({ carga: s.carga, reps: s.reps })));
+
     await registrarSerie(db, {
       exercicioId: exercicio.id,
       data: hoje,
@@ -162,6 +170,11 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
       ? linha.nextElementSibling
       : card.nextElementSibling;
     iniciarDescanso(restBar, cfg.descansoSegundos);
+
+    const prsRelevantes = prs.filter((p) => p.tipo !== "primeira_serie");
+    if (prsRelevantes.length > 0) {
+      mostrarToastPR(prsRelevantes);
+    }
   });
 
   card.querySelector(".trocar-pill").addEventListener("click", () => {
@@ -172,6 +185,45 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
 
   card.querySelector(".history-pill").addEventListener("click", () => {
     if (onAbrirHistorico) onAbrirHistorico(exercicio);
+  });
+
+  const ferramentasPill = document.createElement("button");
+  ferramentasPill.type = "button";
+  ferramentasPill.className = "swap-pill";
+  ferramentasPill.textContent = "Ferramentas";
+  ferramentasPill.style.margin = "0 18px 12px";
+  card.insertBefore(ferramentasPill, card.querySelector(".sets"));
+
+  const painelFerramentas = document.createElement("div");
+  painelFerramentas.className = "sets";
+  painelFerramentas.style.display = "none";
+  painelFerramentas.style.padding = "0 18px 12px";
+  card.insertBefore(painelFerramentas, card.querySelector(".sets"));
+
+  ferramentasPill.addEventListener("click", () => {
+    const abrindo = painelFerramentas.style.display === "none";
+    painelFerramentas.style.display = abrindo ? "flex" : "none";
+    if (abrindo) {
+      const pesoAlvo = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : equipamento.pesoBarra);
+      const anilhas = calcularAnilhas(pesoAlvo, equipamento.pesoBarra, equipamento.anilhasDisponiveis);
+      const aquecimento = gerarEscadaAquecimento(pesoAlvo, equipamento.pesoBarra);
+
+      const textoAnilhas = anilhas.anilhasPorLado.length > 0
+        ? `${anilhas.anilhasPorLado.join(" + ")} kg por lado`
+        : "Sem anilhas — só a barra";
+      const textoAquecimento = aquecimento
+        .map((p) => `${p.peso} kg × ${p.reps}`)
+        .join(" → ");
+
+      painelFerramentas.innerHTML = `
+        <div class="prev-hint" style="grid-column:1/-1;">
+          <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
+        </div>
+        <div class="prev-hint" style="grid-column:1/-1;">
+          <b>Aquecimento:</b> ${textoAquecimento || "—"}
+        </div>
+      `;
+    }
   });
 
   return card;
@@ -219,4 +271,19 @@ function iniciarDescanso(restBar, descansoSegundos) {
   restBar.querySelector('[data-action="mais"]').addEventListener("click", () => cronometro.ajustar(30));
 
   cronometro.iniciar();
+}
+
+function mostrarToastPR(prs) {
+  const toast = document.createElement("div");
+  toast.className = "rest-bar";
+  toast.style.position = "fixed";
+  toast.style.left = "50%";
+  toast.style.bottom = "108px";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.width = "calc(100% - 44px)";
+  toast.style.maxWidth = "398px";
+  toast.style.zIndex = "10";
+  toast.innerHTML = `<div><div class="label">🏆 Recorde pessoal</div><div class="time" style="font-size:1rem;">${prs.map((p) => p.mensagem).join(" ")}</div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }

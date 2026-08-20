@@ -1,0 +1,12 @@
+:root {
+  --paper: oklch(13% 0.012 145);
+  --card: oklch(18% 0.014 145);
+  --card-2: oklch(23% 0.016 145);
+  --ink: oklch(97% 0.006 145);
+  --ink-dim: oklch(72% 0.014 145);
+  --ink-faint: oklch(50% 0.012 145);
+  --accent: oklch(89% 0.21 128);
+  --accent-ink: oklch(19% 0.05 128);
+  --line: oklch(27% 0.016 145);
+  --radius: 26px;
+}

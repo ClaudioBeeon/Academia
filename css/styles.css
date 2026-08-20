@@ -1,6 +1,87 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+html, body { height: 100%; overflow-x: clip; }
 body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "SF Pro Text", -apple-system, "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   padding-bottom: env(safe-area-inset-bottom);
   padding-top: env(safe-area-inset-top);
 }
+
+#tab-content {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0 22px 148px;
+}
+
+#tab-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 18px;
+  width: calc(100% - 32px);
+  max-width: 398px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: flex;
+  padding: 8px;
+  box-shadow: 0 24px 50px -18px oklch(0% 0 0 / 0.7);
+}
+#tab-bar button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 9px 4px;
+  cursor: pointer;
+  border-radius: 999px;
+}
+#tab-bar button.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+#tab-bar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Treino screen component classes (consumed by js/screens/treino.js) */
+.top { padding: 30px 0 0; }
+.date-label { font-size: 0.8rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.day-title { font-size: 2.1rem; font-weight: 900; letter-spacing: -0.03em; margin-top: 6px; }
+.vazio { color: var(--ink-faint); padding: 20px 0; }
+
+main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
+
+.exercise-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.exercise-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 14px; }
+.exercise-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.015em; }
+.exercise-meta { font-size: 0.78rem; color: var(--ink-faint); font-weight: 600; margin-top: 3px; }
+.swap-pill { background: var(--card-2); border: 1px solid var(--line); color: var(--ink-dim); font-size: 0.74rem; font-weight: 700; padding: 7px 13px; border-radius: 999px; cursor: pointer; }
+.swap-pill:hover { color: var(--accent); }
+.swap-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+.set-row { display: grid; grid-template-columns: 40px 1fr 1fr 1fr; align-items: center; gap: 10px; padding: 8px; border-radius: 14px; }
+.set-row.done { background: color-mix(in oklch, var(--accent) 12%, transparent); }
+.set-ring { width: 34px; height: 34px; border-radius: 50%; background: var(--card-2); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; color: var(--ink-faint); }
+.set-row.done .set-ring { background: var(--accent); color: var(--accent-ink); }
+.set-field label { font-size: 0.62rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; margin-bottom: 3px; }
+.set-field input { background: var(--card-2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 8px 10px; font-size: 0.95rem; font-weight: 700; width: 100%; font-variant-numeric: tabular-nums; }
+.set-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.set-field input:disabled { opacity: 0.7; }
+
+.prev-hint { padding: 0 18px 16px; font-size: 0.78rem; color: var(--ink-faint); font-weight: 600; }
+.prev-hint b { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.rest-bar { display: flex; align-items: center; justify-content: space-between; background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 16px 20px; box-shadow: 0 24px 48px -24px color-mix(in oklch, var(--accent) 55%, black); }
+.rest-bar.rest-bar-hidden { opacity: 0.35; pointer-events: none; }
+.rest-bar .label { font-size: 0.78rem; font-weight: 800; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.05em; }
+.rest-bar .time { font-size: 1.9rem; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.rest-ctl { display: flex; gap: 8px; }
+.rest-ctl button { background: color-mix(in oklch, var(--accent-ink) 15%, transparent); border: none; color: var(--accent-ink); border-radius: 999px; padding: 7px 12px; font-size: 0.78rem; font-weight: 800; cursor: pointer; }
+.rest-ctl button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }

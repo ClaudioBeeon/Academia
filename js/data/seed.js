@@ -1,4 +1,4 @@
-import { get, put, putAll } from "./db.js";
+import { get, put, putAll, getAll } from "./db.js";
 
 const DATA_FILES = {
   perfil: "data/perfil.json",
@@ -23,7 +23,15 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   await put(db, "perfil", perfil);
   await put(db, "protocolo", protocolo);
   await put(db, "dietaBase", dieta);
-  await putAll(db, "exercicios", exercicios.exercicios);
+  const existentes = await getAll(db, "exercicios");
+  const observacoesExistentes = new Map(existentes.map((e) => [e.id, e.observacoesExecucao]));
+  const exerciciosMesclados = exercicios.exercicios.map((seedExercicio) => {
+    const observacaoExistente = observacoesExistentes.get(seedExercicio.id);
+    return observacaoExistente
+      ? { ...seedExercicio, observacoesExecucao: observacaoExistente }
+      : seedExercicio;
+  });
+  await putAll(db, "exercicios", exerciciosMesclados);
   await put(db, "config", { chave: "seedVersion", valor: protocolo.versao });
 
   return { seeded: true };

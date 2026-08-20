@@ -40,6 +40,12 @@ test("importarTudo rejeita um objeto que não é um backup válido", async () =>
   db.close();
 });
 
+test("importarTudo rejeita um backup cujo dados não tem nenhuma loja válida", async () => {
+  const db = await openDatabase();
+  await assert.rejects(() => importarTudo(db, { dados: {} }), /Arquivo de backup inválido/);
+  db.close();
+});
+
 test("historicoParaCsv gera cabeçalho e uma linha por série", () => {
   const csv = historicoParaCsv([
     { data: "2026-08-01", exercicioId: "a", musculo: "peito", tipoSerie: "normal", carga: 14, reps: 10, rir: 2, serieNumero: 1 },

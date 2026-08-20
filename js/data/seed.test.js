@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
-import { openDatabase, get, getAll } from "./db.js";
+import { openDatabase, get, put, getAll } from "./db.js";
 import { seedIfNeeded } from "./seed.js";
 
 function fakeFetch(routes) {
@@ -40,5 +40,24 @@ test("seedIfNeeded is a no-op on the second run", async () => {
   await seedIfNeeded(db, fakeFetch(routes));
   const second = await seedIfNeeded(db, fakeFetch(routes));
   assert.equal(second.seeded, false);
+  db.close();
+});
+
+test("seedIfNeeded preserva observacoesExecucao existente ao reexecutar com uma nova versão", async () => {
+  const db = await openDatabase();
+  await seedIfNeeded(db, fakeFetch(routes));
+
+  const exercicio = await get(db, "exercicios", "a");
+  exercicio.observacoesExecucao = "Nota do usuário";
+  await put(db, "exercicios", exercicio);
+
+  const routesV2 = {
+    ...routes,
+    "data/protocolo.json": { versao: "2.0" },
+  };
+  await seedIfNeeded(db, fakeFetch(routesV2));
+
+  const exercicioAposReseed = await get(db, "exercicios", "a");
+  assert.equal(exercicioAposReseed.observacoesExecucao, "Nota do usuário");
   db.close();
 });

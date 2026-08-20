@@ -17,11 +17,14 @@ export async function importarTudo(db, backup) {
   if (!backup || typeof backup !== "object" || !backup.dados || typeof backup.dados !== "object") {
     throw new Error("Arquivo de backup inválido.");
   }
-  for (const nome of STORES_EXPORTAVEIS) {
-    const registros = backup.dados[nome];
-    if (!Array.isArray(registros)) continue;
+  const storesValidas = STORES_EXPORTAVEIS.filter((nome) => Array.isArray(backup.dados[nome]));
+  if (storesValidas.length === 0) {
+    throw new Error("Arquivo de backup inválido.");
+  }
+
+  for (const nome of storesValidas) {
     await clearStore(db, nome);
-    for (const registro of registros) {
+    for (const registro of backup.dados[nome]) {
       await put(db, nome, registro);
     }
   }

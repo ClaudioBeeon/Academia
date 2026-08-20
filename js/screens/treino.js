@@ -109,7 +109,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
 
   const totalSeriesAlvo = 3;
   for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
-    const jaFeita = seriesHoje[numero - 1];
+    const jaFeita = seriesHoje.find((s) => s.serieNumero === numero);
     setsContainer.appendChild(criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps, rirAlvo: cfg.rirAlvo }));
     if (numero < totalSeriesAlvo) {
       setsContainer.appendChild(criarPlaceholderDescanso());

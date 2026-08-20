@@ -36,6 +36,7 @@ export async function montarTelaHistorico(db, exercicio, aoVoltar) {
   }
 
   for (const [data, setsDoDia] of porData) {
+    setsDoDia.sort((a, b) => (a.serieNumero ?? 0) - (b.serieNumero ?? 0));
     const card = document.createElement("section");
     card.className = "exercise-card";
 

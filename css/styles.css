@@ -70,6 +70,15 @@ body {
 .stat-tile b.stat-tile-texto { font-size: 0.85rem; font-weight: 700; }
 .stat-tile span { display: block; font-size: 0.72rem; color: var(--ink-faint); font-weight: 600; margin-top: 5px; }
 
+.carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 20px; }
+.carrossel-plano::-webkit-scrollbar { display: none; }
+.carrossel-plano .plano-hero { flex: 0 0 84%; scroll-snap-align: start; margin-bottom: 0; }
+.carrossel-plano .plano-hero.alt { background: var(--card-2); color: var(--ink); border: 1px solid var(--line); }
+.carrossel-plano .plano-hero.alt button { background: var(--accent); color: var(--accent-ink); }
+.atividade-secao { margin-bottom: 20px; }
+.atividade-secao .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.atividade-secao .shead h4 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
+
 main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 .exercise-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }

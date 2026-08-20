@@ -1,0 +1,215 @@
+// js/screens/evolucao.js
+import { getAll } from "../data/db.js";
+import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
+
+export async function montarTelaEvolucao(db) {
+  const root = document.createElement("div");
+  root.className = "tela-evolucao";
+
+  const header = document.createElement("header");
+  header.className = "top";
+  header.innerHTML = `<div class="date-label">Progressão</div><div class="day-title">Evolução</div>`;
+  root.appendChild(header);
+
+  const main = document.createElement("main");
+  root.appendChild(main);
+
+  const [exercicios, todasAsSeries] = await Promise.all([
+    getAll(db, "exercicios"),
+    getAll(db, "historicoSeries"),
+  ]);
+
+  if (todasAsSeries.length === 0) {
+    main.innerHTML = `<p class="vazio">Sem treinos registrados ainda.</p>`;
+    return root;
+  }
+
+  montarSecaoCarga(main, exercicios, todasAsSeries);
+  montarSecaoVolume(main, todasAsSeries);
+
+  return root;
+}
+
+function montarSecaoCarga(main, exercicios, todasAsSeries) {
+  const idsComHistorico = new Set(todasAsSeries.map((s) => s.exercicioId));
+  const exerciciosComHistorico = exercicios.filter((e) => idsComHistorico.has(e.id));
+  if (exerciciosComHistorico.length === 0) return;
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Progressão de carga (1RM estimado)</div></div>
+    <div class="sets" style="padding:0 18px 18px;">
+      <div class="set-field" style="grid-column:1/-1;">
+        <label>Exercício</label>
+        <select class="select-exercicio" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></select>
+      </div>
+      <div class="grafico-1rm" style="grid-column:1/-1;"></div>
+    </div>
+  `;
+  main.appendChild(card);
+
+  const select = card.querySelector(".select-exercicio");
+  for (const exercicio of exerciciosComHistorico) {
+    const option = document.createElement("option");
+    option.value = exercicio.id;
+    option.textContent = exercicio.nome;
+    select.appendChild(option);
+  }
+
+  const container = card.querySelector(".grafico-1rm");
+
+  const desenhar = (exercicioId) => {
+    const seriesDoExercicio = todasAsSeries.filter((s) => s.exercicioId === exercicioId);
+    const pontos = calcularProgressao1RM(seriesDoExercicio);
+    container.innerHTML = "";
+    if (pontos.length === 0) {
+      container.innerHTML = `<p class="prev-hint">Sem dados suficientes para este exercício.</p>`;
+      return;
+    }
+    container.appendChild(criarSvgLinha(pontos));
+  };
+
+  select.addEventListener("change", () => desenhar(select.value));
+  select.value = exerciciosComHistorico[0].id;
+  desenhar(exerciciosComHistorico[0].id);
+}
+
+function montarSecaoVolume(main, todasAsSeries) {
+  const volumePorMusculo = calcularVolumeSemanalPorMusculo(todasAsSeries);
+  const musculos = Object.keys(volumePorMusculo).sort();
+
+  if (musculos.length === 0) {
+    const vazio = document.createElement("p");
+    vazio.className = "vazio";
+    vazio.textContent = "Sem volume semanal suficiente ainda.";
+    main.appendChild(vazio);
+    return;
+  }
+
+  for (const musculo of musculos) {
+    const semanas = volumePorMusculo[musculo];
+    const card = document.createElement("section");
+    card.className = "exercise-card";
+
+    const head = document.createElement("div");
+    head.className = "exercise-head";
+    head.innerHTML = `<div class="exercise-name"></div>`;
+    head.querySelector(".exercise-name").textContent = `Volume semanal — ${musculo}`;
+    card.appendChild(head);
+
+    const corpo = document.createElement("div");
+    corpo.className = "sets";
+    corpo.style.padding = "0 18px 18px";
+    corpo.appendChild(criarSvgBarras(semanas));
+    card.appendChild(corpo);
+
+    main.appendChild(card);
+  }
+}
+
+function formatarDataCurta(dataIso) {
+  const [, mes, dia] = dataIso.split("-");
+  return `${dia}/${mes}`;
+}
+
+function criarSvgLinha(pontos) {
+  const largura = 320;
+  const altura = 140;
+  const margem = 24;
+
+  const valores = pontos.map((p) => p.carga1RM);
+  const minValor = Math.min(...valores);
+  const maxValor = Math.max(...valores);
+  const faixa = maxValor - minValor || 1;
+  const folga = faixa * 0.1;
+  const min = minValor - folga;
+  const max = maxValor + folga;
+
+  const escalaX = (i) => margem + (i / Math.max(pontos.length - 1, 1)) * (largura - margem * 2);
+  const escalaY = (valor) => altura - margem - ((valor - min) / (max - min)) * (altura - margem * 2);
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${largura} ${altura + 20}`);
+  svg.setAttribute("width", "100%");
+  svg.style.display = "block";
+
+  const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  polyline.setAttribute(
+    "points",
+    pontos.map((p, i) => `${escalaX(i)},${escalaY(p.carga1RM)}`).join(" ")
+  );
+  polyline.setAttribute("fill", "none");
+  polyline.setAttribute("stroke", "var(--accent)");
+  polyline.setAttribute("stroke-width", "2");
+  svg.appendChild(polyline);
+
+  pontos.forEach((p, i) => {
+    const circulo = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circulo.setAttribute("cx", escalaX(i));
+    circulo.setAttribute("cy", escalaY(p.carga1RM));
+    circulo.setAttribute("r", "3");
+    circulo.setAttribute("fill", "var(--accent)");
+    svg.appendChild(circulo);
+  });
+
+  const passoRotulo = Math.max(1, Math.ceil(pontos.length / 6));
+  pontos.forEach((p, i) => {
+    if (i % passoRotulo !== 0 && i !== pontos.length - 1) return;
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", escalaX(i));
+    label.setAttribute("y", altura + 14);
+    label.setAttribute("font-size", "9");
+    label.setAttribute("fill", "var(--ink-faint)");
+    label.setAttribute("text-anchor", "middle");
+    label.textContent = formatarDataCurta(p.data);
+    svg.appendChild(label);
+  });
+
+  return svg;
+}
+
+function criarSvgBarras(semanas) {
+  const largura = 320;
+  const altura = 100;
+  const margem = 16;
+  const maxValor = Math.max(...semanas.map((s) => s.volume), 1);
+  const larguraBarra = (largura - margem * 2) / semanas.length;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${largura} ${altura + 16}`);
+  svg.setAttribute("width", "100%");
+  svg.style.display = "block";
+
+  semanas.forEach((s, i) => {
+    const alturaBarra = (s.volume / maxValor) * (altura - margem);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", String(margem + i * larguraBarra + 2));
+    rect.setAttribute("y", String(altura - alturaBarra));
+    rect.setAttribute("width", String(Math.max(larguraBarra - 4, 1)));
+    rect.setAttribute("height", String(alturaBarra));
+    rect.setAttribute("fill", "var(--accent)");
+    rect.setAttribute("rx", "2");
+    svg.appendChild(rect);
+  });
+
+  const rotuloPrimeira = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  rotuloPrimeira.setAttribute("x", String(margem));
+  rotuloPrimeira.setAttribute("y", String(altura + 12));
+  rotuloPrimeira.setAttribute("font-size", "9");
+  rotuloPrimeira.setAttribute("fill", "var(--ink-faint)");
+  rotuloPrimeira.setAttribute("text-anchor", "start");
+  rotuloPrimeira.textContent = semanas[0].semana;
+  svg.appendChild(rotuloPrimeira);
+
+  const rotuloUltima = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  rotuloUltima.setAttribute("x", String(largura - margem));
+  rotuloUltima.setAttribute("y", String(altura + 12));
+  rotuloUltima.setAttribute("font-size", "9");
+  rotuloUltima.setAttribute("fill", "var(--ink-faint)");
+  rotuloUltima.setAttribute("text-anchor", "end");
+  rotuloUltima.textContent = semanas[semanas.length - 1].semana;
+  svg.appendChild(rotuloUltima);
+
+  return svg;
+}

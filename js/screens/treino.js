@@ -10,6 +10,7 @@ import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
+import { validarRir } from "../engine/rir.js";
 import { criarCronometro } from "./timer.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
@@ -237,6 +238,21 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
       rir: rirInput === "" || Number.isNaN(rirDigitado) ? cfg.rirAlvo : rirDigitado,
       serieNumero: Number(linha.dataset.numero),
     });
+
+    const numeroAtual = Number(linha.dataset.numero);
+    const serieAnteriorMesmoExercicio = seriesHoje.find((s) => s.serieNumero === numeroAtual - 1);
+    if (serieAnteriorMesmoExercicio && serieAnteriorMesmoExercicio.carga === carga) {
+      const validacao = validarRir({
+        rirDeclarado: serieAnteriorMesmoExercicio.rir,
+        repsSerieAtual: serieAnteriorMesmoExercicio.reps,
+        repsSerieSeguinte: reps,
+        cargaIgual: true,
+      });
+      if (validacao.suspeitaSuperestimado) {
+        mostrarToastRir(validacao.mensagem);
+      }
+    }
+
     atualizarProgressao();
 
     linha.classList.add("done");
@@ -358,6 +374,21 @@ function iniciarDescanso(restBar, descansoSegundos) {
   restBar.querySelector('[data-action="mais"]').addEventListener("click", () => cronometro.ajustar(30));
 
   cronometro.iniciar();
+}
+
+function mostrarToastRir(mensagem) {
+  const toast = document.createElement("div");
+  toast.className = "rest-bar";
+  toast.style.position = "fixed";
+  toast.style.left = "50%";
+  toast.style.bottom = "108px";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.width = "calc(100% - 44px)";
+  toast.style.maxWidth = "398px";
+  toast.style.zIndex = "10";
+  toast.innerHTML = `<div><div class="label">💡 Calibração de RIR</div><div class="time" style="font-size:1rem;">${mensagem}</div></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 function mostrarToastPR(prs) {

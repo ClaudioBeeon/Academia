@@ -1,0 +1,601 @@
+<title>Bento, Pôster e Bruto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;700;800&display=swap">
+
+<style>
+/* ═══════════ PAGE CHROME ═══════════ */
+:root{
+  --pg-bg:#F2F1EE; --pg-surf:#FFF; --pg-ink:#17191B; --pg-dim:#5A5F63;
+  --pg-faint:#8B9095; --pg-line:#DDDBD6; --pg-accent:#B0442C;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pg-bg:#0F1112; --pg-surf:#181B1D; --pg-ink:#EDEFF0; --pg-dim:#A0A6AA;
+    --pg-faint:#71787D; --pg-line:#262A2D; --pg-accent:#E8896E;
+  }
+}
+:root[data-theme="dark"]{
+  --pg-bg:#0F1112; --pg-surf:#181B1D; --pg-ink:#EDEFF0; --pg-dim:#A0A6AA;
+  --pg-faint:#71787D; --pg-line:#262A2D; --pg-accent:#E8896E;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--pg-bg);color:var(--pg-ink);
+  font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased
+}
+.wrap{max-width:1200px;margin:0 auto;padding:56px 24px 90px}
+.eyebrow{
+  font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 14px
+}
+h1{
+  font-family:Outfit,sans-serif;font-weight:800;font-size:clamp(34px,5.2vw,56px);
+  line-height:1.02;letter-spacing:-.03em;margin:0 0 18px;text-wrap:balance
+}
+.lede{font-size:17px;line-height:1.62;color:var(--pg-dim);max-width:64ch;margin:0}
+.note{
+  margin:30px 0 0;padding:20px 22px;border-left:3px solid var(--pg-accent);
+  background:var(--pg-surf);max-width:72ch;border-radius:0 12px 12px 0
+}
+.note p{margin:0;font-size:14.5px;line-height:1.65;color:var(--pg-dim)}
+.note b{color:var(--pg-ink);font-weight:700}
+
+.tabs{display:flex;gap:8px;margin:46px 0 0;flex-wrap:wrap}
+.tab{
+  font-family:Outfit,sans-serif;font-weight:700;font-size:14.5px;padding:14px 24px;
+  border-radius:999px;border:1px solid var(--pg-line);background:var(--pg-surf);
+  color:var(--pg-dim);cursor:pointer;min-height:44px;
+  transition:background .18s,color .18s,border-color .18s
+}
+.tab:hover{border-color:var(--pg-accent);color:var(--pg-ink)}
+.tab:focus-visible{outline:3px solid var(--pg-accent);outline-offset:3px}
+.tab[aria-selected="true"]{background:var(--pg-ink);color:var(--pg-bg);border-color:var(--pg-ink)}
+.panel[hidden]{display:none}
+.panel{margin-top:34px}
+
+.meta{
+  display:grid;grid-template-columns:1fr;gap:24px;padding:26px;
+  border:1px solid var(--pg-line);border-radius:16px;background:var(--pg-surf);margin-bottom:32px
+}
+@media(min-width:880px){.meta{grid-template-columns:1.4fr 1fr 1fr}}
+.meta h3{font-family:Outfit,sans-serif;font-size:23px;font-weight:800;margin:0 0 9px;letter-spacing:-.02em}
+.meta p{margin:0;font-size:14.5px;line-height:1.6;color:var(--pg-dim)}
+.meta p+p{margin-top:9px}
+.meta b{color:var(--pg-ink)}
+.mlabel{
+  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 12px
+}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw i{width:38px;height:38px;border-radius:8px;display:block;border:1px solid rgba(128,128,128,.3)}
+.typerow{font-size:14px;color:var(--pg-dim);line-height:1.75}
+.typerow b{color:var(--pg-ink)}
+
+.rail{display:flex;gap:26px;overflow-x:auto;padding:6px 6px 24px;scroll-snap-type:x mandatory}
+.phonebox{scroll-snap-align:center;flex:0 0 auto}
+.caption{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 12px;text-align:center
+}
+.phone{
+  width:344px;height:718px;border-radius:46px;padding:11px;
+  background:linear-gradient(160deg,#33373A,#0C0E0F);
+  box-shadow:0 28px 62px -24px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07) inset
+}
+.screen{width:100%;height:100%;border-radius:36px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.sc{flex:1;overflow-y:auto;overflow-x:hidden}
+.sc::-webkit-scrollbar{width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════
+   A · BENTO — modular grid, tiles de spans variados
+   ══════════════════════════════════════════════════════ */
+.A{background:#F0F0F3;color:#16171A;font-family:"DM Sans",sans-serif}
+.A .bar{display:flex;justify-content:space-between;padding:15px 20px 4px;
+  font:700 12px/1 "JetBrains Mono",monospace;color:#16171A}
+.A .bar span{opacity:.5}
+.A .hd{padding:12px 20px 16px}
+.A .hd u{display:block;text-decoration:none;font:500 11px/1 "JetBrains Mono",monospace;
+  letter-spacing:.13em;text-transform:uppercase;color:#8A8E96;margin-bottom:7px}
+.A .hd h2{margin:0;font-family:Outfit,sans-serif;font-weight:800;font-size:27px;letter-spacing:-.03em;line-height:1.08}
+
+/* the actual bento grid */
+.A .bento{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px}
+.A .t{background:#fff;border-radius:22px;padding:17px;box-shadow:0 3px 10px rgba(20,20,40,.05)}
+.A .t.w2{grid-column:span 2}
+.A .t u{display:block;text-decoration:none;font:600 9.5px/1 "JetBrains Mono",monospace;
+  letter-spacing:.14em;text-transform:uppercase;color:#8A8E96;margin-bottom:11px}
+.A .t .big{font-family:Outfit,sans-serif;font-weight:800;font-size:32px;letter-spacing:-.03em;line-height:1;margin:0}
+.A .t .num{font:800 30px/1 "JetBrains Mono",monospace;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.A .t .sub{font-size:11.5px;color:#8A8E96;margin:7px 0 0;font-weight:500}
+.A .t.acc{background:#FF6A2B;color:#fff}
+.A .t.acc u,.A .t.acc .sub{color:rgba(255,255,255,.72)}
+.A .t.dark{background:#16171A;color:#fff}
+.A .t.dark u,.A .t.dark .sub{color:#9AA0A8}
+.A .go{margin-top:14px;width:100%;min-height:46px;border:0;border-radius:14px;background:#16171A;
+  color:#fff;font-family:Outfit,sans-serif;font-weight:700;font-size:15px;cursor:pointer}
+.A .t.acc .go{background:#fff;color:#FF6A2B}
+.A .days{display:flex;gap:5px;margin-top:3px}
+.A .days b{flex:1;text-align:center;padding:8px 0;border-radius:11px;background:#F0F0F3;
+  font:700 12px/1 "JetBrains Mono",monospace;color:#8A8E96}
+.A .days b.on{background:#FF6A2B;color:#fff}
+.A .vb{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.A .vb:last-child{margin-bottom:0}
+.A .vb i{font-style:normal;font-size:11.5px;font-weight:600;width:52px;color:#5A5F66}
+.A .vb s{flex:1;height:6px;border-radius:99px;background:#EDEDF1;text-decoration:none;display:block;overflow:hidden}
+.A .vb s>b{display:block;height:100%;border-radius:99px;background:#FF6A2B}
+.A .vb s>b.lo{background:#E5484D}
+.A .vb em{font:400 10.5px/1 "JetBrains Mono",monospace;color:#8A8E96;width:34px;text-align:right;font-style:normal}
+.A .spk{display:flex;align-items:flex-end;gap:4px;height:52px}
+.A .spk i{flex:1;background:#E4E4EA;border-radius:3px}
+.A .spk i.on{background:#16171A}
+.A .warn{background:#FFF1E8;border-radius:22px;padding:15px 17px;display:flex;gap:10px;grid-column:span 2}
+.A .warn p{margin:0;font-size:12px;line-height:1.5;color:#9A3F12;font-weight:500}
+.A .nav{display:flex;justify-content:space-around;padding:11px 10px 21px;background:#fff;border-top:1px solid #E6E6EC}
+.A .nav i{display:flex;flex-direction:column;align-items:center;gap:4px;color:#A8ADB5;font-style:normal}
+.A .nav i.on{color:#FF6A2B}
+.A .nav i s{text-decoration:none;font-size:9px;font-weight:700}
+/* bento queue: active exercise spans 2, done ones are compact */
+.A .q{background:#fff;border-radius:20px;padding:15px 16px;display:flex;align-items:center;gap:11px}
+.A .q.w2{grid-column:span 2}
+.A .q h4{margin:0 0 3px;font-size:13.5px;font-weight:700;line-height:1.2}
+.A .q p{margin:0;font:400 10px/1 "JetBrains Mono",monospace;color:#8A8E96}
+.A .q .dot{width:28px;height:28px;border-radius:10px;background:#F0F0F3;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font:700 11px/1 "JetBrains Mono",monospace;color:#8A8E96}
+.A .q.dn{opacity:.48}
+.A .q.dn .dot{background:#16171A;color:#fff}
+.A .q.lv{background:#FF6A2B;color:#fff}
+.A .q.lv p{color:rgba(255,255,255,.75)}
+.A .q.lv .dot{background:#fff;color:#FF6A2B}
+.A .srow{background:#fff;border-radius:18px;padding:13px 16px;display:flex;align-items:center;gap:11px;grid-column:span 2}
+.A .srow.dn{background:#EFF6EF}
+.A .srow .dot{width:24px;height:24px;border-radius:50%}
+.A .srow .dot.ok{background:#2E9E5B;color:#fff}
+.A .srow span{font:700 12.5px/1 "JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.A .srow span em{font-style:normal;color:#8A8E96;font-weight:400}
+.A .qtag{font:700 9px/1 "JetBrains Mono",monospace;background:#fff;color:#FF6A2B;
+  padding:5px 9px;border-radius:99px;flex:0 0 auto}
+
+/* ══════════════════════════════════════════════════════
+   B · PÔSTER — sem cards, tipo gigante, filetes
+   ══════════════════════════════════════════════════════ */
+.B{background:#0A0A0A;color:#FAFAFA;font-family:"DM Sans",sans-serif}
+.B .bar{display:flex;justify-content:space-between;padding:15px 24px 4px;
+  font:700 12px/1 "JetBrains Mono",monospace}
+.B .bar span{color:#737373}
+.B .blk{padding:22px 24px;border-bottom:1px solid #262626}
+.B .kicker{font:400 10px/1 "JetBrains Mono",monospace;letter-spacing:.22em;
+  text-transform:uppercase;color:#737373;margin:0 0 12px}
+.B .mega{font-family:"Bebas Neue",sans-serif;font-size:62px;line-height:.86;
+  letter-spacing:.005em;margin:0;text-transform:uppercase}
+.B .mega.sm{font-size:44px}
+.B .acc{color:#FF3D00}
+.B .rowline{display:flex;justify-content:space-between;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid #1A1A1A}
+.B .rowline:last-child{border-bottom:0}
+.B .rowline i{font-style:normal;font-size:13px;color:#A3A3A3;font-weight:500}
+.B .rowline b{font:800 15px/1 "JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.B .cta{display:inline-block;margin-top:16px;font-family:"Bebas Neue",sans-serif;
+  font-size:25px;letter-spacing:.04em;text-transform:uppercase;color:#FF3D00;
+  border-bottom:3px solid #FF3D00;padding-bottom:3px;cursor:pointer}
+.B .strip{display:flex;gap:0;border-top:1px solid #262626;border-bottom:1px solid #262626}
+.B .strip b{flex:1;text-align:center;padding:13px 0;font:700 13px/1 "JetBrains Mono",monospace;
+  color:#737373;border-right:1px solid #1A1A1A}
+.B .strip b:last-child{border-right:0}
+.B .strip b.on{background:#FF3D00;color:#0A0A0A}
+.B .warn{padding:16px 24px;border-bottom:1px solid #262626;display:flex;gap:11px;background:#1A0E08}
+.B .warn p{margin:0;font-size:12.5px;line-height:1.5;color:#F0A882;font-weight:500}
+.B .qi{display:flex;align-items:baseline;gap:15px;padding:17px 24px;border-bottom:1px solid #1A1A1A}
+.B .qi u{text-decoration:none;font:400 13px/1 "JetBrains Mono",monospace;color:#525252;width:24px;flex:0 0 auto}
+.B .qi div{flex:1;min-width:0}
+.B .qi h4{margin:0 0 5px;font-family:"Bebas Neue",sans-serif;font-size:23px;
+  letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.B .qi p{margin:0;font:400 10px/1 "JetBrains Mono",monospace;color:#737373;letter-spacing:.03em}
+.B .qi.dn h4{color:#525252}
+.B .qi.dn u{color:#FF3D00}
+.B .qi.lv{background:#141414;border-left:3px solid #FF3D00}
+.B .qi.lv u{color:#FF3D00}
+.B .qtag{font:400 10px/1 "JetBrains Mono",monospace;color:#FF3D00;flex:0 0 auto}
+.B .timer{padding:26px 24px;text-align:center;border-bottom:1px solid #262626}
+.B .timer u{display:block;text-decoration:none;font:400 10px/1 "JetBrains Mono",monospace;
+  letter-spacing:.22em;text-transform:uppercase;color:#737373;margin-bottom:12px}
+.B .timer b{display:block;font:800 76px/1 "JetBrains Mono",monospace;color:#FF3D00;
+  letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.B .timer p{margin:12px 0 0;font-size:11.5px;color:#737373}
+.B .nav{display:flex;justify-content:space-around;padding:12px 10px 22px;border-top:1px solid #262626}
+.B .nav i{display:flex;flex-direction:column;align-items:center;gap:4px;color:#525252;font-style:normal}
+.B .nav i.on{color:#FF3D00}
+.B .nav i s{text-decoration:none;font:700 9px/1 "DM Sans",sans-serif}
+.B .foot{padding:16px 24px 22px;border-top:1px solid #262626;display:flex;gap:12px;align-items:center}
+.B .foot .big{flex:1;min-height:52px;border:0;background:#FF3D00;color:#0A0A0A;
+  font-family:"Bebas Neue",sans-serif;font-size:24px;letter-spacing:.05em;cursor:pointer}
+.B .foot .gh{width:56px;min-height:52px;border:1px solid #404040;background:transparent;color:#A3A3A3;cursor:pointer}
+
+/* ══════════════════════════════════════════════════════
+   C · BRUTO — bordas 4px, sombra dura, blocos girados
+   ══════════════════════════════════════════════════════ */
+.C{background:#FFFDF5;color:#000;font-family:"DM Sans",sans-serif}
+.C .bar{display:flex;justify-content:space-between;padding:15px 18px 8px;
+  font:700 12px/1 "Space Grotesk",monospace}
+.C .bar span{opacity:.55}
+.C .pd{padding:0 18px}
+.C .hd{padding:6px 18px 16px}
+.C .hd u{display:inline-block;text-decoration:none;background:#C4B5FD;border:3px solid #000;
+  padding:4px 10px;font:700 10px/1 "Space Grotesk",monospace;letter-spacing:.1em;
+  text-transform:uppercase;transform:rotate(-2deg);margin-bottom:10px}
+.C .hd h2{margin:0;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:30px;
+  letter-spacing:-.03em;line-height:1.02}
+.C .bk{background:#fff;border:4px solid #000;box-shadow:6px 6px 0 #000;padding:16px;margin-bottom:14px}
+.C .bk.red{background:#FF6B6B}
+.C .bk.yel{background:#FFD93D}
+.C .bk.vio{background:#C4B5FD}
+.C .bk u{display:block;text-decoration:none;font:700 10px/1 "Space Grotesk",monospace;
+  letter-spacing:.13em;text-transform:uppercase;margin-bottom:10px}
+.C .bk h3{margin:0;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:34px;
+  letter-spacing:-.03em;line-height:1;text-transform:uppercase}
+.C .bk .meta{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;font-size:12px;font-weight:700}
+.C .bk .meta b{font-family:"Space Grotesk",monospace;font-variant-numeric:tabular-nums}
+.C .btn{margin-top:14px;width:100%;min-height:48px;border:3px solid #000;background:#000;color:#FFFDF5;
+  font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;text-transform:uppercase;
+  letter-spacing:.04em;cursor:pointer;box-shadow:4px 4px 0 rgba(0,0,0,.25)}
+.C .btn.wht{background:#FFFDF5;color:#000}
+.C .days{display:flex;gap:5px;margin-bottom:14px}
+.C .days b{flex:1;text-align:center;padding:9px 0;border:3px solid #000;background:#fff;
+  font:700 12px/1 "Space Grotesk",monospace}
+.C .days b.on{background:#FF6B6B;transform:rotate(-3deg)}
+.C .vb{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.C .vb:last-child{margin-bottom:0}
+.C .vb i{font-style:normal;font-size:11.5px;font-weight:700;width:52px}
+.C .vb s{flex:1;height:14px;border:3px solid #000;background:#fff;text-decoration:none;display:block}
+.C .vb s>b{display:block;height:100%;background:#000}
+.C .vb s>b.lo{background:#FF6B6B}
+.C .vb em{font:700 10.5px/1 "Space Grotesk",monospace;width:34px;text-align:right;font-style:normal}
+.C .trio{display:flex;gap:10px;margin-bottom:14px}
+.C .trio div{flex:1;border:3px solid #000;background:#fff;padding:12px 8px;text-align:center;box-shadow:4px 4px 0 #000}
+.C .trio b{display:block;font:700 22px/1 "Space Grotesk",monospace;font-variant-numeric:tabular-nums}
+.C .trio s{display:block;text-decoration:none;font-size:9px;font-weight:700;text-transform:uppercase;margin-top:5px}
+.C .warn{border:4px solid #000;background:#FFD93D;padding:14px;margin-bottom:14px;display:flex;gap:10px;box-shadow:6px 6px 0 #000}
+.C .warn p{margin:0;font-size:12px;line-height:1.45;font-weight:700}
+.C .q{border:3px solid #000;background:#fff;padding:13px 14px;margin-bottom:11px;
+  display:flex;align-items:center;gap:12px;box-shadow:4px 4px 0 #000}
+.C .q .sq{width:30px;height:30px;border:3px solid #000;flex:0 0 auto;background:#fff;
+  display:flex;align-items:center;justify-content:center;font:700 12px/1 "Space Grotesk",monospace}
+.C .q.dn{background:#EDEDE5}
+.C .q.dn .sq{background:#000;color:#fff}
+.C .q.lv{background:#FF6B6B;box-shadow:6px 6px 0 #000}
+.C .q.lv .sq{background:#FFD93D}
+.C .q h4{margin:0 0 3px;font-size:13.5px;font-weight:700;line-height:1.2}
+.C .q p{margin:0;font:500 10px/1 "Space Grotesk",monospace}
+.C .tag{background:#FFD93D;border:3px solid #000;padding:3px 8px;font:700 9px/1 "Space Grotesk",monospace;
+  transform:rotate(3deg);flex:0 0 auto}
+.C .timer{border:4px solid #000;background:#FFD93D;padding:20px;text-align:center;
+  box-shadow:8px 8px 0 #000;margin-bottom:14px}
+.C .timer u{display:block;text-decoration:none;font:700 10px/1 "Space Grotesk",monospace;
+  letter-spacing:.16em;text-transform:uppercase}
+.C .timer b{display:block;font:700 54px/1 "Space Grotesk",monospace;margin-top:9px;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.C .timer p{margin:9px 0 0;font-size:11px;font-weight:700}
+.C .nav{display:flex;justify-content:space-around;padding:11px 10px 21px;border-top:4px solid #000;background:#fff}
+.C .nav i{display:flex;flex-direction:column;align-items:center;gap:4px;font-style:normal}
+.C .nav i s{text-decoration:none;font-size:9px;font-weight:700}
+.C .nav i.off{opacity:.42}
+.C .foot{padding:14px 18px 20px;border-top:4px solid #000;background:#fff;display:flex;gap:10px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Redesign · rodada 2</p>
+  <h1>Bento, pôster e bruto</h1>
+  <p class="lede">
+    Três sistemas de verdade, não três paletas. Cada um tem <b>estrutura própria</b>:
+    grade modular, tipografia de cartaz e blocos com borda dura. Mesmas três telas
+    em cada, mesmo conteúdo do seu protocolo.
+  </p>
+
+  <div class="note">
+    <p>
+      A sessão continua com <b>7 exercícios</b>, não 16 — a qualidade das séries cai acima
+      de <b>5–8 séries diretas por músculo</b> (P3, seção 13), e distribuir em mais dias
+      não custa hipertrofia (seção 2).
+    </p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="p-A" id="t-A">A · Bento</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p-B" id="t-B">B · Pôster</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p-C" id="t-C">C · Bruto</button>
+  </div>
+
+  <section class="panel" id="p-A" role="tabpanel" aria-labelledby="t-A">
+    <div class="meta">
+      <div>
+        <h3>A · Bento</h3>
+        <p>Grade modular de blocos com <b>tamanhos diferentes</b> — o treino de hoje ocupa
+           a largura toda, as estatísticas viram quadrados, o volume estica. Nada de lista
+           vertical: a informação se organiza por área.</p>
+        <p>Na fila, o exercício ativo <b>ocupa dois blocos</b> e os concluídos encolhem.
+           A hierarquia é espacial, não só de cor.</p>
+      </div>
+      <div><p class="mlabel">Paleta</p><div class="sw">
+        <i style="background:#F0F0F3"></i><i style="background:#FFFFFF"></i>
+        <i style="background:#FF6A2B"></i><i style="background:#16171A"></i><i style="background:#2E9E5B"></i>
+      </div></div>
+      <div><p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Outfit 800</b> · títulos<br><b>DM Sans</b> · corpo<br><b>JetBrains Mono</b> · dados</p></div>
+    </div>
+    <div class="rail" id="r-A"></div>
+  </section>
+
+  <section class="panel" id="p-B" role="tabpanel" aria-labelledby="t-B" hidden>
+    <div class="meta">
+      <div>
+        <h3>B · Pôster</h3>
+        <p><b>Zero cards.</b> Blocos separados por filetes de 1px, tipo condensado gigante
+           e um vermelho-fogo usado com avareza. O cronômetro de descanso vira um número
+           de <b>76px</b> ocupando a tela.</p>
+        <p>CTA é texto sublinhado, não botão. A fila é uma lista numerada em caixa-alta,
+           como cartaz de line-up.</p>
+      </div>
+      <div><p class="mlabel">Paleta</p><div class="sw">
+        <i style="background:#0A0A0A"></i><i style="background:#FAFAFA"></i>
+        <i style="background:#FF3D00"></i><i style="background:#262626"></i><i style="background:#737373"></i>
+      </div></div>
+      <div><p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Bebas Neue</b> condensada · títulos<br><b>DM Sans</b> · corpo<br><b>JetBrains Mono</b> · dados</p></div>
+    </div>
+    <div class="rail" id="r-B"></div>
+  </section>
+
+  <section class="panel" id="p-C" role="tabpanel" aria-labelledby="t-C" hidden>
+    <div class="meta">
+      <div>
+        <h3>C · Bruto</h3>
+        <p>Bordas pretas de <b>4px</b>, sombra sólida deslocada (sem blur) e blocos
+           levemente girados. Creme, vermelho, amarelo e violeta em chapado.
+           Ao apertar, o bloco <b>afunda na direção da sombra</b>.</p>
+        <p>É o oposto do app "wellness": nada é sutil, tudo é físico e legível a um metro
+           de distância — útil quando você está no meio de uma série.</p>
+      </div>
+      <div><p class="mlabel">Paleta</p><div class="sw">
+        <i style="background:#FFFDF5"></i><i style="background:#000000"></i>
+        <i style="background:#FF6B6B"></i><i style="background:#FFD93D"></i><i style="background:#C4B5FD"></i>
+      </div></div>
+      <div><p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Space Grotesk 700</b> · títulos<br><b>DM Sans</b> · corpo<br><b>Space Grotesk</b> · dados</p></div>
+    </div>
+    <div class="rail" id="r-C"></div>
+  </section>
+</div>
+
+<script>
+const I={
+warn:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+ck:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 6 6L20 6"/></svg>',
+pl:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>',
+hm:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+ch:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M7 17v-6M12 17V5M17 17v-9"/></svg>',
+bk:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16a1 1 0 0 0 1.4.9L12 18l6.6 2.9A1 1 0 0 0 20 20V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/></svg>',
+us:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+hs:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>'};
+
+const DAYS=[['SEG',17],['TER',18],['QUA',19],['QUI',20],['SEX',21],['SÁB',22],['DOM',23]];
+const VOL=[['Peito',8,9,0],['Costas',12,16,0],['Ombro',9,16,0],['Bíceps',3,10,1],['Tríceps',6,10,0]];
+const SPK=[42,55,48,61,58,70,64,78];
+const QUEUE=[
+ [1,'Supino inclinado com halteres','peito · 3×8–12 · RIR 1.5','dn'],
+ [2,'Crucifixo no cabo','peito · 3×10–15 · RIR 1','dn'],
+ [3,'Supino reto na máquina','peito · 3×8–15 · RIR 1.5','lv'],
+ [4,'Puxada frente','costas · 3×8–12 · RIR 1.5',''],
+ [5,'Remada baixa na máquina','costas · 3×8–15 · RIR 1.5',''],
+ [6,'Desenvolvimento de ombro','ombro · 3×8–15 · RIR 1.5',''],
+ [7,'Elevação lateral no cabo','ombro · 3×10–15 · RIR 1','']];
+const NAV=[[I.hm,'Hoje'],[I.ch,'Evolução'],[I.bk,'Biblioteca'],[I.us,'Perfil']];
+const bar=c=>`<div class="bar"><b>9:41</b><span>5G ▮▮▮ 82%</span></div>`;
+
+/* ─────────── A · BENTO ─────────── */
+const A={
+home:`${bar()}<div class="sc">
+ <div class="hd"><u>Quinta · 20 de agosto</u><h2>Bom treino,<br>Cláudio</h2></div>
+ <div class="bento">
+  <div class="t w2" style="padding:14px 15px"><div class="days">
+   ${DAYS.map(([d,n])=>`<b class="${n===20?'on':''}">${n}</b>`).join('')}</div></div>
+
+  <div class="t acc w2"><u>Treino de hoje</u><p class="big">Superior</p>
+   <p class="sub">7 exercícios · 21 séries · ~52 min</p>
+   <button class="go">Começar sessão</button></div>
+
+  <div class="warn">${I.warn}<p>Dor articular no último check-in. Considere reduzir carga.</p></div>
+
+  <div class="t"><u>Séries/sem</u><p class="num">34</p><p class="sub">meta 40</p></div>
+  <div class="t dark"><u>Sequência</u><p class="num">6</p><p class="sub">dias seguidos</p></div>
+
+  <div class="t w2"><u>Volume da semana</u>
+   ${VOL.map(([m,v,a,lo])=>`<div class="vb"><i>${m}</i><s><b class="${lo?'lo':''}" style="width:${Math.round(v/a*100)}%"></b></s><em>${v}/${a}</em></div>`).join('')}</div>
+
+  <div class="t w2"><u>Volume por sessão · últimas 8</u>
+   <div class="spk">${SPK.map((h,i)=>`<i class="${i>5?'on':''}" style="height:${h}%"></i>`).join('')}</div></div>
+
+  <div class="t"><u>PRs no mês</u><p class="num">3</p></div>
+  <div class="t"><u>Cardio</u><p class="num">45<span style="font-size:15px">min</span></p></div>
+ </div><div style="height:16px"></div></div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'':'on'}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+fila:`${bar()}<div class="sc">
+ <div class="hd"><u>Fila do dia · 2 de 7</u><h2>Superior</h2></div>
+ <div class="bento">
+  <div class="t w2" style="padding:15px"><u>Progresso · 24:18</u>
+   <s style="display:block;height:8px;border-radius:99px;background:#EDEDF1;overflow:hidden">
+    <b style="display:block;height:100%;width:36%;background:#FF6A2B;border-radius:99px"></b></s></div>
+  ${QUEUE.map(([n,nm,mt,st])=>`<div class="q ${st} ${st==='lv'?'w2':''}">
+    <span class="dot">${st==='dn'?I.ck:n}</span>
+    <div style="min-width:0"><h4>${nm}</h4><p>${mt}</p></div>
+    ${st==='lv'?'<span class="qtag">SÉRIE 3</span>':''}
+   </div>`).join('')}
+  <div class="t w2" style="padding:0;background:none;box-shadow:none">
+   <button class="go" style="margin:0;background:#fff;color:#16171A;border:1px solid #E0E0E6">Finalizar sessão</button></div>
+ </div><div style="height:16px"></div></div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'':'on'}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+exec:`${bar()}<div class="sc">
+ <div class="hd"><u>Exercício 3 de 7 · peito</u><h2>Supino reto<br>na máquina</h2></div>
+ <div class="bento">
+  <div class="t w2"><u>Como executar</u>
+   <p style="margin:0;font-size:12.5px;line-height:1.6;color:#4A4F56">Escápulas retraídas do início ao fim.
+   Desça até sentir alongamento, sem deixar o ombro rolar à frente.</p></div>
+  <div class="t"><u>Carga</u><p class="num">32<span style="font-size:15px">kg</span></p></div>
+  <div class="t"><u>Próximo passo</u><p class="num">+2<span style="font-size:15px">kg</span></p></div>
+
+  <div class="srow dn"><span class="dot ok" style="display:flex;align-items:center;justify-content:center">${I.ck}</span>
+   <span>32 kg · 12 reps <em>· RIR 2</em></span></div>
+  <div class="srow dn"><span class="dot ok" style="display:flex;align-items:center;justify-content:center">${I.ck}</span>
+   <span>32 kg · 11 reps <em>· RIR 1</em></span></div>
+  <div class="srow" style="border:1.5px solid #FF6A2B">
+   <span class="dot" style="background:#FF6A2B;color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 'JetBrains Mono',monospace">3</span>
+   <span style="color:#8A8E96;font-weight:400">aguardando série…</span></div>
+
+  <div class="t acc w2" style="text-align:center"><u>Descanso</u>
+   <p style="margin:0;font:800 46px/1 'JetBrains Mono',monospace;letter-spacing:-.03em">01:12</p>
+   <p class="sub">o relógio segue contando se passar</p></div>
+
+  <div class="t w2" style="padding:0;background:none;box-shadow:none">
+   <button class="go" style="margin:0;background:#fff;color:#16171A;border:1px solid #E0E0E6">Concluir exercício</button></div>
+ </div><div style="height:16px"></div></div>
+ <div class="nav" style="padding:12px 16px 20px;gap:10px;justify-content:stretch">
+  <button style="width:52px;border:1px solid #E0E0E6;background:#fff;border-radius:14px;color:#5A5F66;cursor:pointer">${I.hs}</button>
+  <button style="flex:1;min-height:48px;border:0;border-radius:14px;background:#FF6A2B;color:#fff;font-family:Outfit,sans-serif;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">${I.pl} Iniciar série 3</button>
+ </div>`};
+
+/* ─────────── B · PÔSTER ─────────── */
+const B={
+home:`${bar()}<div class="sc">
+ <div class="blk"><p class="kicker">Quinta · 20 agosto</p>
+  <h2 class="mega">Bom treino,<br><span class="acc">Cláudio</span></h2></div>
+ <div class="strip">${DAYS.map(([d,n])=>`<b class="${n===20?'on':''}">${n}</b>`).join('')}</div>
+ <div class="blk"><p class="kicker">Treino de hoje</p>
+  <h2 class="mega">Superior</h2>
+  <div style="margin-top:16px">
+   <div class="rowline"><i>Exercícios</i><b>7</b></div>
+   <div class="rowline"><i>Séries</i><b>21</b></div>
+   <div class="rowline"><i>Duração estimada</i><b>~52 min</b></div>
+  </div>
+  <span class="cta">Começar sessão →</span></div>
+ <div class="warn">${I.warn}<p>Dor articular no último check-in. Considere reduzir carga ou avaliar deload.</p></div>
+ <div class="blk"><p class="kicker">Volume da semana</p>
+  ${VOL.map(([m,v,a,lo])=>`<div class="rowline"><i>${m}</i><b class="${lo?'acc':''}">${v}<span style="color:#525252">/${a}</span></b></div>`).join('')}</div>
+ <div class="blk"><p class="kicker">Este mês</p>
+  <div style="display:flex;gap:26px;margin-top:2px">
+   <div><b style="display:block;font:800 40px/1 'JetBrains Mono',monospace">34</b>
+    <span style="font-size:10.5px;color:#737373;letter-spacing:.05em">SÉRIES/SEM</span></div>
+   <div><b style="display:block;font:800 40px/1 'JetBrains Mono',monospace">6</b>
+    <span style="font-size:10.5px;color:#737373;letter-spacing:.05em">SEQUÊNCIA</span></div>
+   <div><b style="display:block;font:800 40px/1 'JetBrains Mono',monospace" class="acc">3</b>
+    <span style="font-size:10.5px;color:#737373;letter-spacing:.05em">PRs</span></div>
+  </div></div>
+ </div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'':'on'}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+fila:`${bar()}<div class="sc">
+ <div class="blk" style="padding-bottom:16px"><p class="kicker">Fila do dia · 24:18</p>
+  <h2 class="mega">Superior</h2>
+  <p style="margin:14px 0 0;font:400 12px/1 'JetBrains Mono',monospace;color:#737373">
+   <span class="acc">2</span> DE 7 CONCLUÍDOS</p></div>
+ ${QUEUE.map(([n,nm,mt,st])=>`<div class="qi ${st}">
+   <u>${String(n).padStart(2,'0')}</u><div><h4>${nm}</h4><p>${mt.toUpperCase()}</p></div>
+   ${st==='dn'?'<span class="acc">'+I.ck+'</span>':st==='lv'?'<span class="qtag">SÉRIE 3</span>':''}
+  </div>`).join('')}
+ <div class="blk" style="border-bottom:0"><span class="cta" style="font-size:21px">Finalizar sessão</span></div>
+ </div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'':'on'}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+exec:`${bar()}<div class="sc">
+ <div class="blk"><p class="kicker">Exercício 03 · peito</p>
+  <h2 class="mega sm">Supino reto<br>na máquina</h2></div>
+ <div class="blk"><p class="kicker">Execução</p>
+  <p style="margin:0;font-size:13px;line-height:1.65;color:#A3A3A3">Escápulas retraídas do início ao fim.
+  Desça até sentir alongamento, sem deixar o ombro rolar à frente.</p>
+  <div style="margin-top:14px">
+   <div class="rowline"><i>Carga sugerida</i><b class="acc">32 kg</b></div>
+   <div class="rowline"><i>Próximo passo</i><b>+2 kg</b></div>
+  </div></div>
+ <div class="blk" style="padding-top:16px"><p class="kicker">Séries</p>
+  <div class="rowline"><i><span class="acc">${I.ck}</span> Série 1</i><b>32kg · 12 · RIR 2</b></div>
+  <div class="rowline"><i><span class="acc">${I.ck}</span> Série 2</i><b>32kg · 11 · RIR 1</b></div>
+  <div class="rowline"><i style="color:#525252">○ Série 3</i><b style="color:#525252">aguardando</b></div></div>
+ <div class="timer"><u>Descanso</u><b>01:12</b>
+  <p>o relógio segue contando se você passar do alvo</p></div>
+ <div class="blk" style="border-bottom:0;padding-top:16px">
+  <span class="cta" style="font-size:20px;color:#FAFAFA;border-color:#404040">Concluir exercício</span></div>
+ </div>
+ <div class="foot"><button class="gh">${I.hs}</button>
+  <button class="big">Iniciar série 3</button></div>`};
+
+/* ─────────── C · BRUTO ─────────── */
+const C={
+home:`${bar()}<div class="sc">
+ <div class="hd"><u>Quinta · 20 agosto</u><h2>Bom treino,<br>Cláudio</h2></div>
+ <div class="pd">
+  <div class="days">${DAYS.map(([d,n])=>`<b class="${n===20?'on':''}">${n}</b>`).join('')}</div>
+  <div class="bk red"><u>Treino de hoje</u><h3>Superior</h3>
+   <div class="meta"><span><b>7</b> exercícios</span><span><b>21</b> séries</span><span>~<b>52</b> min</span></div>
+   <button class="btn">Começar sessão</button></div>
+  <div class="warn">${I.warn}<p>Dor articular no último check-in. Considere reduzir carga.</p></div>
+  <div class="trio"><div><b>34</b><s>séries/sem</s></div><div><b>6</b><s>sequência</s></div><div><b>3</b><s>PRs</s></div></div>
+  <div class="bk"><u>Volume da semana</u>
+   ${VOL.map(([m,v,a,lo])=>`<div class="vb"><i>${m}</i><s><b class="${lo?'lo':''}" style="width:${Math.round(v/a*100)}%"></b></s><em>${v}/${a}</em></div>`).join('')}</div>
+  <div class="bk vio"><u>Volume por sessão</u>
+   <div style="display:flex;align-items:flex-end;gap:5px;height:54px;margin-top:2px">
+    ${SPK.map(h=>`<i style="flex:1;height:${h}%;background:#000;border:2px solid #000"></i>`).join('')}</div></div>
+ </div><div style="height:8px"></div></div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'off':''}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+fila:`${bar()}<div class="sc">
+ <div class="hd"><u>Fila do dia · 24:18</u><h2>Superior</h2></div>
+ <div class="pd">
+  <div class="bk yel" style="padding:13px 15px"><u>2 de 7 concluídos</u>
+   <s style="display:block;height:14px;border:3px solid #000;background:#FFFDF5">
+    <b style="display:block;height:100%;width:36%;background:#000"></b></s></div>
+  ${QUEUE.map(([n,nm,mt,st])=>`<div class="q ${st}">
+    <span class="sq">${st==='dn'?I.ck:n}</span>
+    <div style="flex:1;min-width:0"><h4>${nm}</h4><p>${mt}</p></div>
+    ${st==='lv'?'<span class="tag">SÉRIE 3</span>':''}</div>`).join('')}
+  <button class="btn wht" style="margin-top:4px">Finalizar sessão</button>
+ </div><div style="height:14px"></div></div>
+ <div class="nav">${NAV.map(([s,l],k)=>`<i class="${k?'off':''}">${s}<s>${l}</s></i>`).join('')}</div>`,
+
+exec:`${bar()}<div class="sc">
+ <div class="hd"><u>Exercício 3 de 7 · peito</u><h2>Supino reto<br>na máquina</h2></div>
+ <div class="pd">
+  <div class="bk"><u>Como executar</u>
+   <p style="margin:0;font-size:12.5px;line-height:1.6;font-weight:500">Escápulas retraídas do início ao fim.
+   Desça até sentir alongamento, sem deixar o ombro rolar à frente.</p></div>
+  <div style="display:flex;gap:10px;margin-bottom:14px">
+   <div class="bk vio" style="flex:1;margin:0"><u>Carga</u><h3 style="font-size:26px">32kg</h3></div>
+   <div class="bk" style="flex:1;margin:0"><u>Próximo</u><h3 style="font-size:26px">+2kg</h3></div></div>
+  <div class="q dn"><span class="sq">${I.ck}</span>
+   <span style="font:700 12.5px/1 'Space Grotesk',monospace">32kg · 12 reps · RIR 2</span></div>
+  <div class="q dn"><span class="sq">${I.ck}</span>
+   <span style="font:700 12.5px/1 'Space Grotesk',monospace">32kg · 11 reps · RIR 1</span></div>
+  <div class="q"><span class="sq">3</span>
+   <span style="font:500 12.5px/1 'Space Grotesk',monospace;opacity:.5">aguardando série…</span></div>
+  <div class="timer"><u>Descanso</u><b>01:12</b><p>segue contando se você passar</p></div>
+  <button class="btn wht">Concluir exercício</button>
+ </div><div style="height:14px"></div></div>
+ <div class="foot">
+  <button class="btn" style="width:56px;margin:0;background:#FFFDF5;color:#000;display:flex;align-items:center;justify-content:center">${I.hs}</button>
+  <button class="btn" style="flex:1;margin:0;background:#FF6B6B;color:#000;display:flex;align-items:center;justify-content:center;gap:8px">${I.pl} Iniciar série 3</button>
+ </div>`};
+
+const SETS={A,B,C};
+const CAPS=[['home','Início'],['fila','Fila do dia'],['exec','Execução']];
+for(const d of ['A','B','C']){
+  document.getElementById('r-'+d).innerHTML=CAPS.map(([k,cap])=>`
+   <div class="phonebox"><p class="caption">${cap}</p>
+    <div class="phone"><div class="screen ${d}">${SETS[d][k]}</div></div></div>`).join('');
+}
+const tabs=[...document.querySelectorAll('.tab')];
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(o=>{const s=o===t;o.setAttribute('aria-selected',s);
+    document.getElementById(o.getAttribute('aria-controls')).hidden=!s;});
+}));
+</script>

@@ -50,13 +50,18 @@ alternância, porque ela não depende do calendário.
 - `js/engine/divisao.js` (novo, motor puro — sem DOM/IndexedDB/fetch):
   - `GRUPO_POR_MUSCULO`: objeto de mapeamento músculo → grupo (constante
     exportada, para a tela também poder rotular exercícios se precisar).
-  - `obterGrupoDoMusculo(musculo)`: retorna `"superior"` ou `"inferior"`
-    para um `musculoPrimario`; lança erro se o músculo não estiver no
-    mapa (evita silenciosamente cair num grupo errado por typo).
+  - `obterGrupoDoMusculo(musculo)`: retorna `"superior"`, `"inferior"` ou
+    `null` para um `musculoPrimario` não mapeado. Retorna `null` em vez de
+    lançar erro porque `musculoPrimario` é texto livre no formulário da
+    Biblioteca (`js/screens/biblioteca.js`, campo `musculo`) — um
+    exercício customizado pode ter qualquer valor, e a tela de Treino não
+    pode quebrar nem esconder silenciosamente um exercício que o usuário
+    cadastrou de propósito.
   - `determinarProximoGrupo(ultimaSerie)`: recebe o registro mais recente
     de `historicoSeries` (ou `null`/`undefined` se não houver nenhum) e
     retorna o grupo da próxima sessão (`"superior"` se `ultimaSerie` for
-    nulo, senão o oposto do grupo de `ultimaSerie.musculo`).
+    nulo OU se o músculo da última série não estiver mapeado, senão o
+    oposto do grupo de `ultimaSerie.musculo`).
 
 - `js/data/historico.js` (modificado): nova função
   `getUltimaSerieGeral(db)` — busca todos os registros de
@@ -68,8 +73,10 @@ alternância, porque ela não depende do calendário.
 - `js/screens/treino.js` (modificado):
   - Troca a chamada hardcoded por: buscar `getUltimaSerieGeral(db)`,
     calcular `grupoDeHoje = determinarProximoGrupo(ultimaSerieGeral)`,
-    filtrar `todosExercicios` por
-    `GRUPO_POR_MUSCULO[e.musculoPrimario] === grupoDeHoje`.
+    filtrar `todosExercicios` mantendo um exercício quando seu grupo (via
+    `obterGrupoDoMusculo`) é igual a `grupoDeHoje` OU é `null`
+    (exercício customizado com músculo não mapeado sempre aparece, em
+    qualquer sessão, em vez de nunca aparecer).
   - O título do cabeçalho (`<div class="day-title">`) passa a mostrar
     "Superior" ou "Inferior" em vez do hardcode "Peito".
 
@@ -105,6 +112,12 @@ alternância, porque ela não depende do calendário.
   há "pular grupo" manual nesta versão; alternar é sempre consequência de
   ter registrado uma série. Consistente com o guarda-corpo geral do
   projeto de nunca forçar progressão automática sem dado real.
+- **Exercício customizado com músculo não mapeado** (cadastrado via
+  Biblioteca, campo de texto livre): `obterGrupoDoMusculo` retorna `null`
+  em vez de lançar erro. Na tela de Treino, esse exercício aparece em
+  todas as sessões (nunca é escondido). No histórico da aba Divisão, o dia
+  em que só houve séries desse tipo é rotulado "Grupo não identificado" em
+  vez de quebrar a listagem.
 
 ## 5. Fora de escopo (YAGNI, não construir agora)
 

@@ -1,5 +1,5 @@
 // js/data/historico.js
-import { put, getAllByIndex } from "./db.js";
+import { put, getAllByIndex, getAll } from "./db.js";
 
 export function registrarSerie(db, serie) {
   return put(db, "historicoSeries", serie);
@@ -36,4 +36,10 @@ export async function getHistoricoCompletoDoExercicio(db, exercicioId) {
 
 export function getSeriesDoDia(db, data) {
   return getAllByIndex(db, "historicoSeries", "data", data);
+}
+
+export async function getUltimaSerieGeral(db) {
+  const todas = await getAll(db, "historicoSeries");
+  if (todas.length === 0) return undefined;
+  return todas.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id)[0];
 }

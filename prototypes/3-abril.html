@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Protótipo 3 — Abril</title>
+<style>
+  :root{
+    --paper: oklch(13% 0.012 145);
+    --card: oklch(18% 0.014 145);
+    --card-2: oklch(23% 0.016 145);
+    --ink: oklch(97% 0.006 145);
+    --ink-dim: oklch(72% 0.014 145);
+    --ink-faint: oklch(50% 0.012 145);
+    --accent: oklch(89% 0.21 128);
+    --accent-ink: oklch(19% 0.05 128);
+    --line: oklch(27% 0.016 145);
+    --radius: 26px;
+    font-size: 16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{ overflow-x:clip; }
+  body{ background: var(--paper); color: var(--ink); font-family: "SF Pro Text", -apple-system, "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .screen{ max-width: 430px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+
+  header.top{ padding: 30px 22px 0; display:flex; align-items:center; justify-content:space-between; }
+  .month-title{ font-size: 2.6rem; font-weight: 900; letter-spacing: -0.045em; }
+  .date-nav{ display:flex; align-items:center; gap: 10px; }
+  .date-nav button{ width:30px; height:30px; border-radius:50%; background: var(--card); border: 1px solid var(--line); color: var(--ink-dim); font-size: 1rem; cursor:pointer; }
+
+  .day-strip{ display:flex; gap: 8px; padding: 18px 22px 0; overflow-x:auto; }
+  .day-chip{ flex-shrink:0; width: 42px; height: 52px; border-radius: 16px; background: var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size: 0.72rem; font-weight: 700; color: var(--ink-faint); }
+  .day-chip .n{ font-size: 0.95rem; font-weight: 800; color: var(--ink); }
+  .day-chip.active{ background: var(--accent); color: var(--accent-ink); }
+  .day-chip.active .n{ color: var(--accent-ink); }
+
+  .hero-card{
+    margin: 18px 22px 0; padding: 24px;
+    background: linear-gradient(155deg, var(--card-2), var(--card));
+    border: 1px solid color-mix(in oklch, var(--accent) 22%, var(--line));
+    border-radius: var(--radius);
+    box-shadow: 0 26px 54px -30px oklch(0% 0 0 / 0.7);
+  }
+  .hero-top{ display:flex; justify-content:space-between; align-items:center; }
+  .hero-label{ font-size: 0.8rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+  .hero-badge{ font-size: 0.72rem; font-weight: 800; color: var(--accent-ink); background: var(--accent); padding: 5px 11px; border-radius: 999px; }
+  .hero-title{ font-size: 2.1rem; font-weight: 900; letter-spacing: -0.03em; margin-top: 8px; }
+  .hero-meta{ font-size: 0.85rem; color: var(--ink-dim); font-weight: 600; margin-top: 6px; }
+  .hero-cta{
+    margin-top: 16px; width: 100%; background: var(--accent); color: var(--accent-ink); border:none;
+    padding: 15px; border-radius: 16px; font-size: 0.98rem; font-weight: 800; cursor:pointer;
+    box-shadow: 0 16px 32px -14px color-mix(in oklch, var(--accent) 60%, transparent);
+  }
+  .hero-cta:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  main{ flex:1; padding: 18px 22px 148px; display:flex; flex-direction:column; gap: 12px; }
+
+  .exercise-card{ background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow:hidden; }
+  .exercise-head{ display:flex; align-items:center; justify-content:space-between; padding: 18px 18px 14px; }
+  .exercise-name{ font-size: 1.1rem; font-weight: 800; letter-spacing: -0.015em; }
+  .exercise-meta{ font-size: 0.78rem; color: var(--ink-faint); font-weight: 600; margin-top: 3px; }
+  .swap-pill{ background: var(--card-2); border: 1px solid var(--line); color: var(--ink-dim); font-size: 0.74rem; font-weight: 700; padding: 7px 13px; border-radius: 999px; cursor:pointer; }
+  .swap-pill:hover{ color: var(--accent); }
+  .swap-pill:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .sets{ padding: 0 18px 18px; display:flex; flex-direction:column; gap: 8px; }
+  .set-row{ display:grid; grid-template-columns: 40px 1fr 1fr 1fr; align-items:center; gap: 10px; padding: 8px; border-radius: 14px; }
+  .set-row.done{ background: color-mix(in oklch, var(--accent) 12%, transparent); }
+  .set-ring{ width: 34px; height:34px; border-radius:50%; background: conic-gradient(var(--accent) 0deg 0deg, var(--card-2) 0deg 360deg); display:flex; align-items:center; justify-content:center; font-size: 0.68rem; font-weight: 800; color: var(--ink-faint); }
+  .set-row.done .set-ring{ background: conic-gradient(var(--accent) 0deg 360deg, var(--card-2) 360deg 360deg); color: var(--accent-ink); }
+  .set-ring i{ width: 26px; height:26px; border-radius:50%; background: var(--card); display:flex; align-items:center; justify-content:center; font-style:normal; }
+  .set-row.done .set-ring i{ background: var(--accent); color: var(--accent-ink); }
+  .set-field label{ font-size: 0.62rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display:block; margin-bottom: 3px; }
+  .set-field input{ background: var(--card-2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 8px 10px; font-size: 0.95rem; font-weight: 700; width: 100%; font-variant-numeric: tabular-nums; }
+  .set-field input:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .prev-hint{ padding: 0 18px 16px; font-size: 0.78rem; color: var(--ink-faint); font-weight: 600; }
+  .prev-hint b{ color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .rest-bar{ display:flex; align-items:center; justify-content:space-between; background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 16px 20px; box-shadow: 0 24px 48px -24px color-mix(in oklch, var(--accent) 55%, black); }
+  .rest-bar .label{ font-size: 0.78rem; font-weight: 800; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rest-bar .time{ font-size: 1.9rem; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+  .rest-ctl{ display:flex; gap:8px; }
+  .rest-ctl button{ background: color-mix(in oklch, var(--accent-ink) 15%, transparent); border:none; color: var(--accent-ink); border-radius: 999px; padding: 7px 12px; font-size: 0.78rem; font-weight: 800; cursor:pointer; }
+
+  .other-exercise{ display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); font-weight: 700; }
+  .other-exercise .n{ color: var(--ink-faint); font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  nav.tabbar{
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px;
+    width: calc(100% - 32px); max-width: 398px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    display:flex; padding: 8px;
+    box-shadow: 0 24px 50px -18px oklch(0% 0 0 / 0.7);
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; color: var(--ink-faint);
+    font-size: 0.64rem; font-weight: 800; display:flex; flex-direction:column; align-items:center; gap:4px; padding: 9px 4px; cursor:pointer; border-radius: 999px;
+  }
+  nav.tabbar button svg{ width:19px; height:19px; }
+  nav.tabbar button.active{ background: var(--accent); color: var(--accent-ink); }
+  nav.tabbar button:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <header class="top">
+    <div class="month-title">Agosto</div>
+    <div class="date-nav"><button>‹</button><button>›</button></div>
+  </header>
+
+  <div class="day-strip">
+    <div class="day-chip"><span>seg</span><span class="n">17</span></div>
+    <div class="day-chip"><span>ter</span><span class="n">18</span></div>
+    <div class="day-chip active"><span>ter</span><span class="n">20</span></div>
+    <div class="day-chip"><span>qua</span><span class="n">21</span></div>
+    <div class="day-chip"><span>qui</span><span class="n">22</span></div>
+    <div class="day-chip"><span>sex</span><span class="n">23</span></div>
+  </div>
+
+  <section class="hero-card">
+    <div class="hero-top">
+      <span class="hero-label">Sessão de hoje</span>
+      <span class="hero-badge">4/8 séries</span>
+    </div>
+    <div class="hero-title">Peito &amp; Tríceps</div>
+    <div class="hero-meta">3 exercícios · ~42 min · RIR médio 2.1</div>
+    <button class="hero-cta">Continuar treino →</button>
+  </section>
+
+  <main>
+    <div class="exercise-card">
+      <div class="exercise-head">
+        <div>
+          <div class="exercise-name">Supino inclinado</div>
+          <div class="exercise-meta">8–12 reps · RIR 2</div>
+        </div>
+        <button class="swap-pill">Trocar</button>
+      </div>
+      <div class="sets">
+        <div class="set-row done">
+          <div class="set-ring"><i>1</i></div>
+          <div class="set-field"><label>Carga</label><input value="15 kg" readonly /></div>
+          <div class="set-field"><label>Reps</label><input value="10" readonly /></div>
+          <div class="set-field"><label>RIR</label><input value="2" readonly /></div>
+        </div>
+        <div class="set-row">
+          <div class="set-ring"><i>2</i></div>
+          <div class="set-field"><label>Carga</label><input placeholder="15 kg" /></div>
+          <div class="set-field"><label>Reps</label><input placeholder="10" /></div>
+          <div class="set-field"><label>RIR</label><input placeholder="2" /></div>
+        </div>
+        <div class="set-row">
+          <div class="set-ring"><i>3</i></div>
+          <div class="set-field"><label>Carga</label><input placeholder="—" /></div>
+          <div class="set-field"><label>Reps</label><input placeholder="—" /></div>
+          <div class="set-field"><label>RIR</label><input placeholder="—" /></div>
+        </div>
+      </div>
+      <div class="prev-hint">Última vez: <b>14 kg × 10</b>, RIR 2.</div>
+    </div>
+
+    <div class="rest-bar">
+      <div><div class="label">Descanso</div><div class="time">01:24</div></div>
+      <div class="rest-ctl"><button>−30s</button><button>+30s</button></div>
+    </div>
+
+    <div class="other-exercise"><span>Supino reto máquina</span><span class="n">0/3</span></div>
+    <div class="other-exercise"><span>Crucifixo no cabo</span><span class="n">0/3</span></div>
+  </main>
+
+  <nav class="tabbar">
+    <button class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-4 4-6 7-6s5.8 2 7 6"/></svg>Treino</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Divisão</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18l5-6 4 3 7-9"/></svg>Evolução</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3c0 5-3 6-3 11a5 5 0 0010 0c0-3-2-4-2-8 4 2 6 6 6 9a7 7 0 01-14 0"/></svg>Dieta</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14 3h-4l-.6 2.6a7 7 0 00-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9c.6.5 1.3.9 2 1.2L10 21h4l.6-2.6c.7-.3 1.4-.7 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Config</button>
+  </nav>
+</div>
+</body>
+</html>

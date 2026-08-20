@@ -167,6 +167,15 @@ inverso. Isso os torna testáveis isoladamente.
   (HTML/CSS, sem lógica funcional) usando os skills `hallmark`/`impeccable`,
   para o usuário escolher o estilo visual antes da implementação real — evita
   gastar tokens implementando 3 versões funcionais completas.
+  - **Decisão tomada (2026-08-20):** direção visual aprovada = **"Abril"**
+    (`prototypes/3-abril.html`, mantido no repo como referência). Fundo
+    escuro esverdeado, verde-lima vibrante como acento único, tipografia
+    bem pesada (900), tira de datas horizontal no topo, nav inferior em
+    cápsula flutuante preta com o item ativo preenchido na cor de acento,
+    séries mostradas como anéis numerados em vez de checkbox simples, card
+    hero com botão de ação primário. Essa é a referência visual vinculante
+    para as telas do Nível 1 — extraída via skills `screenshot-to-code` +
+    `mobile-app-ui-design` a partir de referências que o usuário enviou.
 
 ## 9. Camada de IA (`/js/ai/`)
 

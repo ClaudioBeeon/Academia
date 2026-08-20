@@ -1,12 +1,13 @@
 // js/screens/treino.js
 import { get, getAll } from "../data/db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
 import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
+import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { criarCronometro } from "./timer.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
@@ -52,9 +53,15 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const main = document.createElement("main");
   root.appendChild(main);
 
+  const resumoCard = montarCardResumoSessao();
+  const atualizarResumo = async () => {
+    const seriesDoDia = await getSeriesDoDia(db, hoje);
+    atualizarResumoSessao(resumoCard, calcularEstatisticasSessao(seriesDoDia));
+  };
+
   for (let i = 0; i < exerciciosHoje.length; i++) {
     const exercicio = exerciciosHoje[i];
-    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento);
+    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento, atualizarResumo);
     main.appendChild(card);
     if (i < exerciciosHoje.length - 1) {
       main.appendChild(criarPlaceholderDescanso());
@@ -65,7 +72,33 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
     main.innerHTML = `<p class="vazio">Nenhum exercício de peito cadastrado ainda.</p>`;
   }
 
+  await atualizarResumo();
+  main.appendChild(resumoCard);
+
   return root;
+}
+
+function montarCardResumoSessao() {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Resumo da sessão</div></div>
+    <div class="prev-hint resumo-texto" style="padding:0 18px 8px;"></div>
+    <div class="prev-hint resumo-musculos" style="padding:0 18px 16px;"></div>
+  `;
+  return card;
+}
+
+function atualizarResumoSessao(card, stats) {
+  const texto = card.querySelector(".resumo-texto");
+  texto.innerHTML = `<b>${stats.totalSeries}</b> séries · <b>${stats.volumeTotal}</b> kg de volume total · <b>${stats.exerciciosTreinados}</b> exercícios`;
+
+  const musculos = card.querySelector(".resumo-musculos");
+  if (stats.musculosTreinados.length > 0) {
+    musculos.textContent = `Músculos: ${stats.musculosTreinados.join(", ")}`;
+  } else {
+    musculos.textContent = "Nenhum músculo treinado ainda hoje.";
+  }
 }
 
 function criarPlaceholderDescanso() {
@@ -78,7 +111,7 @@ function criarPlaceholderDescanso() {
   return div;
 }
 
-async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento) {
+async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico, equipamento, aoRegistrarSerie) {
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
@@ -175,6 +208,8 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
     if (prsRelevantes.length > 0) {
       mostrarToastPR(prsRelevantes);
     }
+
+    if (aoRegistrarSerie) await aoRegistrarSerie();
   });
 
   card.querySelector(".trocar-pill").addEventListener("click", () => {

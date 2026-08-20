@@ -51,3 +51,25 @@ export async function getSeriesDaUltimaSessaoAnterior(db, exercicioId, dataAtual
   const dataMaisRecente = anteriores.reduce((max, s) => (s.data > max ? s.data : max), anteriores[0].data);
   return anteriores.filter((s) => s.data === dataMaisRecente);
 }
+
+export async function getUltimasSessoesPorExercicio(db, limitePorExercicio = 10) {
+  const todas = await getAll(db, "historicoSeries");
+  const porExercicio = new Map();
+  for (const serie of todas) {
+    if (serie.tipoSerie === "aquecimento") continue;
+    if (!porExercicio.has(serie.exercicioId)) porExercicio.set(serie.exercicioId, new Map());
+    const porData = porExercicio.get(serie.exercicioId);
+    if (!porData.has(serie.data)) porData.set(serie.data, []);
+    porData.get(serie.data).push(serie);
+  }
+
+  const resultado = [];
+  for (const [exercicioId, porData] of porExercicio) {
+    const datasOrdenadas = [...porData.keys()].sort((a, b) => b.localeCompare(a)).slice(0, limitePorExercicio);
+    resultado.push({
+      exercicioId,
+      sessoes: datasOrdenadas.map((data) => ({ data, series: porData.get(data) })),
+    });
+  }
+  return resultado;
+}

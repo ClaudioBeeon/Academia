@@ -3,12 +3,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "./historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior, getUltimasSessoesPorExercicio } from "./historico.js";
 
 test("getUltimaSerieGeral retorna undefined quando não há nenhuma série", async () => {
   const db = await openDatabase();
   const resultado = await getUltimaSerieGeral(db);
   assert.equal(resultado, undefined);
+  db.close();
+});
+
+test("getUltimasSessoesPorExercicio retorna vazio quando não há histórico", async () => {
+  const db = await openDatabase();
+  const resultado = await getUltimasSessoesPorExercicio(db);
+  assert.deepEqual(resultado, []);
   db.close();
 });
 
@@ -128,5 +135,36 @@ test("getSeriesDaUltimaSessaoAnterior retorna todas as séries da sessão anteri
   const resultado = await getSeriesDaUltimaSessaoAnterior(db, "p", "2026-08-20");
   assert.equal(resultado.length, 2);
   assert.ok(resultado.every((s) => s.data === "2026-08-18"));
+  db.close();
+});
+
+test("getUltimasSessoesPorExercicio agrupa séries por exercício e por data, mais recente primeiro", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "q", data: "2026-08-13", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "q", data: "2026-08-20", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 10, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "q", data: "2026-08-20", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 9, rir: 2, serieNumero: 2 });
+
+  const resultado = await getUltimasSessoesPorExercicio(db);
+  const entrada = resultado.find((r) => r.exercicioId === "q");
+  assert.equal(entrada.sessoes.length, 2);
+  assert.equal(entrada.sessoes[0].data, "2026-08-20");
+  assert.equal(entrada.sessoes[0].series.length, 2);
+  assert.equal(entrada.sessoes[1].data, "2026-08-13");
+  db.close();
+});
+
+test("getUltimasSessoesPorExercicio exclui séries de aquecimento e respeita o limite por exercício", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "r", data: "2026-08-01", musculo: "peito", contribuicao: 1, tipoSerie: "aquecimento", carga: 5, reps: 15, rir: 5, serieNumero: 0 });
+  await registrarSerie(db, { exercicioId: "r", data: "2026-08-01", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "r", data: "2026-08-08", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 11, reps: 10, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "r", data: "2026-08-15", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 10, rir: 2, serieNumero: 1 });
+
+  const resultado = await getUltimasSessoesPorExercicio(db, 2);
+  const entrada = resultado.find((r) => r.exercicioId === "r");
+  assert.equal(entrada.sessoes.length, 2);
+  assert.equal(entrada.sessoes[0].data, "2026-08-15");
+  assert.equal(entrada.sessoes[1].data, "2026-08-08");
+  assert.ok(entrada.sessoes.every((s) => s.series.every((serie) => serie.tipoSerie !== "aquecimento")));
   db.close();
 });

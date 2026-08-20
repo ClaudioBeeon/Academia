@@ -1,9 +1,10 @@
 // js/screens/treino.js
 import { get, getAll } from "../data/db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
+import { avaliarProgressao } from "../engine/progressao.js";
 import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
@@ -127,6 +128,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
   const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
   const sugestao = sugerirCarga(amostras, cfg.rirAlvo);
+  const sessaoAnteriorCompleta = await getSeriesDaUltimaSessaoAnterior(db, exercicio.id, hoje);
 
   const card = document.createElement("section");
   card.className = "exercise-card";
@@ -174,6 +176,31 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
     card.appendChild(hint);
   }
 
+  const progressaoHint = document.createElement("div");
+  progressaoHint.className = "prev-hint";
+  progressaoHint.style.display = "none";
+  card.appendChild(progressaoHint);
+
+  const atualizarProgressao = () => {
+    const avaliacao = avaliarProgressao({
+      faixaMin: cfg.repsMin,
+      faixaMax: cfg.repsMax,
+      rirAlvo: cfg.rirAlvo,
+      sessaoAtual: seriesHoje,
+      sessaoAnterior: sessaoAnteriorCompleta,
+    });
+    if (avaliacao.acao === "aumentar_carga") {
+      progressaoHint.textContent = `📈 ${avaliacao.motivo}`;
+      progressaoHint.style.display = "";
+    } else if (avaliacao.acao === "reduzir_carga") {
+      progressaoHint.textContent = `📉 ${avaliacao.motivo}`;
+      progressaoHint.style.display = "";
+    } else {
+      progressaoHint.style.display = "none";
+    }
+  };
+  atualizarProgressao();
+
   setsContainer.addEventListener("submit", async (event) => {
     const linha = event.target.closest(".set-row");
     if (!linha) return;
@@ -198,6 +225,19 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
       rir: rirInput === "" || Number.isNaN(rirDigitado) ? cfg.rirAlvo : rirDigitado,
       serieNumero: Number(linha.dataset.numero),
     });
+
+    seriesHoje.push({
+      exercicioId: exercicio.id,
+      data: hoje,
+      musculo: exercicio.musculoPrimario,
+      contribuicao: 1.0,
+      tipoSerie: "normal",
+      carga,
+      reps,
+      rir: rirInput === "" || Number.isNaN(rirDigitado) ? cfg.rirAlvo : rirDigitado,
+      serieNumero: Number(linha.dataset.numero),
+    });
+    atualizarProgressao();
 
     linha.classList.add("done");
     linha.querySelectorAll("input").forEach((input) => (input.disabled = true));

@@ -3,7 +3,7 @@ function estimativa1RM(serie) {
 }
 
 export function detectarPRs(novaSerie, seriesAnteriores) {
-  const principio = "nivel2";
+  const principio = "recordes";
   const secao = "prompt-original";
 
   if (!seriesAnteriores || seriesAnteriores.length === 0) {

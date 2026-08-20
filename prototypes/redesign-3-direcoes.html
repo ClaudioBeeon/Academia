@@ -1,0 +1,695 @@
+<title>Treino em Três Direções</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+:root{
+  --pg-bg:#F4F3F1; --pg-surf:#FFFFFF; --pg-ink:#181A19; --pg-dim:#5E635F;
+  --pg-faint:#8E938F; --pg-line:#DFDEDA; --pg-accent:#2F6B4F;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pg-bg:#111311; --pg-surf:#191C1A; --pg-ink:#F0F2EF; --pg-dim:#A2A8A3;
+    --pg-faint:#767C78; --pg-line:#282C29; --pg-accent:#8FD6AE;
+  }
+}
+:root[data-theme="dark"]{
+  --pg-bg:#111311; --pg-surf:#191C1A; --pg-ink:#F0F2EF; --pg-dim:#A2A8A3;
+  --pg-faint:#767C78; --pg-line:#282C29; --pg-accent:#8FD6AE;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--pg-bg); color:var(--pg-ink);
+  font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:56px 24px 80px}
+
+/* ---------- page header ---------- */
+.eyebrow{
+  font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 14px
+}
+h1{
+  font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(34px,5vw,54px);
+  line-height:1.04;letter-spacing:-.025em;margin:0 0 18px;text-wrap:balance
+}
+.lede{font-size:17px;line-height:1.6;color:var(--pg-dim);max-width:62ch;margin:0}
+
+.note{
+  margin:32px 0 0;padding:20px 22px;border:1px solid var(--pg-line);
+  border-radius:14px;background:var(--pg-surf);max-width:70ch
+}
+.note h2{
+  font-family:Archivo,sans-serif;font-size:13px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;margin:0 0 10px;color:var(--pg-accent)
+}
+.note p{margin:0 0 10px;font-size:14.5px;line-height:1.65;color:var(--pg-dim)}
+.note p:last-child{margin-bottom:0}
+.note b{color:var(--pg-ink);font-weight:700}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:8px;margin:48px 0 0;flex-wrap:wrap}
+.tab{
+  font-family:Archivo,sans-serif;font-weight:700;font-size:14px;letter-spacing:.01em;
+  padding:13px 22px;border-radius:999px;border:1px solid var(--pg-line);
+  background:var(--pg-surf);color:var(--pg-dim);cursor:pointer;
+  transition:background .18s,color .18s,border-color .18s
+}
+.tab:hover{border-color:var(--pg-accent);color:var(--pg-ink)}
+.tab:focus-visible{outline:2px solid var(--pg-accent);outline-offset:3px}
+.tab[aria-selected="true"]{background:var(--pg-ink);color:var(--pg-bg);border-color:var(--pg-ink)}
+
+.panel[hidden]{display:none}
+.panel{margin-top:36px}
+
+/* ---------- direction meta ---------- */
+.meta{
+  display:grid;grid-template-columns:1fr;gap:26px;
+  padding:26px;border:1px solid var(--pg-line);border-radius:16px;
+  background:var(--pg-surf);margin-bottom:34px
+}
+@media(min-width:840px){.meta{grid-template-columns:1.3fr 1fr 1fr}}
+.meta h3{
+  font-family:Archivo,sans-serif;font-size:22px;font-weight:800;margin:0 0 8px;
+  letter-spacing:-.01em
+}
+.meta p{margin:0;font-size:14.5px;line-height:1.6;color:var(--pg-dim)}
+.mlabel{
+  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 12px
+}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw i{
+  width:38px;height:38px;border-radius:9px;display:block;
+  border:1px solid rgba(128,128,128,.28)
+}
+.typerow{font-size:14px;color:var(--pg-dim);line-height:1.7}
+.typerow b{color:var(--pg-ink)}
+
+/* ---------- phone rail ---------- */
+.rail{
+  display:flex;gap:26px;overflow-x:auto;padding:6px 6px 22px;
+  scroll-snap-type:x mandatory
+}
+.phonebox{scroll-snap-align:center;flex:0 0 auto}
+.caption{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 12px;text-align:center
+}
+.phone{
+  width:340px;height:710px;border-radius:44px;padding:11px;
+  background:linear-gradient(160deg,#2C2F2D,#0D0F0E);
+  box-shadow:0 26px 60px -22px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07) inset
+}
+.screen{
+  width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;background:var(--p-bg);color:var(--p-ink);
+  font-family:var(--p-font)
+}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.scroll::-webkit-scrollbar{width:0}
+
+/* ---------- shared phone components (tokenised) ---------- */
+.sbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 22px 6px;font-size:12px;font-weight:700;
+  font-family:"JetBrains Mono",monospace;color:var(--p-ink);flex:0 0 auto
+}
+.sbar span{opacity:.55;letter-spacing:.04em}
+.pad{padding:0 18px}
+
+.phead{padding:12px 18px 16px}
+.pdate{
+  font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--p-faint);margin:0 0 6px
+}
+.ptitle{
+  font-family:var(--p-display);font-weight:var(--p-dw);font-size:25px;margin:0;
+  letter-spacing:var(--p-dls);line-height:1.12;text-transform:var(--p-dtt)
+}
+
+/* week strip */
+.week{display:flex;gap:6px;padding:0 18px 18px}
+.day{
+  flex:1;border-radius:var(--p-r-sm);padding:9px 0 8px;text-align:center;
+  background:var(--p-surf);border:1px solid var(--p-line);position:relative
+}
+.day u{
+  display:block;text-decoration:none;font-family:"JetBrains Mono",monospace;
+  font-size:9px;letter-spacing:.06em;color:var(--p-faint);margin-bottom:4px
+}
+.day b{font-family:var(--p-display);font-size:14px;font-weight:700}
+.day i{
+  display:block;width:4px;height:4px;border-radius:50%;background:var(--p-accent);
+  margin:5px auto 0;opacity:.85
+}
+.day.off i{background:var(--p-faint);opacity:.4}
+.day.now{background:var(--p-accent);border-color:var(--p-accent);color:var(--p-onacc)}
+.day.now u,.day.now b{color:var(--p-onacc)}
+.day.now i{background:var(--p-onacc);opacity:.5}
+
+/* cards */
+.card{
+  background:var(--p-surf);border:1px solid var(--p-line);border-radius:var(--p-r);
+  padding:18px;margin:0 18px 12px;box-shadow:var(--p-shadow)
+}
+.card.hero{background:var(--p-hero);border-color:var(--p-hero-line);color:var(--p-hero-ink)}
+.clabel{
+  font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--p-faint);margin:0 0 9px
+}
+.card.hero .clabel{color:var(--p-hero-dim)}
+.cbig{
+  font-family:var(--p-display);font-weight:var(--p-dw);font-size:30px;margin:0;
+  line-height:1.05;letter-spacing:var(--p-dls);text-transform:var(--p-dtt)
+}
+.cmeta{
+  display:flex;gap:14px;margin:12px 0 0;font-size:12px;color:var(--p-dim);
+  font-weight:600;flex-wrap:wrap
+}
+.card.hero .cmeta{color:var(--p-hero-dim)}
+.cmeta b{
+  font-family:"JetBrains Mono",monospace;color:var(--p-ink);font-weight:700;
+  font-variant-numeric:tabular-nums
+}
+.card.hero .cmeta b{color:var(--p-hero-ink)}
+
+.btn{
+  display:block;width:100%;margin-top:15px;padding:14px;border:0;
+  border-radius:var(--p-r-btn);background:var(--p-accent);color:var(--p-onacc);
+  font-family:var(--p-display);font-weight:800;font-size:15px;cursor:pointer;
+  letter-spacing:var(--p-btnls);text-transform:var(--p-dtt)
+}
+.btn.ghost{
+  background:transparent;border:1.5px solid var(--p-line);color:var(--p-ink)
+}
+
+/* alert */
+.alert{
+  display:flex;gap:11px;align-items:flex-start;background:var(--p-warnbg);
+  border:1px solid var(--p-warnline);border-radius:var(--p-r);padding:14px 16px;
+  margin:0 18px 12px
+}
+.alert svg{flex:0 0 auto;margin-top:1px}
+.alert p{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-warnink);font-weight:500}
+
+/* volume bars */
+.vrow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.vrow:last-child{margin-bottom:0}
+.vname{font-size:11.5px;font-weight:600;color:var(--p-dim);width:64px;flex:0 0 auto}
+.vtrack{flex:1;height:7px;border-radius:99px;background:var(--p-track);position:relative;overflow:hidden}
+.vfill{display:block;height:100%;border-radius:99px;background:var(--p-accent)}
+.vfill.low{background:var(--p-warn)}
+.vnum{
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--p-faint);
+  width:38px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums
+}
+
+/* sparkline bars */
+.spark{display:flex;align-items:flex-end;gap:5px;height:62px;margin-top:4px}
+.spark i{flex:1;background:var(--p-track);border-radius:4px 4px 2px 2px;display:block}
+.spark i.on{background:var(--p-accent)}
+
+/* stat trio */
+.trio{display:flex;gap:10px;margin:0 18px 12px}
+.stat{
+  flex:1;background:var(--p-surf);border:1px solid var(--p-line);
+  border-radius:var(--p-r);padding:14px 12px;text-align:center;box-shadow:var(--p-shadow)
+}
+.stat b{
+  display:block;font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:700;
+  color:var(--p-ink);font-variant-numeric:tabular-nums;line-height:1
+}
+.stat u{
+  display:block;text-decoration:none;font-size:9.5px;color:var(--p-faint);
+  margin-top:6px;letter-spacing:.05em;text-transform:uppercase;font-weight:600
+}
+
+/* tab bar */
+.tabbar{
+  flex:0 0 auto;display:flex;justify-content:space-around;align-items:center;
+  padding:11px 12px 20px;background:var(--p-navbg);border-top:1px solid var(--p-line)
+}
+.tabitem{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--p-faint)}
+.tabitem.on{color:var(--p-accent)}
+.tabitem span{font-size:9px;font-weight:700;letter-spacing:.03em}
+
+/* progress head */
+.prog{padding:0 18px 14px}
+.ptrack{height:6px;border-radius:99px;background:var(--p-track);overflow:hidden}
+.pbar{height:100%;background:var(--p-accent);border-radius:99px}
+.pmeta{
+  display:flex;justify-content:space-between;margin-top:9px;
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--p-faint);
+  font-variant-numeric:tabular-nums
+}
+
+/* exercise queue rows */
+.ex{
+  display:flex;align-items:center;gap:13px;background:var(--p-surf);
+  border:1px solid var(--p-line);border-radius:var(--p-r);padding:14px 15px;
+  margin:0 18px 9px;box-shadow:var(--p-shadow)
+}
+.ex.done{opacity:.5}
+.ex.live{border-color:var(--p-accent);border-width:1.5px;background:var(--p-livebg)}
+.exn{
+  width:29px;height:29px;border-radius:var(--p-r-sm);flex:0 0 auto;display:flex;
+  align-items:center;justify-content:center;background:var(--p-track);
+  font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:700;color:var(--p-faint)
+}
+.ex.done .exn{background:var(--p-accent);color:var(--p-onacc)}
+.ex.live .exn{background:var(--p-accent);color:var(--p-onacc)}
+.exb{flex:1;min-width:0}
+.exb h4{
+  margin:0 0 4px;font-size:13.5px;font-weight:700;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.exb p{
+  margin:0;font-size:10.5px;color:var(--p-faint);font-family:"JetBrains Mono",monospace;
+  letter-spacing:.02em
+}
+.pill{
+  font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:700;
+  padding:4px 9px;border-radius:999px;background:var(--p-accent);color:var(--p-onacc);
+  letter-spacing:.06em;flex:0 0 auto
+}
+
+/* execution */
+.expl{
+  margin:0 18px 12px;background:var(--p-surf);border:1px solid var(--p-line);
+  border-radius:var(--p-r);padding:16px;box-shadow:var(--p-shadow)
+}
+.expl p{margin:0;font-size:12.5px;line-height:1.62;color:var(--p-dim)}
+.expl p+p{margin-top:9px}
+.expl b{color:var(--p-ink);font-weight:700}
+
+.loadrow{display:flex;gap:10px;margin:0 18px 12px}
+.load{
+  flex:1;background:var(--p-surf);border:1px solid var(--p-line);
+  border-radius:var(--p-r);padding:14px;box-shadow:var(--p-shadow)
+}
+.load b{
+  display:block;font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:700;
+  line-height:1;font-variant-numeric:tabular-nums
+}
+.load u{
+  display:block;text-decoration:none;font-size:9.5px;color:var(--p-faint);
+  margin-top:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:600
+}
+
+.serie{
+  display:flex;align-items:center;gap:11px;padding:12px 15px;margin:0 18px 8px;
+  border-radius:var(--p-r);border:1px solid var(--p-line);background:var(--p-surf)
+}
+.serie.ok{background:var(--p-okbg);border-color:var(--p-okline)}
+.serie.now{border-color:var(--p-accent);border-width:1.5px;background:var(--p-livebg)}
+.sn{
+  width:24px;height:24px;border-radius:50%;flex:0 0 auto;display:flex;
+  align-items:center;justify-content:center;background:var(--p-track);
+  font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:700;color:var(--p-faint)
+}
+.serie.ok .sn{background:var(--p-ok);color:var(--p-onacc)}
+.serie.now .sn{background:var(--p-accent);color:var(--p-onacc)}
+.sdata{
+  flex:1;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:700;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em
+}
+.sdata em{font-style:normal;color:var(--p-faint);font-weight:400}
+.sghost{color:var(--p-faint);font-weight:400}
+
+/* rest timer */
+.rest{
+  margin:14px 18px 12px;padding:18px;border-radius:var(--p-r);text-align:center;
+  background:var(--p-restbg);border:1.5px solid var(--p-accent)
+}
+.rest u{
+  display:block;text-decoration:none;font-family:"JetBrains Mono",monospace;
+  font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--p-faint)
+}
+.rest b{
+  display:block;font-family:"JetBrains Mono",monospace;font-size:40px;font-weight:700;
+  line-height:1.1;margin-top:7px;color:var(--p-accent);font-variant-numeric:tabular-nums
+}
+.rest p{margin:7px 0 0;font-size:11px;color:var(--p-faint);font-weight:500}
+
+.foot{
+  flex:0 0 auto;padding:14px 18px 20px;background:var(--p-navbg);
+  border-top:1px solid var(--p-line);display:flex;gap:10px
+}
+.play{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:16px;border:0;border-radius:var(--p-r-btn);background:var(--p-accent);
+  color:var(--p-onacc);font-family:var(--p-display);font-weight:800;font-size:15px;
+  cursor:pointer;letter-spacing:var(--p-btnls);text-transform:var(--p-dtt)
+}
+.sq{
+  width:54px;flex:0 0 auto;border-radius:var(--p-r-btn);border:1.5px solid var(--p-line);
+  background:transparent;color:var(--p-dim);display:flex;align-items:center;
+  justify-content:center;cursor:pointer
+}
+.hgap{height:14px}
+
+/* ============ DIRECTION A — VOLTAGEM ============ */
+.dir-a{
+  --p-bg:#131714; --p-surf:#1C211D; --p-track:#2A312B; --p-line:#272E28;
+  --p-ink:#F3F7F3; --p-dim:#A9B3A9; --p-faint:#6E7970;
+  --p-accent:#C8F542; --p-onacc:#16240A; --p-ok:#C8F542;
+  --p-hero:#C8F542; --p-hero-ink:#16240A; --p-hero-dim:#3E5418; --p-hero-line:#C8F542;
+  --p-warn:#FFB020; --p-warnbg:#2A2312; --p-warnline:#4A3C15; --p-warnink:#F3D9A0;
+  --p-okbg:#1E2A16; --p-okline:#2E3F1F; --p-livebg:#1F2618; --p-restbg:#1B2116;
+  --p-navbg:#171B18;
+  --p-font:Manrope,sans-serif; --p-display:Archivo,sans-serif; --p-dw:800;
+  --p-dls:-.02em; --p-dtt:uppercase; --p-btnls:.04em;
+  --p-r:16px; --p-r-sm:10px; --p-r-btn:14px; --p-shadow:none;
+}
+/* ============ DIRECTION B — AURORA ============ */
+.dir-b{
+  --p-bg:#F7F6FB; --p-surf:#FFFFFF; --p-track:#EAE8F4; --p-line:#E7E4F1;
+  --p-ink:#1E1B2E; --p-dim:#5D5878; --p-faint:#9995B0;
+  --p-accent:#6D5AE6; --p-onacc:#FFFFFF; --p-ok:#4BBF8A;
+  --p-hero:linear-gradient(142deg,#B9AAFB,#8FB8F6 58%,#7ED4E8);
+  --p-hero-ink:#1B1738; --p-hero-dim:#463F7A; --p-hero-line:transparent;
+  --p-warn:#E8913A; --p-warnbg:#FDF3E8; --p-warnline:#F6E0C4; --p-warnink:#8A5A1C;
+  --p-okbg:#EFFAF4; --p-okline:#D3EFE2; --p-livebg:#F3F0FE; --p-restbg:#F3F0FE;
+  --p-navbg:#FFFFFF;
+  --p-font:Manrope,sans-serif; --p-display:Manrope,sans-serif; --p-dw:800;
+  --p-dls:-.03em; --p-dtt:none; --p-btnls:0;
+  --p-r:24px; --p-r-sm:16px; --p-r-btn:18px;
+  --p-shadow:0 8px 22px -12px rgba(80,60,180,.28);
+}
+/* ============ DIRECTION C — FERRO ============ */
+.dir-c{
+  --p-bg:#0E2A2B; --p-surf:#143839; --p-track:#1E4A4B; --p-line:#1D4546;
+  --p-ink:#F0EDE4; --p-dim:#A9BDB9; --p-faint:#6F8A87;
+  --p-accent:#F5C049; --p-onacc:#22200F; --p-ok:#7BD4C4;
+  --p-hero:#F5C049; --p-hero-ink:#22200F; --p-hero-dim:#6B5A1E; --p-hero-line:#F5C049;
+  --p-warn:#F0946A; --p-warnbg:#2E2620; --p-warnline:#4A392C; --p-warnink:#F3C7AE;
+  --p-okbg:#123B38; --p-okline:#1D5450; --p-livebg:#17403F; --p-restbg:#14393A;
+  --p-navbg:#102E2F;
+  --p-font:Manrope,sans-serif; --p-display:Archivo,sans-serif; --p-dw:700;
+  --p-dls:-.015em; --p-dtt:none; --p-btnls:.01em;
+  --p-r:22px; --p-r-sm:14px; --p-r-btn:999px;
+  --p-shadow:0 6px 18px -12px rgba(0,0,0,.5);
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Redesign · Etapa 1 de 2</p>
+  <h1>Treino em três direções</h1>
+  <p class="lede">
+    Três tratamentos visuais para o mesmo app, com as mesmas três telas em cada um —
+    Início, Fila do Dia e Execução. Conteúdo real do seu protocolo, nada de placeholder.
+    Escolha a direção; a etapa seguinte constrói ela por inteiro.
+  </p>
+
+  <div class="note">
+    <h2>Por que a sessão cabe em 7 exercícios</h2>
+    <p>
+      Hoje a tela de Treino despeja <b>o catálogo inteiro</b> do grupo — 16 exercícios,
+      48 séries. Isso viola o seu próprio <b>protocolo.json</b>, que limita a
+      <b>5–8 séries diretas por músculo por sessão</b>.
+    </p>
+    <p>
+      A base científica sustenta o corte: a qualidade das séries cai claramente acima
+      desse ponto (<b>P3, seção 13</b>), e com o volume semanal igualado a frequência tem
+      efeito <b>desprezível</b> sobre hipertrofia (<b>seção 2</b>) — distribuir em mais dias
+      não custa resultado. A ordem também não afeta crescimento, então a sessão passa a
+      ser ordenada <b>por prioridade</b> (<b>seção 9</b>): peito na frente.
+    </p>
+    <p>
+      <b>7 exercícios × 3 séries = 21 séries por sessão</b>, cabendo folgado na faixa-alvo
+      semanal de 10–16 séries por músculo.
+    </p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="p-a" id="t-a">A · Voltagem</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p-b" id="t-b">B · Aurora</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p-c" id="t-c">C · Ferro</button>
+  </div>
+
+  <!-- ============================= A ============================= -->
+  <section class="panel" id="p-a" role="tabpanel" aria-labelledby="t-a">
+    <div class="meta">
+      <div>
+        <h3>A · Voltagem</h3>
+        <p>Evolui os tokens que o app já usa. Verde-quase-preto com lima elétrico,
+           caixa-alta condensada, zero sombra — tudo é contraste e borda. Lê como
+           equipamento, não como wellness.</p>
+      </div>
+      <div>
+        <p class="mlabel">Paleta</p>
+        <div class="sw">
+          <i style="background:#131714"></i><i style="background:#1C211D"></i>
+          <i style="background:#C8F542"></i><i style="background:#F3F7F3"></i>
+          <i style="background:#FFB020"></i>
+        </div>
+      </div>
+      <div>
+        <p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Archivo 800</b> caixa-alta · títulos<br>
+           <b>Manrope</b> · corpo<br><b>JetBrains Mono</b> · números</p>
+      </div>
+    </div>
+    <div class="rail" id="rail-a"></div>
+  </section>
+
+  <!-- ============================= B ============================= -->
+  <section class="panel" id="p-b" role="tabpanel" aria-labelledby="t-b" hidden>
+    <div class="meta">
+      <div>
+        <h3>B · Aurora</h3>
+        <p>A referência lilás–azul que você mandou, levada a sério: fundo claro,
+           cards brancos flutuando em sombra violeta, gradiente só no card do dia.
+           Cantos generosos, muito respiro, tom calmo.</p>
+      </div>
+      <div>
+        <p class="mlabel">Paleta</p>
+        <div class="sw">
+          <i style="background:#F7F6FB"></i><i style="background:#FFFFFF"></i>
+          <i style="background:#6D5AE6"></i><i style="background:linear-gradient(140deg,#B9AAFB,#7ED4E8)"></i>
+          <i style="background:#1E1B2E"></i>
+        </div>
+      </div>
+      <div>
+        <p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Manrope 800</b> tracking fechado · títulos<br>
+           <b>Manrope</b> · corpo<br><b>JetBrains Mono</b> · números</p>
+      </div>
+    </div>
+    <div class="rail" id="rail-b"></div>
+  </section>
+
+  <!-- ============================= C ============================= -->
+  <section class="panel" id="p-c" role="tabpanel" aria-labelledby="t-c" hidden>
+    <div class="meta">
+      <div>
+        <h3>C · Ferro</h3>
+        <p>Teal profundo com âmbar quente — escuro sem ser frio. Botões em cápsula
+           total, cards largos, densidade de dado maior. O contraste quente/frio faz
+           o número saltar sem precisar de neon.</p>
+      </div>
+      <div>
+        <p class="mlabel">Paleta</p>
+        <div class="sw">
+          <i style="background:#0E2A2B"></i><i style="background:#143839"></i>
+          <i style="background:#F5C049"></i><i style="background:#7BD4C4"></i>
+          <i style="background:#F0EDE4"></i>
+        </div>
+      </div>
+      <div>
+        <p class="mlabel">Tipografia</p>
+        <p class="typerow"><b>Archivo 700</b> caixa mista · títulos<br>
+           <b>Manrope</b> · corpo<br><b>JetBrains Mono</b> · números</p>
+      </div>
+    </div>
+    <div class="rail" id="rail-c"></div>
+  </section>
+</div>
+
+<script>
+const ICON = {
+  bolt:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>',
+  warn:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+  play:'<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>',
+  check:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 6 6L20 6"/></svg>',
+  x:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  home:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  chart:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M7 17v-6M12 17V5M17 17v-9"/></svg>',
+  book:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16a1 1 0 0 0 1.4.9L12 18l6.6 2.9A1 1 0 0 0 20 20V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/></svg>',
+  user:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  back:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"/></svg>',
+  hist:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>'
+};
+
+const sbar = '<div class="sbar"><b>9:41</b><span>5G ▮▮▮ 82%</span></div>';
+
+const tabbar = (on) => `<div class="tabbar">
+  ${[['home','Hoje'],['chart','Evolução'],['book','Biblioteca'],['user','Perfil']]
+    .map(([i,l],k)=>`<div class="tabitem${k===on?' on':''}">${ICON[i]}<span>${l}</span></div>`).join('')}
+</div>`;
+
+/* ---------------- screen 1 : HOME ---------------- */
+const home = `
+${sbar}
+<div class="scroll">
+  <div class="phead">
+    <p class="pdate">Quinta · 20 de agosto</p>
+    <h2 class="ptitle">Bom treino,<br>Cláudio</h2>
+  </div>
+
+  <div class="week">
+    ${[['SEG','17',1],['TER','18',0],['QUA','19',1],['QUI','20',-1],
+       ['SEX','21',0],['SÁB','22',0],['DOM','23',0]]
+      .map(([d,n,t])=>`<div class="day${t===-1?' now':(t?'':' off')}">
+        <u>${d}</u><b>${n}</b><i></i></div>`).join('')}
+  </div>
+
+  <div class="card hero">
+    <p class="clabel">Treino de hoje</p>
+    <h3 class="cbig">Superior</h3>
+    <div class="cmeta">
+      <span><b>7</b> exercícios</span><span><b>21</b> séries</span><span>~<b>52</b> min</span>
+    </div>
+    <button class="btn" style="background:var(--p-hero-ink);color:var(--p-hero)">
+      Começar sessão
+    </button>
+  </div>
+
+  <div class="alert">
+    ${ICON.warn}
+    <p>Dor articular relatada no último check-in. Considere reduzir carga ou avaliar deload.</p>
+  </div>
+
+  <div class="card">
+    <p class="clabel">Volume da semana · séries diretas</p>
+    ${[['Peito',8,9,0],['Costas',12,16,0],['Ombro',9,16,0],['Bíceps',3,10,1],['Tríceps',6,10,0]]
+      .map(([m,v,alvo,low])=>`<div class="vrow">
+        <span class="vname">${m}</span>
+        <span class="vtrack"><span class="vfill${low?' low':''}" style="width:${Math.round(v/alvo*100)}%"></span></span>
+        <span class="vnum">${v}/${alvo}</span>
+      </div>`).join('')}
+  </div>
+
+  <div class="card">
+    <p class="clabel">Volume por sessão · últimas 8</p>
+    <div class="spark">
+      ${[42,55,48,61,58,70,64,78].map((h,i)=>
+        `<i class="${i>5?'on':''}" style="height:${h}%"></i>`).join('')}
+    </div>
+  </div>
+
+  <div class="trio">
+    <div class="stat"><b>34</b><u>séries/sem</u></div>
+    <div class="stat"><b>6</b><u>dias seguidos</u></div>
+    <div class="stat"><b>3</b><u>PRs no mês</u></div>
+  </div>
+  <div class="hgap"></div>
+</div>
+${tabbar(0)}`;
+
+/* ---------------- screen 2 : FILA DO DIA ---------------- */
+const fila = `
+${sbar}
+<div class="scroll">
+  <div class="phead" style="display:flex;align-items:center;gap:12px">
+    <span style="color:var(--p-dim)">${ICON.back}</span>
+    <div><p class="pdate">Fila do dia</p><h2 class="ptitle">Superior</h2></div>
+  </div>
+
+  <div class="prog">
+    <div class="ptrack"><div class="pbar" style="width:36%"></div></div>
+    <div class="pmeta"><span>2 de 7 concluídos</span><span>24:18</span></div>
+  </div>
+
+  ${[
+    ['1','Supino inclinado com halteres','peito · 3 × 8–12 · RIR 1.5','done',''],
+    ['2','Crucifixo no cabo','peito · 3 × 10–15 · RIR 1','done',''],
+    ['3','Supino reto na máquina','peito · 3 × 8–15 · RIR 1.5','live','SÉRIE 3'],
+    ['4','Puxada frente','costas · 3 × 8–12 · RIR 1.5','',''],
+    ['5','Remada baixa na máquina','costas · 3 × 8–15 · RIR 1.5','',''],
+    ['6','Desenvolvimento de ombro','ombro · 3 × 8–15 · RIR 1.5','',''],
+    ['7','Elevação lateral no cabo','ombro · 3 × 10–15 · RIR 1','','']
+  ].map(([n,nome,meta,st,pill])=>`
+    <div class="ex ${st}">
+      <span class="exn">${st==='done'?ICON.check:n}</span>
+      <div class="exb"><h4>${nome}</h4><p>${meta}</p></div>
+      ${pill?`<span class="pill">${pill}</span>`:''}
+    </div>`).join('')}
+
+  <div style="padding:6px 18px 0">
+    <button class="btn ghost">Finalizar sessão</button>
+  </div>
+  <div class="hgap"></div>
+</div>
+${tabbar(0)}`;
+
+/* ---------------- screen 3 : EXECUÇÃO ---------------- */
+const exec = `
+${sbar}
+<div class="scroll">
+  <div class="phead" style="display:flex;align-items:flex-start;gap:12px">
+    <div style="flex:1">
+      <p class="pdate">Exercício 3 de 7 · peito</p>
+      <h2 class="ptitle" style="font-size:21px">Supino reto<br>na máquina</h2>
+    </div>
+    <span style="color:var(--p-faint);margin-top:16px">${ICON.x}</span>
+  </div>
+
+  <div class="expl">
+    <p><b>Como executar.</b> Costas apoiadas e escápulas retraídas do início ao fim.
+       Desça até sentir alongamento no peito, sem deixar o ombro rolar à frente.</p>
+    <p><b>Amplitude.</b> A curva da máquina é estável — use isso para chegar perto da
+       falha com segurança. Alvo: <b>8–15 reps</b>, RIR <b>1.5</b>.</p>
+  </div>
+
+  <div class="loadrow">
+    <div class="load"><b>32 kg</b><u>Carga sugerida</u></div>
+    <div class="load"><b>+2 kg</b><u>Próximo passo</u></div>
+  </div>
+
+  <div class="serie ok"><span class="sn">${ICON.check}</span>
+    <span class="sdata">32 kg · 12 reps <em>· RIR 2</em></span></div>
+  <div class="serie ok"><span class="sn">${ICON.check}</span>
+    <span class="sdata">32 kg · 11 reps <em>· RIR 1</em></span></div>
+  <div class="serie now"><span class="sn">3</span>
+    <span class="sdata sghost">aguardando série…</span></div>
+
+  <div class="rest">
+    <u>Descanso</u><b>01:12</b>
+    <p>Toque em iniciar quando estiver pronto — o relógio segue contando.</p>
+  </div>
+
+  <div style="padding:2px 18px 0">
+    <button class="btn ghost">Concluir exercício</button>
+  </div>
+  <div class="hgap"></div>
+</div>
+<div class="foot">
+  <button class="sq">${ICON.hist}</button>
+  <button class="play">${ICON.play} Iniciar série 3</button>
+</div>`;
+
+const SCREENS = [['Início',home],['Fila do dia',fila],['Execução',exec]];
+
+for (const d of ['a','b','c']) {
+  document.getElementById('rail-'+d).innerHTML = SCREENS.map(([cap,html])=>`
+    <div class="phonebox">
+      <p class="caption">${cap}</p>
+      <div class="phone"><div class="screen dir-${d}">${html}</div></div>
+    </div>`).join('');
+}
+
+const tabs = [...document.querySelectorAll('.tab')];
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(o => {
+    const sel = o === t;
+    o.setAttribute('aria-selected', sel);
+    document.getElementById(o.getAttribute('aria-controls')).hidden = !sel;
+  });
+}));
+</script>

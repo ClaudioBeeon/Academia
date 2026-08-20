@@ -2,7 +2,7 @@ import { getAll, put, clearStore } from "./db.js";
 
 const STORES_EXPORTAVEIS = [
   "perfil", "protocolo", "exercicios", "dietaBase",
-  "historicoSeries", "cargas", "registrosDiarios", "config",
+  "historicoSeries", "medidasCorporais", "cargas", "registrosDiarios", "config",
 ];
 
 export async function exportarTudo(db) {

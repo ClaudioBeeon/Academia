@@ -55,3 +55,14 @@ test("historicoParaCsv gera cabeçalho e uma linha por série", () => {
   assert.equal(linhas[0], "data,exercicioId,musculo,tipoSerie,carga,reps,rir,serieNumero");
   assert.equal(linhas[1], "2026-08-01,a,peito,normal,14,10,2,1");
 });
+
+test("exportarTudo inclui medidasCorporais", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "medidasCorporais");
+  await put(db, "medidasCorporais", { data: "2026-08-20", peso_kg: 70 });
+
+  const backup = await exportarTudo(db);
+  assert.equal(backup.dados.medidasCorporais.length, 1);
+  assert.equal(backup.dados.medidasCorporais[0].peso_kg, 70);
+  db.close();
+});

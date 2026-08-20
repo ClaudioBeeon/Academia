@@ -70,6 +70,15 @@ export async function putAll(db, storeName, values) {
   }
 }
 
+export function getAllByIndex(db, storeName, indexName, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, "readonly");
+    const req = tx.objectStore(storeName).index(indexName).getAll(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
 export function clearStore(db, storeName) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");

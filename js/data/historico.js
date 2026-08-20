@@ -1,28 +1,35 @@
 // js/data/historico.js
-import { put, getAll } from "./db.js";
+import { put, getAllByIndex } from "./db.js";
 
 export function registrarSerie(db, serie) {
   return put(db, "historicoSeries", serie);
 }
 
 export async function getSeriesDoExercicioNaData(db, exercicioId, data) {
-  const todas = await getAll(db, "historicoSeries");
-  return todas.filter((s) => s.exercicioId === exercicioId && s.data === data);
+  const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
+  return doExercicio
+    .filter((s) => s.data === data)
+    .sort((a, b) => (a.serieNumero ?? 0) - (b.serieNumero ?? 0));
 }
 
 export async function getUltimaSerieAnterior(db, exercicioId, dataAtual) {
-  const todas = await getAll(db, "historicoSeries");
-  const anteriores = todas
-    .filter((s) => s.exercicioId === exercicioId && s.data < dataAtual)
-    .sort((a, b) => (a.data < b.data ? 1 : -1));
+  const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
+  const anteriores = doExercicio
+    .filter((s) => s.data < dataAtual)
+    .sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
   return anteriores.length > 0 ? anteriores[0] : null;
 }
 
 export async function getAmostrasRecentesDoExercicio(db, exercicioId, limite = 5) {
-  const todas = await getAll(db, "historicoSeries");
-  return todas
-    .filter((s) => s.exercicioId === exercicioId)
-    .sort((a, b) => (a.data < b.data ? 1 : -1))
+  const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
+  return doExercicio
+    .filter((s) => s.tipoSerie !== "aquecimento")
+    .sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id)
     .slice(0, limite)
     .map((s) => ({ carga: s.carga, reps: s.reps, rir_relatado: s.rir }));
+}
+
+export async function getHistoricoCompletoDoExercicio(db, exercicioId) {
+  const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
+  return doExercicio.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
 }

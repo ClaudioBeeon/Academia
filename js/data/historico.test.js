@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio } from "./historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio } from "./historico.js";
 
 test("registrarSerie grava e getSeriesDoExercicioNaData filtra por exercício e data", async () => {
   const db = await openDatabase();
@@ -45,5 +45,37 @@ test("getAmostrasRecentesDoExercicio reshapes séries em amostras (rir_relatado)
   assert.equal(amostras.length, 2);
   assert.ok("rir_relatado" in amostras[0]);
   assert.ok(!("rir" in amostras[0]));
+  db.close();
+});
+
+test("getAmostrasRecentesDoExercicio exclui séries de aquecimento", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "e", data: "2026-08-10", musculo: "peito", contribuicao: 1, tipoSerie: "aquecimento", carga: 8, reps: 12, rir: 5, serieNumero: 0 });
+  await registrarSerie(db, { exercicioId: "e", data: "2026-08-10", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 14, reps: 10, rir: 2, serieNumero: 1 });
+
+  const amostras = await getAmostrasRecentesDoExercicio(db, "e");
+  assert.equal(amostras.length, 1);
+  assert.equal(amostras[0].carga, 14);
+  db.close();
+});
+
+test("getSeriesDoExercicioNaData ordena por serieNumero", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "f", data: "2026-08-10", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 14, reps: 10, rir: 2, serieNumero: 2 });
+  await registrarSerie(db, { exercicioId: "f", data: "2026-08-10", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 15, reps: 9, rir: 2, serieNumero: 1 });
+
+  const series = await getSeriesDoExercicioNaData(db, "f", "2026-08-10");
+  assert.deepEqual(series.map((s) => s.serieNumero), [1, 2]);
+  db.close();
+});
+
+test("getHistoricoCompletoDoExercicio retorna todas as séries, mais recente primeiro", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "g", data: "2026-08-01", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 3, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "g", data: "2026-08-08", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 10, rir: 2, serieNumero: 1 });
+
+  const historico = await getHistoricoCompletoDoExercicio(db, "g");
+  assert.equal(historico.length, 2);
+  assert.equal(historico[0].data, "2026-08-08");
   db.close();
 });

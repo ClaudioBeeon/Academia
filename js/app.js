@@ -1,6 +1,7 @@
 // js/app.js
 import { openDatabase } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
+import { montarTelaTreino } from "./screens/treino.js";
 
 async function bootstrap() {
   if ("serviceWorker" in navigator) {
@@ -12,15 +13,22 @@ async function bootstrap() {
   const db = await openDatabase();
   await seedIfNeeded(db);
 
-  renderPlaceholderShell();
+  renderShell(db);
 }
 
-function renderPlaceholderShell() {
+function renderShell(db) {
   const content = document.getElementById("tab-content");
   const tabs = document.querySelectorAll("#tab-bar button");
 
-  const renderTab = (tabName) => {
-    content.textContent = `Tela "${tabName}" ainda não implementada (vem no plano do Nível 1).`;
+  const renderTab = async (tabName) => {
+    tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
+
+    if (tabName === "treino") {
+      content.textContent = "";
+      content.appendChild(await montarTelaTreino(db));
+      return;
+    }
+    content.textContent = `Tela "${tabName}" ainda não implementada (vem no Nível 1b ou depois).`;
   };
 
   tabs.forEach((button) => {

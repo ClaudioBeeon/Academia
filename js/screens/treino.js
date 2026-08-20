@@ -49,7 +49,7 @@ function criarPlaceholderDescanso() {
   div.className = "rest-bar rest-bar-hidden";
   div.innerHTML = `
     <div><div class="label">Descanso</div><div class="time">00:00</div></div>
-    <div class="rest-ctl"><button data-action="menos">−30s</button><button data-action="mais">+30s</button></div>
+    <div class="rest-ctl"><button type="button" data-action="menos">−30s</button><button type="button" data-action="mais">+30s</button></div>
   `;
   return div;
 }
@@ -87,6 +87,9 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
   for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
     const jaFeita = seriesHoje[numero - 1];
     setsContainer.appendChild(criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps }));
+    if (numero < totalSeriesAlvo) {
+      setsContainer.appendChild(criarPlaceholderDescanso());
+    }
   }
 
   if (ultimaAnterior) {
@@ -105,7 +108,8 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
     event.preventDefault();
     const carga = Number(linha.querySelector('[name="carga"]').value);
     const reps = Number(linha.querySelector('[name="reps"]').value);
-    const rir = Number(linha.querySelector('[name="rir"]').value);
+    const rirInput = linha.querySelector('[name="rir"]').value;
+    const rirDigitado = Number(rirInput);
     if (!carga || !reps) return;
 
     await registrarSerie(db, {
@@ -116,13 +120,23 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
       tipoSerie: "normal",
       carga,
       reps,
-      rir: rir || RIR_ALVO,
+      rir: rirInput === "" || Number.isNaN(rirDigitado) ? RIR_ALVO : rirDigitado,
     });
 
     linha.classList.add("done");
     linha.querySelectorAll("input").forEach((input) => (input.disabled = true));
+    const ring = linha.querySelector(".set-ring");
+    if (ring) {
+      const marcado = document.createElement("div");
+      marcado.className = "set-ring";
+      marcado.innerHTML = "<i>✓</i>";
+      ring.replaceWith(marcado);
+    }
 
-    iniciarDescansoNoCartaoSeguinte(card);
+    const restBar = linha.nextElementSibling && linha.nextElementSibling.classList.contains("rest-bar")
+      ? linha.nextElementSibling
+      : card.nextElementSibling;
+    iniciarDescanso(restBar);
   });
 
   card.querySelector(".swap-pill").addEventListener("click", () => {
@@ -137,27 +151,20 @@ async function montarCardExercicio(db, exercicio, todosExercicios) {
 function criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps }) {
   const form = document.createElement("form");
   form.className = "set-row" + (jaFeita ? " done" : "");
+  const ringHtml = jaFeita
+    ? `<div class="set-ring"><i>✓</i></div>`
+    : `<button type="submit" class="set-ring" aria-label="Marcar série ${numero} concluída"><i>${numero}</i></button>`;
   form.innerHTML = `
-    <div class="set-ring"><i>${jaFeita ? "✓" : numero}</i></div>
+    ${ringHtml}
     <div class="set-field"><label>Carga</label><input name="carga" type="number" step="0.5" placeholder="${placeholderCarga}" value="${jaFeita ? jaFeita.carga : ""}" ${jaFeita ? "disabled" : ""} /></div>
     <div class="set-field"><label>Reps</label><input name="reps" type="number" placeholder="${placeholderReps}" value="${jaFeita ? jaFeita.reps : ""}" ${jaFeita ? "disabled" : ""} /></div>
     <div class="set-field"><label>RIR</label><input name="rir" type="number" step="0.5" placeholder="${RIR_ALVO}" value="${jaFeita ? jaFeita.rir : ""}" ${jaFeita ? "disabled" : ""} /></div>
-    ${jaFeita ? "" : '<button type="submit" style="grid-column: 1 / -1; display:none;">Confirmar</button>'}
   `;
-  if (!jaFeita) {
-    form.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        form.requestSubmit();
-      }
-    });
-  }
   return form;
 }
 
-function iniciarDescansoNoCartaoSeguinte(card) {
-  const restBar = card.nextElementSibling;
-  if (!restBar || !restBar.classList.contains("rest-bar")) return;
+function iniciarDescanso(restBar) {
+  if (!restBar || !restBar.classList || !restBar.classList.contains("rest-bar")) return;
 
   restBar.classList.remove("rest-bar-hidden");
   const timeEl = restBar.querySelector(".time");

@@ -144,13 +144,16 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
 
   const resumoCard = montarCardResumoSessao();
   let diaPersistido = diaJaPersistidoHoje;
+  const atualizarResumo = async () => {
+    const seriesDoDia = await getSeriesDoDia(db, hoje);
+    atualizarResumoSessao(resumoCard, calcularEstatisticasSessao(seriesDoDia));
+  };
   const aoRegistrarSerie = async () => {
     if (!diaPersistido) {
       await registrarDiaDaSessao(db, diaDaSessao, hoje);
       diaPersistido = true;
     }
-    const seriesDoDia = await getSeriesDoDia(db, hoje);
-    atualizarResumoSessao(resumoCard, calcularEstatisticasSessao(seriesDoDia));
+    await atualizarResumo();
   };
 
   for (let i = 0; i < exerciciosHoje.length; i++) {
@@ -169,7 +172,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } 
     main.appendChild(vazio);
   }
 
-  await aoRegistrarSerie();
+  await atualizarResumo();
   main.appendChild(resumoCard);
 
   return root;

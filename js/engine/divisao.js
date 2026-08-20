@@ -22,3 +22,11 @@ export function determinarProximoGrupo(ultimaSerie) {
   if (grupoAnterior === null) return "superior";
   return grupoAnterior === "superior" ? "inferior" : "superior";
 }
+
+export function determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral) {
+  if (seriesDeHoje && seriesDeHoje.length > 0) {
+    const grupo = obterGrupoDoMusculo(seriesDeHoje[0].musculo);
+    return grupo ?? "superior";
+  }
+  return determinarProximoGrupo(ultimaSerieGeral);
+}

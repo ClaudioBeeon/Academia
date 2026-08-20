@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GRUPO_POR_MUSCULO, obterGrupoDoMusculo, determinarProximoGrupo } from "./divisao.js";
+import { GRUPO_POR_MUSCULO, obterGrupoDoMusculo, determinarProximoGrupo, determinarGrupoDaSessao } from "./divisao.js";
 
 test("GRUPO_POR_MUSCULO mapeia todos os 10 músculos semeados", () => {
   assert.equal(GRUPO_POR_MUSCULO.peito, "superior");
@@ -36,4 +36,19 @@ test("determinarProximoGrupo alterna com base no músculo da última série", ()
 
 test("determinarProximoGrupo cai em superior quando a última série tem músculo não mapeado", () => {
   assert.equal(determinarProximoGrupo({ musculo: "core_customizado" }), "superior");
+});
+
+test("determinarGrupoDaSessao usa o grupo das séries de hoje quando existem", () => {
+  const seriesDeHoje = [{ musculo: "peito" }, { musculo: "peito" }];
+  assert.equal(determinarGrupoDaSessao(seriesDeHoje, { musculo: "quadriceps" }), "superior");
+});
+
+test("determinarGrupoDaSessao cai para determinarProximoGrupo quando hoje está vazio", () => {
+  assert.equal(determinarGrupoDaSessao([], { musculo: "peito" }), "inferior");
+  assert.equal(determinarGrupoDaSessao([], null), "superior");
+});
+
+test("determinarGrupoDaSessao cai em superior quando a série de hoje tem músculo não mapeado", () => {
+  const seriesDeHoje = [{ musculo: "core_customizado" }];
+  assert.equal(determinarGrupoDaSessao(seriesDeHoje, { musculo: "peito" }), "superior");
 });

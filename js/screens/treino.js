@@ -8,7 +8,7 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
-import { obterGrupoDoMusculo, determinarProximoGrupo } from "../engine/divisao.js";
+import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
 import { criarCronometro } from "./timer.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
@@ -38,8 +38,11 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const ultimaSerieGeral = await getUltimaSerieGeral(db);
-  const grupoDeHoje = determinarProximoGrupo(ultimaSerieGeral);
+  const [ultimaSerieGeral, seriesDeHoje] = await Promise.all([
+    getUltimaSerieGeral(db),
+    getSeriesDoDia(db, hoje),
+  ]);
+  const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
   const exerciciosHoje = todosExercicios.filter((e) => {
     const grupo = obterGrupoDoMusculo(e.musculoPrimario);

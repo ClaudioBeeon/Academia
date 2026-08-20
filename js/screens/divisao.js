@@ -1,9 +1,18 @@
 // js/screens/divisao.js
 import { getAll } from "../data/db.js";
-import { getUltimaSerieGeral } from "../data/historico.js";
-import { GRUPO_POR_MUSCULO, obterGrupoDoMusculo, determinarProximoGrupo } from "../engine/divisao.js";
+import { getUltimaSerieGeral, getSeriesDoDia } from "../data/historico.js";
+import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
+
+function obterDataLocal() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
 
 export async function montarTelaDivisao(db) {
+  const hoje = obterDataLocal();
   const root = document.createElement("div");
   root.className = "tela-divisao";
 
@@ -15,12 +24,13 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
+    getSeriesDoDia(db, hoje),
   ]);
 
-  const grupoDeHoje = determinarProximoGrupo(ultimaSerieGeral);
+  const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
 
   main.appendChild(montarCardHoje(tituloGrupo));
@@ -63,7 +73,6 @@ function montarCardHistorico(todasAsSeries) {
       const rotulo = grupo === "superior" ? "Superior" : grupo === "inferior" ? "Inferior" : "Grupo não identificado";
       const linha = document.createElement("div");
       linha.className = "prev-hint";
-      linha.style.gridColumn = "1/-1";
       linha.textContent = `${data} — ${rotulo}`;
       lista.appendChild(linha);
     }

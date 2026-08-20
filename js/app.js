@@ -6,6 +6,7 @@ import { montarTelaBiblioteca } from "./screens/biblioteca.js";
 import { montarTelaHistorico } from "./screens/historico.js";
 import { montarTelaConfig } from "./screens/config.js";
 import { montarTelaEvolucao } from "./screens/evolucao.js";
+import { montarTelaDivisao } from "./screens/divisao.js";
 
 async function bootstrap() {
   if ("serviceWorker" in navigator) {
@@ -51,6 +52,11 @@ function renderShell(db) {
       if (tabName === "evolucao") {
         content.textContent = "";
         content.appendChild(await montarTelaEvolucao(db));
+        return;
+      }
+      if (tabName === "divisao") {
+        content.textContent = "";
+        content.appendChild(await montarTelaDivisao(db));
         return;
       }
       content.textContent = `Tela "${tabName}" ainda não implementada (vem depois).`;

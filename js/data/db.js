@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORES = {
   perfil: "versao",
@@ -7,6 +7,7 @@ const STORES = {
   exercicios: "id",
   dietaBase: "versao",
   historicoSeries: { keyPath: "id", autoIncrement: true },
+  medidasCorporais: { keyPath: "id", autoIncrement: true },
   cargas: "exercicioId",
   registrosDiarios: "data",
   config: "chave",
@@ -36,6 +37,11 @@ export function openDatabase(indexedDBImpl = globalThis.indexedDB) {
           if (!store.indexNames.contains("exercicioId")) {
             store.createIndex("exercicioId", "exercicioId", { unique: false });
           }
+          if (!store.indexNames.contains("data")) {
+            store.createIndex("data", "data", { unique: false });
+          }
+        }
+        if (name === "medidasCorporais") {
           if (!store.indexNames.contains("data")) {
             store.createIndex("data", "data", { unique: false });
           }

@@ -23,16 +23,21 @@ function renderShell(db) {
   const renderTab = async (tabName) => {
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
-    if (tabName === "treino") {
-      content.textContent = "";
-      content.appendChild(await montarTelaTreino(db));
-      return;
+    try {
+      if (tabName === "treino") {
+        content.textContent = "";
+        content.appendChild(await montarTelaTreino(db));
+        return;
+      }
+      content.textContent = `Tela "${tabName}" ainda não implementada (vem no Nível 1b ou depois).`;
+    } catch (err) {
+      console.error(`Falha ao renderizar a aba "${tabName}":`, err);
+      content.textContent = "Não foi possível carregar esta tela. Tente novamente ou importe seu último backup nas Configurações.";
     }
-    content.textContent = `Tela "${tabName}" ainda não implementada (vem no Nível 1b ou depois).`;
   };
 
   tabs.forEach((button) => {
-    button.addEventListener("click", () => renderTab(button.dataset.tab));
+    button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
 
   renderTab("treino");

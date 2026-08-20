@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { getCheckin, registrarCheckin } from "./checkin.js";
+import { getCheckin, registrarCheckin, getCheckinsRecentes } from "./checkin.js";
+import { clearStore } from "./db.js";
 
 test("getCheckin retorna undefined quando não há registro para a data", async () => {
   const db = await openDatabase();
@@ -67,5 +68,39 @@ test("registrarCheckin sobrescreve apenas os campos re-enviados ao editar", asyn
   assert.equal(resultado.bemEstarBaixo, false);
   assert.equal(resultado.dorArticularOuTendinea, false);
   assert.equal(resultado.domsPersistente, false);
+  db.close();
+});
+
+test("getCheckinsRecentes retorna vazio quando não há check-ins", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  const resultado = await getCheckinsRecentes(db);
+  assert.deepEqual(resultado, []);
+  db.close();
+});
+
+test("getCheckinsRecentes ignora registros sem qualidadePercebida (de outras fatias)", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  await registrarCheckin(db, "2026-08-19", { caloriasConsumidas: 2100 }); // registro de outra fatia, não é check-in
+  await registrarCheckin(db, "2026-08-20", { qualidadePercebida: 4, bemEstarBaixo: false, dorArticularOuTendinea: false, domsPersistente: false });
+
+  const resultado = await getCheckinsRecentes(db);
+  assert.equal(resultado.length, 1);
+  assert.equal(resultado[0].data, "2026-08-20");
+  db.close();
+});
+
+test("getCheckinsRecentes ordena do mais recente pro mais antigo e respeita o limite", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  await registrarCheckin(db, "2026-08-18", { qualidadePercebida: 3, bemEstarBaixo: false, dorArticularOuTendinea: false, domsPersistente: false });
+  await registrarCheckin(db, "2026-08-20", { qualidadePercebida: 5, bemEstarBaixo: false, dorArticularOuTendinea: false, domsPersistente: false });
+  await registrarCheckin(db, "2026-08-19", { qualidadePercebida: 4, bemEstarBaixo: false, dorArticularOuTendinea: false, domsPersistente: false });
+
+  const resultado = await getCheckinsRecentes(db, 2);
+  assert.equal(resultado.length, 2);
+  assert.equal(resultado[0].data, "2026-08-20");
+  assert.equal(resultado[1].data, "2026-08-19");
   db.close();
 });

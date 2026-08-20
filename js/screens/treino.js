@@ -286,10 +286,14 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
 
   const meta = document.createElement("div");
   meta.className = "meta";
-  if (ultimoCardio) {
+  if (ultimoCardio && ultimoCardio.duracaoMinutos) {
     const duracao = document.createElement("span");
     duracao.innerHTML = `<b>${ultimoCardio.duracaoMinutos}</b> min`;
     meta.appendChild(duracao);
+  } else if (ultimoCardio) {
+    const semDuracao = document.createElement("span");
+    semDuracao.textContent = "Duração não registrada";
+    meta.appendChild(semDuracao);
   } else {
     const vazio = document.createElement("span");
     vazio.textContent = "Registre sua primeira sessão";

@@ -26,7 +26,7 @@ function obterConfigExercicio(protocolo, exercicio) {
   };
 }
 
-export async function montarTelaTreino(db) {
+export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -49,7 +49,7 @@ export async function montarTelaTreino(db) {
 
   for (let i = 0; i < exerciciosHoje.length; i++) {
     const exercicio = exerciciosHoje[i];
-    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje);
+    const card = await montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico);
     main.appendChild(card);
     if (i < exerciciosHoje.length - 1) {
       main.appendChild(criarPlaceholderDescanso());
@@ -73,7 +73,7 @@ function criarPlaceholderDescanso() {
   return div;
 }
 
-async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje) {
+async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, hoje, onAbrirHistorico) {
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
@@ -90,7 +90,10 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
       <div class="exercise-name"></div>
       <div class="exercise-meta">${cfg.repsMin}–${cfg.repsMax} reps · RIR ${cfg.rirAlvo}</div>
     </div>
-    <button class="swap-pill" type="button">Trocar</button>
+    <div style="display:flex; gap:6px;">
+      <button class="swap-pill history-pill" type="button">Histórico</button>
+      <button class="swap-pill trocar-pill" type="button">Trocar</button>
+    </div>
   `;
   head.querySelector(".exercise-name").textContent = exercicio.nome;
   card.appendChild(head);
@@ -142,6 +145,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
       carga,
       reps,
       rir: rirInput === "" || Number.isNaN(rirDigitado) ? cfg.rirAlvo : rirDigitado,
+      serieNumero: Number(linha.dataset.numero),
     });
 
     linha.classList.add("done");
@@ -160,10 +164,14 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
     iniciarDescanso(restBar, cfg.descansoSegundos);
   });
 
-  card.querySelector(".swap-pill").addEventListener("click", () => {
+  card.querySelector(".trocar-pill").addEventListener("click", () => {
     const sugestoes = sugerirSubstitutos(exercicio.id, todosExercicios);
     const nomes = sugestoes.map((e) => e.nome).join(", ") || "nenhuma alternativa encontrada";
     alert(`Alternativas: ${nomes}`);
+  });
+
+  card.querySelector(".history-pill").addEventListener("click", () => {
+    if (onAbrirHistorico) onAbrirHistorico(exercicio);
   });
 
   return card;
@@ -172,6 +180,7 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
 function criarLinhaSerie({ numero, jaFeita, placeholderCarga, placeholderReps, rirAlvo }) {
   const form = document.createElement("form");
   form.className = "set-row" + (jaFeita ? " done" : "");
+  form.dataset.numero = String(numero);
   const ringHtml = jaFeita
     ? `<div class="set-ring"><i>✓</i></div>`
     : `<button type="submit" class="set-ring" aria-label="Marcar série ${numero} concluída"><i>${numero}</i></button>`;

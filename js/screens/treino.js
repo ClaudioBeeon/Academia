@@ -15,6 +15,8 @@ import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.
 import { validarRir } from "../engine/rir.js";
 import { gerarSessaoDoDia } from "../engine/sessaoGerada.js";
 import { criarCronometro } from "./timer.js";
+import { calcularAtividadeMensal } from "../engine/atividade.js";
+import { getCardioRecente } from "../data/cardio.js";
 
 const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
 
@@ -47,20 +49,23 @@ function obterConfigExercicio(protocolo, exercicio) {
   };
 }
 
-export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
+export async function montarTelaTreino(db, { onAbrirHistorico, onIrParaCardio } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries, grupoForcado] = await Promise.all([
+  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries, grupoForcado, cardioRecente] = await Promise.all([
     getUltimaSerieGeral(db),
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
     getGrupoForcado(db, hoje),
+    getCardioRecente(db, 1),
   ]);
   const grupoDeHoje = grupoForcado ?? determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
+  const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
+  const ultimoCardio = cardioRecente[0] ?? null;
   const exerciciosDoGrupo = todosExercicios.filter((e) => {
     const grupo = obterGrupoDoMusculo(e.musculoPrimario);
     return grupo === null || grupo === grupoDeHoje;
@@ -125,7 +130,13 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
     planoCard.insertBefore(trocarBtn, planoCard.querySelector("button"));
   }
 
-  main.appendChild(planoCard);
+  const carrossel = document.createElement("div");
+  carrossel.className = "carrossel-plano";
+  carrossel.appendChild(planoCard);
+  carrossel.appendChild(montarCardCardio(ultimoCardio, onIrParaCardio));
+  main.appendChild(carrossel);
+
+  main.appendChild(montarCardAtividade(atividade));
 
   main.appendChild(await montarCardCheckin(db, hoje));
 
@@ -246,6 +257,96 @@ function renderizarFormularioCheckin(corpo, db, hoje, checkinExistente) {
   });
 
   corpo.appendChild(form);
+}
+
+const NOME_MODALIDADE_CARDIO = {
+  bicicleta: "Bicicleta",
+  eliptico: "Elíptico",
+  escada: "Escada",
+  caminhada: "Caminhada",
+  corrida: "Corrida",
+};
+
+function montarCardCardio(ultimoCardio, onIrParaCardio) {
+  const card = document.createElement("section");
+  card.className = "plano-hero alt";
+
+  const rotulo = document.createElement("div");
+  rotulo.className = "rotulo";
+  rotulo.textContent = "Cardio";
+  card.appendChild(rotulo);
+
+  const titulo = document.createElement("h2");
+  if (ultimoCardio) {
+    titulo.textContent = NOME_MODALIDADE_CARDIO[ultimoCardio.modalidade] ?? ultimoCardio.modalidade;
+  } else {
+    titulo.textContent = "Nenhum registro ainda";
+  }
+  card.appendChild(titulo);
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  if (ultimoCardio) {
+    const duracao = document.createElement("span");
+    duracao.innerHTML = `<b>${ultimoCardio.duracaoMinutos}</b> min`;
+    meta.appendChild(duracao);
+  } else {
+    const vazio = document.createElement("span");
+    vazio.textContent = "Registre sua primeira sessão";
+    meta.appendChild(vazio);
+  }
+  card.appendChild(meta);
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.textContent = ultimoCardio ? "Ver mais" : "Registrar";
+  botao.addEventListener("click", () => {
+    if (onIrParaCardio) onIrParaCardio();
+  });
+  card.appendChild(botao);
+
+  return card;
+}
+
+function formatarMinutosAtivos(minutos) {
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  return resto === 0 ? `${horas}h` : `${horas}h${String(resto).padStart(2, "0")}`;
+}
+
+function montarCardAtividade(atividade) {
+  const section = document.createElement("section");
+  section.className = "atividade-secao";
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "shead";
+  const h4 = document.createElement("h4");
+  h4.textContent = "Minha atividade";
+  cabecalho.appendChild(h4);
+  section.appendChild(cabecalho);
+
+  const grid = document.createElement("div");
+  grid.className = "stats-grid";
+  grid.appendChild(criarStatTile(String(atividade.treinosEsteMes), "Treinos este mês"));
+  grid.appendChild(criarStatTile(String(atividade.seriesEstaSemana), "Séries esta semana"));
+  grid.appendChild(criarStatTile(`~${formatarMinutosAtivos(atividade.minutosAtivosEstaSemana)}`, "Tempo ativo (estimado)"));
+  grid.appendChild(criarStatTile(String(atividade.diasSeguidos), "Dias seguidos"));
+  section.appendChild(grid);
+
+  return section;
+}
+
+function criarStatTile(valor, rotulo) {
+  const tile = document.createElement("div");
+  tile.className = "stat-tile";
+  const b = document.createElement("b");
+  b.textContent = valor;
+  const span = document.createElement("span");
+  span.textContent = rotulo;
+  tile.appendChild(b);
+  tile.appendChild(span);
+  return tile;
 }
 
 function montarCardResumoSessao() {

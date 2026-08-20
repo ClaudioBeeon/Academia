@@ -1,6 +1,6 @@
 // js/screens/treino.js
 import { get, getAll } from "../data/db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
@@ -8,6 +8,7 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
+import { obterGrupoDoMusculo, determinarProximoGrupo } from "../engine/divisao.js";
 import { criarCronometro } from "./timer.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
@@ -37,7 +38,13 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const exerciciosHoje = todosExercicios.filter((e) => e.musculoPrimario === "peito");
+  const ultimaSerieGeral = await getUltimaSerieGeral(db);
+  const grupoDeHoje = determinarProximoGrupo(ultimaSerieGeral);
+  const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
+  const exerciciosHoje = todosExercicios.filter((e) => {
+    const grupo = obterGrupoDoMusculo(e.musculoPrimario);
+    return grupo === null || grupo === grupoDeHoje;
+  });
 
   const root = document.createElement("div");
   root.className = "tela-treino";
@@ -46,7 +53,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   header.className = "top";
   header.innerHTML = `
     <div class="date-label">Sessão de hoje</div>
-    <div class="day-title">Peito</div>
+    <div class="day-title">${tituloGrupo}</div>
   `;
   root.appendChild(header);
 
@@ -69,7 +76,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   }
 
   if (exerciciosHoje.length === 0) {
-    main.innerHTML = `<p class="vazio">Nenhum exercício de peito cadastrado ainda.</p>`;
+    main.innerHTML = `<p class="vazio">Nenhum exercício de ${tituloGrupo.toLowerCase()} cadastrado ainda.</p>`;
   }
 
   await atualizarResumo();

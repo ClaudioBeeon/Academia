@@ -1,3 +1,7 @@
+// Algoritmo guloso: correto para conjuntos de anilhas canônicos (o padrão
+// de academia, ex. 20/15/10/5/2.5/1.25), mas pode reportar "não atingível"
+// num conjunto não-canônico onde uma combinação de anilhas menores fecharia
+// o peso exato mesmo assim.
 export function calcularAnilhas(pesoAlvo, pesoBarra, anilhasDisponiveis) {
   const pesoPorLado = (pesoAlvo - pesoBarra) / 2;
 

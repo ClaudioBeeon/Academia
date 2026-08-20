@@ -27,13 +27,13 @@ test("bicicleta leve (<3) em dia de pernas não alerta por intensidade", () => {
   assert.ok(!alertas.some((a) => a.tipo === "intenso_dia_pernas"));
 });
 
-test("4 ou mais sessões intensas em 7 dias alerta por frequência", () => {
-  const alertas = avaliarCardio({ modalidade: "bicicleta", intensidadePercebida: 3, ehDiaDePernas: false, cardiosIntensosUltimos7Dias: 4 });
+test("5 ou mais sessões intensas em 7 dias alerta por frequência", () => {
+  const alertas = avaliarCardio({ modalidade: "bicicleta", intensidadePercebida: 3, ehDiaDePernas: false, cardiosIntensosUltimos7Dias: 5 });
   assert.ok(alertas.some((a) => a.tipo === "frequencia_alta"));
 });
 
-test("3 sessões intensas em 7 dias não alerta por frequência", () => {
-  const alertas = avaliarCardio({ modalidade: "bicicleta", intensidadePercebida: 3, ehDiaDePernas: false, cardiosIntensosUltimos7Dias: 3 });
+test("4 sessões intensas em 7 dias não alerta por frequência (ainda dentro da faixa recomendada)", () => {
+  const alertas = avaliarCardio({ modalidade: "bicicleta", intensidadePercebida: 3, ehDiaDePernas: false, cardiosIntensosUltimos7Dias: 4 });
   assert.ok(!alertas.some((a) => a.tipo === "frequencia_alta"));
 });
 

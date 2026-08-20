@@ -53,7 +53,22 @@ body {
 .top { padding: 30px 0 0; }
 .date-label { font-size: 0.8rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
 .day-title { font-size: 2.1rem; font-weight: 900; letter-spacing: -0.03em; margin-top: 6px; }
+.top.greeting .date-label { text-transform: none; letter-spacing: 0; font-size: 0.95rem; }
 .vazio { color: var(--ink-faint); padding: 20px 0; }
+
+.plano-hero { background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 22px; }
+.plano-hero .rotulo { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.62; }
+.plano-hero h2 { font-size: 1.7rem; font-weight: 900; letter-spacing: -0.03em; margin-top: 6px; }
+.plano-hero .meta { display: flex; gap: 16px; margin-top: 12px; font-size: 0.78rem; font-weight: 700; opacity: 0.78; flex-wrap: wrap; }
+.plano-hero .meta b { font-variant-numeric: tabular-nums; }
+.plano-hero button { margin-top: 16px; width: 100%; min-height: 48px; border: none; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-weight: 800; font-size: 0.92rem; padding: 14px; cursor: pointer; font-family: inherit; }
+.plano-hero button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-tile { background: var(--card-2); border: 1px solid var(--line); border-radius: 18px; padding: 14px 15px; }
+.stat-tile b { display: block; font-size: 1.3rem; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.stat-tile b.stat-tile-texto { font-size: 0.85rem; font-weight: 700; }
+.stat-tile span { display: block; font-size: 0.72rem; color: var(--ink-faint); font-weight: 600; margin-top: 5px; }
 
 main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 

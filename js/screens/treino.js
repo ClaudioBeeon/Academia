@@ -12,7 +12,18 @@ import { detectarPRs } from "../engine/recordes.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
 import { validarRir } from "../engine/rir.js";
+import { gerarSessaoDoDia } from "../engine/sessaoGerada.js";
 import { criarCronometro } from "./timer.js";
+
+const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
+
+function saudacaoPorHorario(agora = new Date()) {
+  const hora = agora.getHours();
+  if (hora < 5) return "Boa noite";
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 
@@ -41,30 +52,63 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [ultimaSerieGeral, seriesDeHoje] = await Promise.all([
+  const [ultimaSerieGeral, seriesDeHoje, todasAsSeries] = await Promise.all([
     getUltimaSerieGeral(db),
     getSeriesDoDia(db, hoje),
+    getAll(db, "historicoSeries"),
   ]);
   const grupoDeHoje = determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
   const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
-  const exerciciosHoje = todosExercicios.filter((e) => {
+  const exerciciosDoGrupo = todosExercicios.filter((e) => {
     const grupo = obterGrupoDoMusculo(e.musculoPrimario);
     return grupo === null || grupo === grupoDeHoje;
+  });
+  const sessoesAnterioresDoGrupo = new Set(
+    todasAsSeries
+      .filter((s) => s.data !== hoje && obterGrupoDoMusculo(s.musculo) === grupoDeHoje)
+      .map((s) => s.data)
+  ).size;
+  const definicaoFase = protocolo?.volumeSemanalPorFase?.definicao;
+  const exerciciosHoje = gerarSessaoDoDia({
+    exerciciosDoGrupo,
+    musculosPriorizados: definicaoFase?.musculoPriorizadoCrescimento ?? [],
+    musculosEmManutencao: definicaoFase?.musculoEmManutencao ?? [],
+    sessoesAnterioresDoGrupo,
   });
 
   const root = document.createElement("div");
   root.className = "tela-treino";
 
   const header = document.createElement("header");
-  header.className = "top";
+  header.className = "top greeting";
   header.innerHTML = `
-    <div class="date-label">Sessão de hoje</div>
-    <div class="day-title">${tituloGrupo}</div>
+    <div class="date-label">${saudacaoPorHorario()}</div>
+    <div class="day-title">Pronto pra treinar?</div>
   `;
   root.appendChild(header);
 
   const main = document.createElement("main");
   root.appendChild(main);
+
+  const totalSeriesPrevistas = exerciciosHoje.length * 3;
+  const minutosEstimados = exerciciosHoje.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+  const planoCard = document.createElement("section");
+  planoCard.className = "plano-hero";
+  planoCard.innerHTML = `
+    <div class="rotulo">Treino de hoje</div>
+    <h2>${tituloGrupo}</h2>
+    <div class="meta">
+      <span><b>${exerciciosHoje.length}</b> exercícios</span>
+      <span><b>${totalSeriesPrevistas}</b> séries</span>
+      <span>~<b>${minutosEstimados}</b> min</span>
+    </div>
+    <button type="button">Começar treino</button>
+  `;
+  planoCard.querySelector("button").addEventListener("click", () => {
+    main.querySelector(".exercise-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  main.appendChild(planoCard);
+
   main.appendChild(await montarCardCheckin(db, hoje));
 
   const resumoCard = montarCardResumoSessao();
@@ -191,22 +235,23 @@ function montarCardResumoSessao() {
   card.className = "exercise-card";
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Resumo da sessão</div></div>
-    <div class="prev-hint resumo-texto" style="padding:0 18px 8px;"></div>
-    <div class="prev-hint resumo-musculos" style="padding:0 18px 16px;"></div>
+    <div class="stats-grid" style="padding:0 18px 18px;">
+      <div class="stat-tile"><b class="stat-series">0</b><span>Séries feitas</span></div>
+      <div class="stat-tile"><b class="stat-volume">0</b><span>Volume (kg)</span></div>
+      <div class="stat-tile"><b class="stat-exercicios">0</b><span>Exercícios</span></div>
+      <div class="stat-tile"><b class="stat-musculos stat-tile-texto">—</b><span>Músculos treinados</span></div>
+    </div>
   `;
   return card;
 }
 
 function atualizarResumoSessao(card, stats) {
-  const texto = card.querySelector(".resumo-texto");
-  texto.innerHTML = `<b>${stats.totalSeries}</b> séries · <b>${stats.volumeTotal}</b> kg de volume total · <b>${stats.exerciciosTreinados}</b> exercícios`;
-
-  const musculos = card.querySelector(".resumo-musculos");
-  if (stats.musculosTreinados.length > 0) {
-    musculos.textContent = `Músculos: ${stats.musculosTreinados.join(", ")}`;
-  } else {
-    musculos.textContent = "Nenhum músculo treinado ainda hoje.";
-  }
+  card.querySelector(".stat-series").textContent = stats.totalSeries;
+  card.querySelector(".stat-volume").textContent = stats.volumeTotal;
+  card.querySelector(".stat-exercicios").textContent = stats.exerciciosTreinados;
+  card.querySelector(".stat-musculos").textContent = stats.musculosTreinados.length > 0
+    ? stats.musculosTreinados.join(", ")
+    : "—";
 }
 
 function criarPlaceholderDescanso() {

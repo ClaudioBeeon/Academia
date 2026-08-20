@@ -43,3 +43,11 @@ export async function getUltimaSerieGeral(db) {
   if (todas.length === 0) return undefined;
   return todas.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id)[0];
 }
+
+export async function getSeriesDaUltimaSessaoAnterior(db, exercicioId, dataAtual) {
+  const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
+  const anteriores = doExercicio.filter((s) => s.data < dataAtual);
+  if (anteriores.length === 0) return [];
+  const dataMaisRecente = anteriores.reduce((max, s) => (s.data > max ? s.data : max), anteriores[0].data);
+  return anteriores.filter((s) => s.data === dataMaisRecente);
+}

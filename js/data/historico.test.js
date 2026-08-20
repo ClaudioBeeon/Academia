@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral } from "./historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "./historico.js";
 
 test("getUltimaSerieGeral retorna undefined quando não há nenhuma série", async () => {
   const db = await openDatabase();
@@ -108,5 +108,25 @@ test("getUltimaSerieGeral retorna a série mais recente entre todos os exercíci
   const resultado = await getUltimaSerieGeral(db);
   assert.equal(resultado.data, "2026-08-21");
   assert.equal(resultado.musculo, "quadriceps");
+  db.close();
+});
+
+test("getSeriesDaUltimaSessaoAnterior retorna vazio quando não há sessão anterior", async () => {
+  const db = await openDatabase();
+  const resultado = await getSeriesDaUltimaSessaoAnterior(db, "nunca-treinado", "2026-08-21");
+  assert.deepEqual(resultado, []);
+  db.close();
+});
+
+test("getSeriesDaUltimaSessaoAnterior retorna todas as séries da sessão anterior mais recente, ignorando sessões mais antigas e a de hoje", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "p", data: "2026-08-15", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 8, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "p", data: "2026-08-18", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 9, rir: 2, serieNumero: 1 });
+  await registrarSerie(db, { exercicioId: "p", data: "2026-08-18", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 12, reps: 8, rir: 2, serieNumero: 2 });
+  await registrarSerie(db, { exercicioId: "p", data: "2026-08-20", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 13, reps: 10, rir: 1, serieNumero: 1 });
+
+  const resultado = await getSeriesDaUltimaSessaoAnterior(db, "p", "2026-08-20");
+  assert.equal(resultado.length, 2);
+  assert.ok(resultado.every((s) => s.data === "2026-08-18"));
   db.close();
 });

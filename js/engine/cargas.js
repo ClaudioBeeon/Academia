@@ -37,6 +37,11 @@ export function sugerirCarga(amostras, rirAlvo) {
   }
 
   const inclinacao = numerador / denominador;
+
+  if (!Number.isFinite(inclinacao) || inclinacao === 0) {
+    return { cargaSugerida: arredondarMeioKg(mediaCarga), confianca, principio: "cargas", secao: "prompt-original" };
+  }
+
   const intercepto = mediaRir - inclinacao * mediaCarga;
   const carga = (rirAlvo - intercepto) / inclinacao;
 

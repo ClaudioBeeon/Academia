@@ -49,3 +49,14 @@ test("todas as amostras com a mesma carga: sugere essa carga sem divisão por ze
   );
   assert.equal(resultado.cargaSugerida, 15);
 });
+
+test("mesmo RIR relatado em cargas diferentes (inclinação zero): não retorna Infinity", () => {
+  const resultado = sugerirCarga(
+    [
+      { carga: 12, reps: 10, rir_relatado: 2 },
+      { carga: 16, reps: 8, rir_relatado: 2 },
+    ],
+    2
+  );
+  assert.ok(Number.isFinite(resultado.cargaSugerida));
+});

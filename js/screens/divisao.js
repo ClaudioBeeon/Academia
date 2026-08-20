@@ -1,14 +1,14 @@
 // js/screens/divisao.js
 import { getAll } from "../data/db.js";
 import { getUltimaSerieGeral, getSeriesDoDia, getUltimasSessoesPorExercicio, getSeriesDesde } from "../data/historico.js";
-import { obterGrupoDoMusculo, determinarGrupoDaSessao } from "../engine/divisao.js";
+import { obterDiaPorNumero, obterDiaPeloMusculo, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
 import { avaliarAlertasRecuperacao } from "../engine/alertasRecuperacao.js";
 import { avaliarAlertasDesempenho } from "../engine/alertasDesempenho.js";
 import { avaliarAlertasVolume } from "../engine/alertasVolume.js";
 import { registrarCardio, getCardioRecente } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
-import { getGrupoForcado } from "../data/grupoForcado.js";
+import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 
 const MODALIDADES_CARDIO = ["bicicleta", "eliptico", "escada", "caminhada", "corrida"];
 const NOME_MODALIDADE = {
@@ -49,7 +49,7 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente, grupoForcado] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente, ultimoDiaRegistrado] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
     getSeriesDoDia(db, hoje),
@@ -58,11 +58,11 @@ export async function montarTelaDivisao(db) {
     getSeriesDesde(db, subtrairDias(hoje, 6)),
     getAll(db, "exercicios"),
     getCardioRecente(db),
-    getGrupoForcado(db, hoje),
+    getUltimoDiaRegistrado(db),
   ]);
 
-  const grupoDeHoje = grupoForcado ?? determinarGrupoDaSessao(seriesDeHoje, ultimaSerieGeral);
-  const tituloGrupo = grupoDeHoje === "superior" ? "Superior" : "Inferior";
+  const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+  const diaInfo = obterDiaPorNumero(diaDaSessao);
 
   const exercicioPorId = new Map(exercicios.map((e) => [e.id, e]));
   const alertasRecuperacao = avaliarAlertasRecuperacao(checkinsRecentes);
@@ -82,26 +82,26 @@ export async function montarTelaDivisao(db) {
   if (todosAlertas.length > 0) {
     main.appendChild(montarCardAlertas(todosAlertas, exercicioPorId));
   }
-  main.appendChild(montarCardHoje(tituloGrupo));
-  main.appendChild(montarCardCardio(db, hoje, grupoDeHoje, cardioRecente));
+  main.appendChild(montarCardHoje(diaInfo));
+  main.appendChild(montarCardCardio(db, hoje, diaInfo, cardioRecente));
   main.appendChild(montarCardHistorico(todasAsSeries));
 
   return root;
 }
 
-function montarCardCardio(db, hoje, grupoDeHoje, cardioRecente) {
+function montarCardCardio(db, hoje, diaInfo, cardioRecente) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Cardio</div></div>`;
 
   const corpo = document.createElement("div");
   card.appendChild(corpo);
-  renderizarCardio(corpo, db, hoje, grupoDeHoje, cardioRecente, null);
+  renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, null);
 
   return card;
 }
 
-function renderizarCardio(corpo, db, hoje, grupoDeHoje, cardioRecente, avisoRecente) {
+function renderizarCardio(corpo, db, hoje, diaInfo, cardioRecente, avisoRecente) {
   corpo.innerHTML = "";
 
   const form = document.createElement("form");
@@ -139,9 +139,9 @@ function renderizarCardio(corpo, db, hoje, grupoDeHoje, cardioRecente, avisoRece
 
     await registrarCardio(db, { data: hoje, modalidade, duracaoMinutos, intensidadePercebida });
 
-    const avisoCardio = avaliarCardio({ modalidade, grupoDoDia: grupoDeHoje });
+    const avisoCardio = avaliarCardio({ modalidade, ehDiaDePernas: diaInfo.musculos.includes("quadriceps") });
     const atualizado = await getCardioRecente(db);
-    renderizarCardio(corpo, db, hoje, grupoDeHoje, atualizado, avisoCardio);
+    renderizarCardio(corpo, db, hoje, diaInfo, atualizado, avisoCardio);
   });
 
   corpo.appendChild(form);
@@ -194,12 +194,12 @@ function montarCardAlertas(alertas, exercicioPorId) {
   return card;
 }
 
-function montarCardHoje(tituloGrupo) {
+function montarCardHoje(diaInfo) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
-    <div class="exercise-head"><div class="exercise-name">Hoje: ${tituloGrupo}</div></div>
-    <div class="prev-hint" style="padding:0 18px 18px;">Rotação por sessão: o grupo alterna a cada treino registrado, não por dia fixo da semana.</div>
+    <div class="exercise-head"><div class="exercise-name">Hoje: Dia ${diaInfo.numero} — ${diaInfo.titulo}</div></div>
+    <div class="prev-hint" style="padding:0 18px 18px;">Rotação por sessão: o dia avança a cada treino registrado, não por dia fixo da semana.</div>
   `;
   return card;
 }
@@ -224,8 +224,8 @@ function montarCardHistorico(todasAsSeries) {
     lista.innerHTML = `<p class="vazio">Nenhuma sessão registrada ainda.</p>`;
   } else {
     for (const data of datasOrdenadas) {
-      const grupo = obterGrupoDoMusculo(musculoPorData.get(data));
-      const rotulo = grupo === "superior" ? "Superior" : grupo === "inferior" ? "Inferior" : "Grupo não identificado";
+      const diaEncontrado = obterDiaPeloMusculo(musculoPorData.get(data));
+      const rotulo = diaEncontrado ? diaEncontrado.titulo : "Dia não identificado";
       const linha = document.createElement("div");
       linha.className = "prev-hint";
       linha.textContent = `${data} — ${rotulo}`;

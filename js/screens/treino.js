@@ -2,6 +2,7 @@
 import { get, getAll } from "../data/db.js";
 import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
+import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
 import { avaliarProgressao } from "../engine/progressao.js";
@@ -64,6 +65,7 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
 
   const main = document.createElement("main");
   root.appendChild(main);
+  main.appendChild(await montarCardCheckin(db, hoje));
 
   const resumoCard = montarCardResumoSessao();
   const atualizarResumo = async () => {
@@ -88,6 +90,97 @@ export async function montarTelaTreino(db, { onAbrirHistorico } = {}) {
   main.appendChild(resumoCard);
 
   return root;
+}
+
+async function montarCardCheckin(db, hoje) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Check-in de hoje</div></div>`;
+
+  const corpo = document.createElement("div");
+  card.appendChild(corpo);
+
+  const checkinExistente = await getCheckin(db, hoje);
+  if (checkinExistente) {
+    renderizarResumoCheckin(corpo, db, hoje, checkinExistente);
+  } else {
+    renderizarFormularioCheckin(corpo, db, hoje);
+  }
+
+  return card;
+}
+
+function renderizarResumoCheckin(corpo, db, hoje, checkin) {
+  corpo.innerHTML = "";
+
+  const resumo = document.createElement("div");
+  resumo.className = "prev-hint";
+  resumo.style.padding = "0 18px 18px";
+  const partes = [`Qualidade: ${checkin.qualidadePercebida}/5`];
+  if (checkin.bemEstarBaixo) partes.push("sono/motivação baixos");
+  if (checkin.dorArticularOuTendinea) partes.push("dor articular/tendínea");
+  if (checkin.domsPersistente) partes.push("dor muscular residual");
+  resumo.textContent = partes.join(" · ");
+  corpo.appendChild(resumo);
+
+  const editarBtn = document.createElement("button");
+  editarBtn.type = "button";
+  editarBtn.className = "swap-pill";
+  editarBtn.textContent = "Editar";
+  editarBtn.style.margin = "0 18px 18px";
+  editarBtn.addEventListener("click", () => renderizarFormularioCheckin(corpo, db, hoje, checkin));
+  corpo.appendChild(editarBtn);
+}
+
+function renderizarFormularioCheckin(corpo, db, hoje, checkinExistente) {
+  corpo.innerHTML = "";
+
+  const form = document.createElement("form");
+  form.className = "sets";
+  form.style.padding = "0 18px 18px";
+  form.innerHTML = `
+    <div class="set-field" style="grid-column:1/-1;">
+      <label>Como foi a sessão hoje, no geral? (1-5)</label>
+      <select name="qualidadePercebida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+        <option value="1">1 — muito ruim</option>
+        <option value="2">2 — ruim</option>
+        <option value="3">3 — neutra</option>
+        <option value="4">4 — boa</option>
+        <option value="5">5 — muito boa</option>
+      </select>
+    </div>
+    <div class="set-field" style="grid-column:1/-1;">
+      <label><input type="checkbox" name="bemEstarBaixo" /> Sono ruim, motivação baixa ou irritação sustentada hoje?</label>
+    </div>
+    <div class="set-field" style="grid-column:1/-1;">
+      <label><input type="checkbox" name="dorArticularOuTendinea" /> Alguma dor articular ou de tendão persistente?</label>
+    </div>
+    <div class="set-field" style="grid-column:1/-1;">
+      <label><input type="checkbox" name="domsPersistente" /> Ainda com dor muscular do treino anterior?</label>
+    </div>
+    <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
+  `;
+
+  if (checkinExistente) {
+    form.qualidadePercebida.value = String(checkinExistente.qualidadePercebida ?? 3);
+    form.bemEstarBaixo.checked = !!checkinExistente.bemEstarBaixo;
+    form.dorArticularOuTendinea.checked = !!checkinExistente.dorArticularOuTendinea;
+    form.domsPersistente.checked = !!checkinExistente.domsPersistente;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const campos = {
+      qualidadePercebida: Number(form.qualidadePercebida.value),
+      bemEstarBaixo: form.bemEstarBaixo.checked,
+      dorArticularOuTendinea: form.dorArticularOuTendinea.checked,
+      domsPersistente: form.domsPersistente.checked,
+    };
+    const salvo = await registrarCheckin(db, hoje, campos);
+    renderizarResumoCheckin(corpo, db, hoje, salvo);
+  });
+
+  corpo.appendChild(form);
 }
 
 function montarCardResumoSessao() {

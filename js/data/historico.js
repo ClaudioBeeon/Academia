@@ -33,3 +33,7 @@ export async function getHistoricoCompletoDoExercicio(db, exercicioId) {
   const doExercicio = await getAllByIndex(db, "historicoSeries", "exercicioId", exercicioId);
   return doExercicio.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
 }
+
+export function getSeriesDoDia(db, data) {
+  return getAllByIndex(db, "historicoSeries", "data", data);
+}

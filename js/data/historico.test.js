@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio } from "./historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia } from "./historico.js";
 
 test("registrarSerie grava e getSeriesDoExercicioNaData filtra por exercício e data", async () => {
   const db = await openDatabase();
@@ -77,5 +77,17 @@ test("getHistoricoCompletoDoExercicio retorna todas as séries, mais recente pri
   const historico = await getHistoricoCompletoDoExercicio(db, "g");
   assert.equal(historico.length, 2);
   assert.equal(historico[0].data, "2026-08-08");
+  db.close();
+});
+
+test("getSeriesDoDia retorna todas as séries de todos os exercícios numa data", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "h", data: "2026-08-21", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2 });
+  await registrarSerie(db, { exercicioId: "i", data: "2026-08-21", musculo: "costas", contribuicao: 1, tipoSerie: "normal", carga: 20, reps: 8, rir: 1 });
+  await registrarSerie(db, { exercicioId: "h", data: "2026-08-20", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 9, reps: 10, rir: 2 });
+
+  const seriesDoDia = await getSeriesDoDia(db, "2026-08-21");
+  assert.equal(seriesDoDia.length, 2);
+  assert.ok(seriesDoDia.every((s) => s.data === "2026-08-21"));
   db.close();
 });

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase } from "./db.js";
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior, getUltimasSessoesPorExercicio } from "./historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDoDia, getUltimaSerieGeral, getSeriesDaUltimaSessaoAnterior, getUltimasSessoesPorExercicio, getSeriesDesde } from "./historico.js";
 
 test("getUltimaSerieGeral retorna undefined quando não há nenhuma série", async () => {
   const db = await openDatabase();
@@ -166,5 +166,18 @@ test("getUltimasSessoesPorExercicio exclui séries de aquecimento e respeita o l
   assert.equal(entrada.sessoes[0].data, "2026-08-15");
   assert.equal(entrada.sessoes[1].data, "2026-08-08");
   assert.ok(entrada.sessoes.every((s) => s.series.every((serie) => serie.tipoSerie !== "aquecimento")));
+  db.close();
+});
+
+test("getSeriesDesde retorna só séries com data >= dataCorte", async () => {
+  const db = await openDatabase();
+  await registrarSerie(db, { exercicioId: "s", data: "2026-08-10", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2 });
+  await registrarSerie(db, { exercicioId: "s", data: "2026-08-14", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2 });
+  await registrarSerie(db, { exercicioId: "s", data: "2026-08-20", musculo: "peito", contribuicao: 1, tipoSerie: "normal", carga: 10, reps: 10, rir: 2 });
+
+  const resultado = await getSeriesDesde(db, "2026-08-14");
+  const doExercicio = resultado.filter((s) => s.exercicioId === "s");
+  assert.equal(doExercicio.length, 2);
+  assert.ok(doExercicio.every((s) => s.data >= "2026-08-14"));
   db.close();
 });

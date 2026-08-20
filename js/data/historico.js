@@ -52,6 +52,11 @@ export async function getSeriesDaUltimaSessaoAnterior(db, exercicioId, dataAtual
   return anteriores.filter((s) => s.data === dataMaisRecente);
 }
 
+export async function getSeriesDesde(db, dataCorte) {
+  const todas = await getAll(db, "historicoSeries");
+  return todas.filter((s) => s.data >= dataCorte);
+}
+
 export async function getUltimasSessoesPorExercicio(db, limitePorExercicio = 10) {
   const todas = await getAll(db, "historicoSeries");
   const porExercicio = new Map();

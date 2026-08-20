@@ -1,16 +1,22 @@
 // sw.js
-const CACHE_NAME = "app-treino-shell-v1";
+const CACHE_NAME = "app-treino-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./css/tokens.css",
   "./css/styles.css",
   "./js/app.js",
   "./js/data/db.js",
   "./js/data/seed.js",
+  "./js/data/historico.js",
   "./js/engine/progressao.js",
   "./js/engine/volume.js",
   "./js/engine/rir.js",
+  "./js/engine/cargas.js",
+  "./js/engine/substituicao.js",
+  "./js/screens/treino.js",
+  "./js/screens/timer.js",
   "./data/perfil.json",
   "./data/protocolo.json",
   "./data/exercicios.json",

@@ -187,44 +187,46 @@ async function montarCardExercicio(db, exercicio, todosExercicios, protocolo, ho
     if (onAbrirHistorico) onAbrirHistorico(exercicio);
   });
 
-  const ferramentasPill = document.createElement("button");
-  ferramentasPill.type = "button";
-  ferramentasPill.className = "swap-pill";
-  ferramentasPill.textContent = "Ferramentas";
-  ferramentasPill.style.margin = "0 18px 12px";
-  card.insertBefore(ferramentasPill, card.querySelector(".sets"));
+  if (exercicio.equipamento === "barra") {
+    const ferramentasPill = document.createElement("button");
+    ferramentasPill.type = "button";
+    ferramentasPill.className = "swap-pill";
+    ferramentasPill.textContent = "Ferramentas";
+    ferramentasPill.style.margin = "0 18px 12px";
+    card.insertBefore(ferramentasPill, card.querySelector(".sets"));
 
-  const painelFerramentas = document.createElement("div");
-  painelFerramentas.className = "sets";
-  painelFerramentas.style.display = "none";
-  painelFerramentas.style.padding = "0 18px 12px";
-  card.insertBefore(painelFerramentas, card.querySelector(".sets"));
+    const painelFerramentas = document.createElement("div");
+    painelFerramentas.className = "sets";
+    painelFerramentas.style.display = "none";
+    painelFerramentas.style.padding = "0 18px 12px";
+    card.insertBefore(painelFerramentas, card.querySelector(".sets"));
 
-  ferramentasPill.addEventListener("click", () => {
-    const abrindo = painelFerramentas.style.display === "none";
-    painelFerramentas.style.display = abrindo ? "flex" : "none";
-    if (abrindo) {
-      const pesoAlvo = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : equipamento.pesoBarra);
-      const anilhas = calcularAnilhas(pesoAlvo, equipamento.pesoBarra, equipamento.anilhasDisponiveis);
-      const aquecimento = gerarEscadaAquecimento(pesoAlvo, equipamento.pesoBarra);
+    ferramentasPill.addEventListener("click", () => {
+      const abrindo = painelFerramentas.style.display === "none";
+      painelFerramentas.style.display = abrindo ? "flex" : "none";
+      if (abrindo) {
+        const pesoAlvo = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : equipamento.pesoBarra);
+        const anilhas = calcularAnilhas(pesoAlvo, equipamento.pesoBarra, equipamento.anilhasDisponiveis);
+        const aquecimento = gerarEscadaAquecimento(pesoAlvo, equipamento.pesoBarra);
 
-      const textoAnilhas = anilhas.anilhasPorLado.length > 0
-        ? `${anilhas.anilhasPorLado.join(" + ")} kg por lado`
-        : "Sem anilhas — só a barra";
-      const textoAquecimento = aquecimento
-        .map((p) => `${p.peso} kg × ${p.reps}`)
-        .join(" → ");
+        const textoAnilhas = anilhas.anilhasPorLado.length > 0
+          ? `${anilhas.anilhasPorLado.join(" + ")} kg por lado`
+          : "Sem anilhas — só a barra";
+        const textoAquecimento = aquecimento
+          .map((p) => `${p.peso} kg × ${p.reps}`)
+          .join(" → ");
 
-      painelFerramentas.innerHTML = `
-        <div class="prev-hint" style="grid-column:1/-1;">
-          <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
-        </div>
-        <div class="prev-hint" style="grid-column:1/-1;">
-          <b>Aquecimento:</b> ${textoAquecimento || "—"}
-        </div>
-      `;
-    }
-  });
+        painelFerramentas.innerHTML = `
+          <div class="prev-hint" style="grid-column:1/-1;">
+            <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
+          </div>
+          <div class="prev-hint" style="grid-column:1/-1;">
+            <b>Aquecimento:</b> ${textoAquecimento || "—"}
+          </div>
+        `;
+      }
+    });
+  }
 
   return card;
 }

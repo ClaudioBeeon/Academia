@@ -121,7 +121,7 @@ async function criarSecaoEquipamento(db) {
       .split(",")
       .map((v) => Number(v.trim()))
       .filter((v) => Number.isFinite(v) && v > 0);
-    if (!pesoBarra || anilhasDisponiveis.length === 0) {
+    if (!(pesoBarra > 0) || anilhasDisponiveis.length === 0) {
       status.textContent = "Preencha o peso da barra e ao menos uma anilha válida.";
       return;
     }

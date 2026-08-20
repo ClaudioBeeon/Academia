@@ -1,6 +1,8 @@
 // js/screens/evolucao.js
 import { getAll } from "../data/db.js";
 import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
+import { getMedidas, registrarMedida } from "../data/medidas.js";
+import { prepararSerieTemporal } from "../engine/medidas.js";
 
 export async function montarTelaEvolucao(db) {
   const root = document.createElement("div");
@@ -14,18 +16,20 @@ export async function montarTelaEvolucao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [exercicios, todasAsSeries] = await Promise.all([
+  const [exercicios, todasAsSeries, linhasMedidas] = await Promise.all([
     getAll(db, "exercicios"),
     getAll(db, "historicoSeries"),
+    getMedidas(db),
   ]);
 
   if (todasAsSeries.length === 0) {
     main.innerHTML = `<p class="vazio">Sem treinos registrados ainda.</p>`;
-    return root;
+  } else {
+    montarSecaoCarga(main, exercicios, todasAsSeries);
+    montarSecaoVolume(main, todasAsSeries);
   }
 
-  montarSecaoCarga(main, exercicios, todasAsSeries);
-  montarSecaoVolume(main, todasAsSeries);
+  montarSecaoMedidas(main, db, linhasMedidas);
 
   return root;
 }
@@ -67,7 +71,7 @@ function montarSecaoCarga(main, exercicios, todasAsSeries) {
       container.innerHTML = `<p class="prev-hint">Sem dados suficientes para este exercício.</p>`;
       return;
     }
-    container.appendChild(criarSvgLinha(pontos));
+    container.appendChild(criarSvgLinha(pontos.map((p) => ({ data: p.data, valor: p.carga1RM }))));
   };
 
   select.addEventListener("change", () => desenhar(select.value));
@@ -118,7 +122,7 @@ function criarSvgLinha(pontos) {
   const altura = 140;
   const margem = 24;
 
-  const valores = pontos.map((p) => p.carga1RM);
+  const valores = pontos.map((p) => p.valor);
   const minValor = Math.min(...valores);
   const maxValor = Math.max(...valores);
   const faixa = maxValor - minValor || 1;
@@ -137,7 +141,7 @@ function criarSvgLinha(pontos) {
   const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
   polyline.setAttribute(
     "points",
-    pontos.map((p, i) => `${escalaX(i)},${escalaY(p.carga1RM)}`).join(" ")
+    pontos.map((p, i) => `${escalaX(i)},${escalaY(p.valor)}`).join(" ")
   );
   polyline.setAttribute("fill", "none");
   polyline.setAttribute("stroke", "var(--accent)");
@@ -147,7 +151,7 @@ function criarSvgLinha(pontos) {
   pontos.forEach((p, i) => {
     const circulo = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     circulo.setAttribute("cx", escalaX(i));
-    circulo.setAttribute("cy", escalaY(p.carga1RM));
+    circulo.setAttribute("cy", escalaY(p.valor));
     circulo.setAttribute("r", "3");
     circulo.setAttribute("fill", "var(--accent)");
     svg.appendChild(circulo);
@@ -212,4 +216,92 @@ function criarSvgBarras(semanas) {
   svg.appendChild(rotuloUltima);
 
   return svg;
+}
+
+function montarSecaoMedidas(main, db, linhasIniciais) {
+  let linhas = linhasIniciais;
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Medidas corporais</div></div>
+    <form class="sets medidas-form" style="padding:0 18px 18px;">
+      <div class="set-field">
+        <label>Data</label>
+        <input name="data" type="date" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field">
+        <label>Peso (kg)</label>
+        <input name="peso_kg" type="number" step="0.1" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field">
+        <label>Cintura (cm)</label>
+        <input name="cintura_cm" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field">
+        <label>% Gordura</label>
+        <input name="percentualGordura" type="number" step="0.1" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Registrar</button>
+      <div class="prev-hint medidas-status" style="grid-column:1/-1;"></div>
+    </form>
+    <div class="sets medidas-graficos" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:16px;"></div>
+  `;
+  main.appendChild(card);
+
+  const form = card.querySelector(".medidas-form");
+  form.querySelector('input[name="data"]').valueAsDate = new Date();
+  const status = card.querySelector(".medidas-status");
+  const graficosContainer = card.querySelector(".medidas-graficos");
+
+  const METRICAS = [
+    { campo: "peso_kg", titulo: "Peso (kg)" },
+    { campo: "cintura_cm", titulo: "Cintura (cm)" },
+    { campo: "percentualGordura", titulo: "% Gordura" },
+  ];
+
+  const desenharGraficos = () => {
+    graficosContainer.innerHTML = "";
+    for (const { campo, titulo } of METRICAS) {
+      const pontos = prepararSerieTemporal(linhas, campo);
+      if (pontos.length === 0) continue;
+      const subCard = document.createElement("div");
+      const rotulo = document.createElement("div");
+      rotulo.className = "exercise-name";
+      rotulo.style.fontSize = "0.85rem";
+      rotulo.style.marginBottom = "6px";
+      rotulo.textContent = titulo;
+      subCard.appendChild(rotulo);
+      subCard.appendChild(criarSvgLinha(pontos));
+      graficosContainer.appendChild(subCard);
+    }
+  };
+  desenharGraficos();
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const data = form.querySelector('input[name="data"]').value;
+    const peso_kg = form.querySelector('input[name="peso_kg"]').value;
+    const cintura_cm = form.querySelector('input[name="cintura_cm"]').value;
+    const percentualGordura = form.querySelector('input[name="percentualGordura"]').value;
+
+    if (!data || (!peso_kg && !cintura_cm && !percentualGordura)) {
+      status.textContent = "Preencha a data e ao menos uma medida.";
+      return;
+    }
+
+    await registrarMedida(db, {
+      data,
+      peso_kg: peso_kg ? Number(peso_kg) : undefined,
+      cintura_cm: cintura_cm ? Number(cintura_cm) : undefined,
+      percentualGordura: percentualGordura ? Number(percentualGordura) : undefined,
+    });
+
+    linhas = await getMedidas(db);
+    status.textContent = "Medida registrada.";
+    form.querySelector('input[name="peso_kg"]').value = "";
+    form.querySelector('input[name="cintura_cm"]').value = "";
+    form.querySelector('input[name="percentualGordura"]').value = "";
+    desenharGraficos();
+  });
 }

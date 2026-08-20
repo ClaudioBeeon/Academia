@@ -1,0 +1,11 @@
+{
+  "name": "app-treino",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test js/**/*.test.js"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.0.0"
+  }
+}

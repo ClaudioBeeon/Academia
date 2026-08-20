@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
-import { openDatabase } from "./db.js";
-import { registrarCardio, getCardioDoDia, getCardioRecente } from "./cardio.js";
+import { openDatabase, clearStore } from "./db.js";
+import { registrarCardio, getCardioDoDia, getCardioRecente, getCardioDesde } from "./cardio.js";
 
 test("getCardioRecente retorna vazio quando não há registros", async () => {
   const db = await openDatabase();
@@ -32,5 +32,26 @@ test("getCardioRecente ordena do mais recente pro mais antigo e respeita o limit
   assert.equal(resultado.length, 2);
   assert.equal(resultado[0].data, "2030-07-10");
   assert.equal(resultado[1].data, "2030-07-05");
+  db.close();
+});
+
+test("getCardioDesde retorna vazio quando não há registros", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosCardio");
+  const resultado = await getCardioDesde(db, "2026-08-14");
+  assert.deepEqual(resultado, []);
+  db.close();
+});
+
+test("getCardioDesde retorna só registros na data de corte ou depois", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosCardio");
+  await registrarCardio(db, { data: "2026-08-10", modalidade: "bicicleta", duracaoMinutos: 30, intensidadePercebida: 2 });
+  await registrarCardio(db, { data: "2026-08-15", modalidade: "corrida", duracaoMinutos: 25, intensidadePercebida: 4 });
+  await registrarCardio(db, { data: "2026-08-20", modalidade: "elíptico", duracaoMinutos: 20, intensidadePercebida: 3 });
+
+  const resultado = await getCardioDesde(db, "2026-08-14");
+  assert.equal(resultado.length, 2);
+  assert.ok(resultado.every((r) => r.data >= "2026-08-14"));
   db.close();
 });

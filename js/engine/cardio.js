@@ -26,7 +26,7 @@ export function avaliarCardio({ modalidade, intensidadePercebida, ehDiaDePernas,
   if (cardiosIntensosUltimos7Dias >= 5) {
     alertas.push({
       tipo: "frequencia_alta",
-      mensagem: "Você já tem 4 ou mais sessões de cardio moderado/intenso nos últimos 7 dias — a faixa recomendada é 3-4x por semana.",
+      mensagem: "Você já tem 5 ou mais sessões de cardio moderado/intenso nos últimos 7 dias — a faixa recomendada é 3-4x por semana.",
       principio: "regrasCardio",
     });
   }

@@ -9,6 +9,12 @@ const DESLOCAMENTO_PX = 32;
 
 export async function trocarConteudo(container, montarNovaTela, { direcao = "trocarAba" } = {}) {
   const atual = container.firstElementChild;
+  // Qualquer nó que não seja um elemento (texto solto, por exemplo) nunca é
+  // animado nem removido pela lógica abaixo — limpa isso aqui pra não
+  // acumular lixo no container a cada troca de tela.
+  for (const no of [...container.childNodes]) {
+    if (no !== atual) no.remove();
+  }
   const novaTela = await montarNovaTela();
 
   const saidaX = direcao === "avancar" ? -DESLOCAMENTO_PX * 0.4 : direcao === "voltar" ? DESLOCAMENTO_PX * 0.4 : 0;

@@ -7,6 +7,7 @@ import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
+import { montarTelaHistorico } from "./historico.js";
 import { trocarConteudo } from "./transicaoTela.js";
 
 function obterDataLocal() {
@@ -17,7 +18,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico } = {}) {
+export async function montarFluxoSessao(db, { onVoltarParaHoje } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -36,9 +37,11 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
 
   const root = document.createElement("div");
   let estadoAtual = "fila";
+  let estadoAntesDoHistorico = "fila";
   let indiceExercicioAtual = 0;
   let explicacaoJaMostrada = false;
   let telaAtual = null;
+  let historicoExercicio = null;
   const prsDaSessao = [];
 
   const persistirDiaSeNecessario = async () => {
@@ -97,9 +100,21 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
             }
             await renderizar("avancar");
           },
-          onAbrirHistorico,
+          onAbrirHistorico: async (exercicio) => {
+            historicoExercicio = exercicio;
+            estadoAntesDoHistorico = estadoAtual;
+            estadoAtual = "historico";
+            await renderizar("avancar");
+          },
           onSerieRegistrada: persistirDiaSeNecessario,
           onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
+        });
+      }
+
+      if (estadoAtual === "historico") {
+        return montarTelaHistorico(db, historicoExercicio, async () => {
+          estadoAtual = estadoAntesDoHistorico;
+          await renderizar("voltar");
         });
       }
 

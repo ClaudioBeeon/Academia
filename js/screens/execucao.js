@@ -42,6 +42,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const cfg = obterConfigExercicio(protocolo, exercicio);
   let cronometroAtivo = null;
   let wakeLockAtivo = null;
+  let numeroEmAndamento = null;
+  let cronometroTrabalho = null;
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
   const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
@@ -228,6 +230,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
           <div class="exec-serie-chk"><i>✓</i></div>
           <div class="exec-serie-info"><h5>${feita.carga} kg · ${feita.reps} reps</h5><p>RIR ${feita.rir}</p></div>
         `;
+      } else if (numero === pendente && numero === numeroEmAndamento) {
+        row.innerHTML = `
+          <div class="exec-serie-chk off">${numero}</div>
+          <div class="exec-serie-info"><h5>Em andamento… <span class="crono-trabalho">00:00</span></h5></div>
+        `;
       } else if (numero === pendente) {
         row.innerHTML = `
           <div class="exec-serie-chk off">${numero}</div>
@@ -245,7 +252,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   function renderizarFooter() {
     const pendente = numeroPendenteAtual();
-    if (pendente == null) {
+    if (numeroEmAndamento != null) {
+      primarioBtn.textContent = "Iniciar descanso";
+      cargaPillEl.disabled = true;
+      cargaPillEl.style.opacity = "0.5";
+    } else if (pendente == null) {
       primarioBtn.textContent = "Concluir exercício";
       cargaPillEl.disabled = true;
       cargaPillEl.style.opacity = "0.5";
@@ -277,10 +288,40 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       cronometroAtivo.parar();
       cronometroAtivo = null;
     }
+    pararTrabalho();
     if (wakeLockAtivo) {
       wakeLockAtivo.release().catch(() => {});
       wakeLockAtivo = null;
     }
+  }
+
+  function pararTrabalho() {
+    if (cronometroTrabalho) {
+      cronometroTrabalho.parar();
+      cronometroTrabalho = null;
+    }
+  }
+
+  function iniciarTrabalho(numero) {
+    numeroEmAndamento = numero;
+    let segundos = 0;
+    const atualizar = () => {
+      const el = seriesListEl.querySelector(".crono-trabalho");
+      if (!el) return;
+      const min = String(Math.floor(segundos / 60)).padStart(2, "0");
+      const seg = String(segundos % 60).padStart(2, "0");
+      el.textContent = `${min}:${seg}`;
+    };
+    const intervalId = setInterval(() => { segundos++; atualizar(); }, 1000);
+    cronometroTrabalho = { parar: () => clearInterval(intervalId) };
+    renderizarTudo();
+  }
+
+  async function finalizarTrabalhoERegistrar() {
+    const numero = numeroEmAndamento;
+    pararTrabalho();
+    numeroEmAndamento = null;
+    await registrarSerieAtual(numero);
   }
 
   function iniciarDescanso(descansoSegundos) {
@@ -367,12 +408,16 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   });
   const primarioBtn = rodape.querySelector(".primario-btn");
   primarioBtn.addEventListener("click", async () => {
+    if (numeroEmAndamento != null) {
+      await finalizarTrabalhoERegistrar();
+      return;
+    }
     const pendente = numeroPendenteAtual();
     if (pendente == null) {
       if (onProximoExercicio) onProximoExercicio();
       return;
     }
-    await registrarSerieAtual(pendente);
+    iniciarTrabalho(pendente);
   });
   root.appendChild(rodape);
 

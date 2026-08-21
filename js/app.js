@@ -4,11 +4,17 @@ import { seedIfNeeded } from "./data/seed.js";
 import { montarTelaTreino } from "./screens/treino.js";
 import { montarFluxoSessao } from "./screens/sessao.js";
 import { montarTelaBiblioteca } from "./screens/biblioteca.js";
-import { montarTelaHistorico } from "./screens/historico.js";
 import { montarTelaConfig } from "./screens/config.js";
 import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
+
+function criarMensagem(texto) {
+  const div = document.createElement("div");
+  div.className = "vazio";
+  div.textContent = texto;
+  return div;
+}
 
 async function bootstrap() {
   if ("serviceWorker" in navigator) {
@@ -42,7 +48,6 @@ function renderShell(db) {
           onIrParaCardio: () => renderTab("divisao"),
           onComecarTreino: () => trocarConteudo(content, () => montarFluxoSessao(db, {
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
-            onAbrirHistorico: (exercicio) => trocarConteudo(content, () => montarTelaHistorico(db, exercicio, () => renderTab("hoje", "voltar")), { direcao: "avancar" }),
           }), { direcao: "avancar" }),
         }), { direcao });
         return;
@@ -61,10 +66,10 @@ function renderShell(db) {
         await trocarConteudo(content, () => montarTelaDivisao(db), { direcao });
         return;
       }
-      content.textContent = `Tela "${tabName}" ainda não implementada (vem depois).`;
+      await trocarConteudo(content, () => criarMensagem(`Tela "${tabName}" ainda não implementada (vem depois).`), { direcao });
     } catch (err) {
       console.error(`Falha ao renderizar a aba "${tabName}":`, err);
-      content.textContent = "Não foi possível carregar esta tela. Tente novamente ou importe seu último backup nas Configurações.";
+      await trocarConteudo(content, () => criarMensagem("Não foi possível carregar esta tela. Tente novamente ou importe seu último backup nas Configurações."), { direcao });
     }
   };
 

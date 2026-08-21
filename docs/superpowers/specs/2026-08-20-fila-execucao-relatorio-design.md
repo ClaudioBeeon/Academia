@@ -109,12 +109,17 @@ Relatório ──[Concluir]──▶ Hoje
   via `calcularEstatisticasSessao` (já existe, sem mudança).
 - PRs da sessão: lista dos PRs acumulados durante a Execução (passados
   pelo orquestrador, não recalculados aqui).
-- Check-in embutido: mesmo componente de formulário já usado no card de
-  check-in da Home (`renderizarFormularioCheckin`/
-  `renderizarResumoCheckin` de `treino.js`) — extraído pra um módulo
-  compartilhado nesta fatia, já que agora tem 2 consumidores (Home e
-  Relatório) em vez de 1.
 - Botão "Concluir" → volta pra Hoje.
+
+**Ruling pós-implementação (revisão final, 2026-08-20):** o check-in
+embutido no Relatório foi cortado do escopo desta fatia. Justificativa:
+o card de check-in já existe e continua funcional na Home, que é
+exatamente a tela pra onde "Concluir" leva o usuário — o check-in
+continua a um toque de distância do fim da sessão, só que numa tela em
+vez de dentro do Relatório. Extrair `renderizarFormularioCheckin`/
+`renderizarResumoCheckin` pra um módulo compartilhado só pra evitar
+esse toque extra não paga o custo agora. Fica pra uma fatia futura se
+o usuário sentir falta na prática.
 
 ## 7. Mudança na Home (`js/screens/treino.js`)
 

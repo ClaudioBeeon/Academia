@@ -111,7 +111,11 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   carrossel.appendChild(montarCardCardio(ultimoCardio, onIrParaCardio));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
-    carrossel.appendChild(montarChipProximoDia(obterDiaPorNumero(numero), () => {
+    const diaFuturoInfo = obterDiaPorNumero(numero);
+    const { exerciciosHoje: exerciciosDoDiaFuturo } = prepararSessaoDoDia({
+      todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo,
+    });
+    carrossel.appendChild(montarCardProximoDia(diaFuturoInfo, exerciciosDoDiaFuturo, () => {
       if (onAbrirDia) onAbrirDia(numero);
     }));
   }
@@ -235,7 +239,7 @@ const NOME_MODALIDADE_CARDIO = {
 
 function montarCardCardio(ultimoCardio, onIrParaCardio) {
   const card = document.createElement("section");
-  card.className = "plano-hero alt";
+  card.className = "plano-hero";
 
   const rotulo = document.createElement("div");
   rotulo.className = "rotulo";
@@ -278,17 +282,23 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
   return card;
 }
 
-function montarChipProximoDia(dia, aoClicar) {
-  const chip = document.createElement("button");
-  chip.type = "button";
-  chip.className = "dia-chip";
-  chip.innerHTML = `
-    <div class="num">Dia ${dia.numero}</div>
-    <div class="titulo">${dia.titulo}</div>
-    <div class="musc">${dia.musculos.join(", ")}</div>
+function montarCardProximoDia(dia, exerciciosDoDia, aoClicar) {
+  const totalSeries = exerciciosDoDia.length * 3;
+  const minutosEstimados = exerciciosDoDia.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+  const card = document.createElement("section");
+  card.className = "plano-hero alt clicavel";
+  card.innerHTML = `
+    <div class="rotulo">Dia ${dia.numero}</div>
+    <h2>${dia.titulo}</h2>
+    <div class="meta">
+      <span><b>${exerciciosDoDia.length}</b> exercícios</span>
+      <span><b>${totalSeries}</b> séries</span>
+      <span>~<b>${minutosEstimados}</b> min</span>
+    </div>
+    <button type="button">Ver treino</button>
   `;
-  chip.addEventListener("click", aoClicar);
-  return chip;
+  card.addEventListener("click", aoClicar);
+  return card;
 }
 
 function formatarMinutosAtivos(minutos) {

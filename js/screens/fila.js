@@ -1,5 +1,6 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
+import { criarIconeExercicio } from "./iconeExercicio.js";
 
 export async function montarTelaFila(db, contexto, callbacks) {
   const { diaInfo, exerciciosHoje, hoje } = contexto;
@@ -53,13 +54,16 @@ export async function montarTelaFila(db, contexto, callbacks) {
     item.className = "exercise-card fila-item fila-item-" + estados[indice];
     item.innerHTML = `
       <div class="exercise-head">
-        <div>
-          <div class="exercise-name"></div>
-          <div class="exercise-meta"></div>
+        <div class="fila-item-info">
+          <div>
+            <div class="exercise-name"></div>
+            <div class="exercise-meta"></div>
+          </div>
         </div>
         <div class="fila-status"></div>
       </div>
     `;
+    item.querySelector(".fila-item-info").prepend(criarIconeExercicio(exercicio.id, 52));
     item.querySelector(".exercise-name").textContent = exercicio.nome;
     item.querySelector(".exercise-meta").textContent = exercicio.musculoPrimario;
     const statusEl = item.querySelector(".fila-status");

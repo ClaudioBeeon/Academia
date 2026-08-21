@@ -1,5 +1,6 @@
 // js/screens/biblioteca.js
 import { getAll, put } from "../data/db.js";
+import { criarIconeExercicio } from "./iconeExercicio.js";
 
 export async function montarTelaBiblioteca(db, { aoVoltar } = {}) {
   const root = document.createElement("div");
@@ -41,12 +42,15 @@ function criarLinhaExercicio(db, exercicio) {
   const head = document.createElement("div");
   head.className = "exercise-head";
   head.innerHTML = `
-    <div>
-      <div class="exercise-name"></div>
-      <div class="exercise-meta"></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div>
+        <div class="exercise-name"></div>
+        <div class="exercise-meta"></div>
+      </div>
     </div>
     <button class="swap-pill editar-pill" type="button">Editar</button>
   `;
+  head.querySelector("div").prepend(criarIconeExercicio(exercicio.id, 48));
   head.querySelector(".exercise-name").textContent = exercicio.nome;
   head.querySelector(".exercise-meta").textContent = `${exercicio.musculoPrimario} · ${exercicio.tipo}`;
   card.appendChild(head);

@@ -43,6 +43,10 @@ test("determinarDiaDaSessao mantém o dia já decidido hoje", () => {
   assert.equal(determinarDiaDaSessao({ dia: 3, data: "2026-08-21" }, "2026-08-21"), 3);
 });
 
+test("determinarDiaDaSessao avança pro próximo dia hoje mesmo quando marcado concluído", () => {
+  assert.equal(determinarDiaDaSessao({ dia: 3, data: "2026-08-21", concluido: true }, "2026-08-21"), 4);
+});
+
 test("determinarDiaDaSessao avança pro próximo dia quando o registro é de outra data", () => {
   assert.equal(determinarDiaDaSessao({ dia: 3, data: "2026-08-20" }, "2026-08-21"), 4);
 });

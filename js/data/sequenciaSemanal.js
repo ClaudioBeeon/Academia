@@ -5,6 +5,6 @@ export async function getUltimoDiaRegistrado(db) {
   return salvo ?? null;
 }
 
-export function registrarDiaDaSessao(db, dia, data) {
-  return put(db, "config", { chave: "sequenciaSemanal", dia, data });
+export function registrarDiaDaSessao(db, dia, data, concluido = false) {
+  return put(db, "config", { chave: "sequenciaSemanal", dia, data, concluido });
 }

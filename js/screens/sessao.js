@@ -115,6 +115,8 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
         onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
       });
     } else {
+      await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
+      diaPersistido = true;
       tela = await montarTelaRelatorio(db, { hoje, prsDaSessao }, {
         onConcluir: onVoltarParaHoje,
       });

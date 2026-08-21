@@ -20,6 +20,14 @@ test("registrarDiaDaSessao grava e getUltimoDiaRegistrado lê de volta", async (
   db.close();
 });
 
+test("registrarDiaDaSessao grava concluido quando informado", async () => {
+  const db = await openDatabase();
+  await registrarDiaDaSessao(db, 3, "2026-08-21", true);
+  const resultado = await getUltimoDiaRegistrado(db);
+  assert.equal(resultado.concluido, true);
+  db.close();
+});
+
 test("registrarDiaDaSessao sobrescreve o valor anterior", async () => {
   const db = await openDatabase();
   await registrarDiaDaSessao(db, 1, "2026-08-20");

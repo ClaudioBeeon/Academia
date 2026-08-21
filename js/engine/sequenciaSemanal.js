@@ -30,7 +30,9 @@ export function proximoDia(numeroAtual) {
 
 export function determinarDiaDaSessao(ultimoRegistro, hoje) {
   if (!ultimoRegistro) return 1;
-  if (ultimoRegistro.data === hoje) return ultimoRegistro.dia;
+  if (ultimoRegistro.data === hoje) {
+    return ultimoRegistro.concluido ? proximoDia(ultimoRegistro.dia) : ultimoRegistro.dia;
+  }
   return proximoDia(ultimoRegistro.dia);
 }
 

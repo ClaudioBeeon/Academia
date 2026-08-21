@@ -8,7 +8,6 @@ import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
 import { abrirSeletorCarga } from "./seletorCarga.js";
-import { criarIconeExercicio } from "./iconeExercicio.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO = 3;
@@ -57,72 +56,45 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   const header = document.createElement("header");
   header.className = "top";
+  header.style.alignItems = "center";
   header.innerHTML = `
-    <div>
-      <div class="date-label">Exercício ${indice} de ${total}</div>
-      <div class="day-title"></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">←</button>
+      <div>
+        <div class="date-label">Exercício ${indice} de ${total}</div>
+        <div class="day-title" style="font-size:1.3rem;"></div>
+      </div>
     </div>
   `;
   header.querySelector(".day-title").textContent = exercicio.nome;
-  const fecharBtn = document.createElement("button");
-  fecharBtn.type = "button";
-  fecharBtn.className = "icon-btn";
-  fecharBtn.setAttribute("aria-label", "Fechar");
-  fecharBtn.textContent = "✕";
-  fecharBtn.addEventListener("click", () => { if (onFechar) onFechar(); });
-  header.appendChild(fecharBtn);
+  header.querySelector(".voltar-btn").addEventListener("click", () => { if (onFechar) onFechar(); });
+  const trocarBtn = document.createElement("button");
+  trocarBtn.type = "button";
+  trocarBtn.className = "swap-pill trocar-pill";
+  trocarBtn.textContent = "Trocar";
+  header.appendChild(trocarBtn);
   root.appendChild(header);
 
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const card = document.createElement("section");
-  card.className = "exercise-card";
-  main.appendChild(card);
-
-  if (exercicio.observacoesExecucao) {
-    const explicacao = document.createElement("details");
-    explicacao.className = "explicacao-execucao";
-    explicacao.open = Boolean(mostrarExplicacaoAberta);
-    explicacao.innerHTML = `<summary>Como executar</summary><p></p>`;
-    explicacao.querySelector("p").textContent = exercicio.observacoesExecucao;
-    card.appendChild(explicacao);
-  }
-
-  const head = document.createElement("div");
-  head.className = "exercise-head";
-  head.innerHTML = `
-    <div style="display:flex; align-items:center; gap:14px;">
-      <div class="exercise-head-texto">
-        <div class="exercise-name"></div>
-        <div class="exercise-meta">${cfg.repsMin}–${cfg.repsMax} reps · RIR ${cfg.rirAlvo}</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:6px;">
-      <button class="swap-pill trocar-pill" type="button">Trocar</button>
-    </div>
-  `;
-  head.querySelector("div").prepend(criarIconeExercicio(exercicio.id, 60));
-  head.querySelector(".exercise-name").textContent = exercicio.nome;
-  card.appendChild(head);
-
   const tilesEl = document.createElement("div");
   tilesEl.className = "exec-tiles";
-  card.appendChild(tilesEl);
+  main.appendChild(tilesEl);
 
   if (exercicio.equipamento === "barra") {
     const ferramentasPill = document.createElement("button");
     ferramentasPill.type = "button";
     ferramentasPill.className = "swap-pill";
     ferramentasPill.textContent = "Ferramentas";
-    ferramentasPill.style.margin = "0 18px 12px";
-    card.appendChild(ferramentasPill);
+    ferramentasPill.style.margin = "0 0 16px";
+    main.appendChild(ferramentasPill);
 
     const painelFerramentas = document.createElement("div");
     painelFerramentas.className = "sets";
     painelFerramentas.style.display = "none";
-    painelFerramentas.style.padding = "0 18px 12px";
-    card.appendChild(painelFerramentas);
+    painelFerramentas.style.padding = "0 0 12px";
+    main.appendChild(painelFerramentas);
 
     ferramentasPill.addEventListener("click", () => {
       const abrindo = painelFerramentas.style.display === "none";
@@ -154,32 +126,32 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const cargaPillEl = document.createElement("button");
   cargaPillEl.type = "button";
   cargaPillEl.className = "exec-carga-pill";
-  card.appendChild(cargaPillEl);
+  main.appendChild(cargaPillEl);
 
   const shead = document.createElement("div");
   shead.className = "shead";
-  shead.style.padding = "0 18px";
   shead.innerHTML = `<h4>Séries</h4><s>${TOTAL_SERIES_ALVO} no total</s>`;
-  card.appendChild(shead);
+  main.appendChild(shead);
 
   const seriesListEl = document.createElement("div");
   seriesListEl.className = "exec-series";
-  card.appendChild(seriesListEl);
+  main.appendChild(seriesListEl);
 
   if (ultimaAnterior) {
     const hint = document.createElement("div");
     hint.className = "prev-hint";
+    hint.style.padding = "0 0 16px";
     const sugestaoTexto = sugestao.cargaSugerida != null
       ? ` Sugestão de hoje: <b>${sugestao.cargaSugerida} kg</b> (confiança ${sugestao.confianca}).`
       : "";
     hint.innerHTML = `Última vez: <b>${ultimaAnterior.carga} kg × ${ultimaAnterior.reps}</b>, RIR ${ultimaAnterior.rir}.${sugestaoTexto}`;
-    card.appendChild(hint);
+    main.appendChild(hint);
   }
 
   const progressaoHint = document.createElement("div");
   progressaoHint.className = "prev-hint";
-  progressaoHint.style.display = "none";
-  card.appendChild(progressaoHint);
+  progressaoHint.style.cssText = "padding:0 0 16px; display:none;";
+  main.appendChild(progressaoHint);
 
   const restCard = document.createElement("div");
   restCard.className = "exec-rest rest-bar-hidden";
@@ -189,8 +161,16 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     <div class="sub">o relógio segue contando se você passar</div>
     <div class="rest-ctl"><button type="button" data-action="menos">−30s</button><button type="button" data-action="mais">+30s</button></div>
   `;
-  card.appendChild(restCard);
-  card.style.paddingBottom = "18px";
+  main.appendChild(restCard);
+
+  if (exercicio.observacoesExecucao) {
+    const explicacao = document.createElement("details");
+    explicacao.className = "explicacao-execucao";
+    explicacao.open = Boolean(mostrarExplicacaoAberta);
+    explicacao.innerHTML = `<summary>Como executar</summary><p></p>`;
+    explicacao.querySelector("p").textContent = exercicio.observacoesExecucao;
+    main.appendChild(explicacao);
+  }
 
   const atualizarProgressao = () => {
     const avaliacao = avaliarProgressao({
@@ -370,7 +350,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     if (onSerieRegistrada) await onSerieRegistrada();
   }
 
-  card.querySelector(".trocar-pill").addEventListener("click", () => {
+  trocarBtn.addEventListener("click", () => {
     const sugestoes = sugerirSubstitutos(exercicio.id, todosExercicios);
     const nomes = sugestoes.map((e) => e.nome).join(", ") || "nenhuma alternativa encontrada";
     alert(`Alternativas: ${nomes}`);

@@ -2,6 +2,7 @@
 import { openDatabase } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
 import { montarTelaTreino } from "./screens/treino.js";
+import { montarFluxoSessao } from "./screens/sessao.js";
 import { montarTelaBiblioteca } from "./screens/biblioteca.js";
 import { montarTelaHistorico } from "./screens/historico.js";
 import { montarTelaConfig } from "./screens/config.js";
@@ -32,11 +33,17 @@ function renderShell(db) {
       if (tabName === "hoje") {
         content.textContent = "";
         content.appendChild(await montarTelaTreino(db, {
-          onAbrirHistorico: async (exercicio) => {
-            content.textContent = "";
-            content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("hoje")));
-          },
           onIrParaCardio: () => renderTab("divisao"),
+          onComecarTreino: async () => {
+            content.textContent = "";
+            content.appendChild(await montarFluxoSessao(db, {
+              onVoltarParaHoje: () => renderTab("hoje"),
+              onAbrirHistorico: async (exercicio) => {
+                content.textContent = "";
+                content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("hoje")));
+              },
+            }));
+          },
         }));
         return;
       }

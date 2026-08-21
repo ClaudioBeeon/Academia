@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Protótipo — Emon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap">
+<style>
+:root{--pg-bg:#F2F2EF;--pg-surf:#FFF;--pg-ink:#141614;--pg-dim:#5A605A;
+  --pg-faint:#8B918B;--pg-line:#DEDDD7;--pg-accent:#5B7C1F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --pg-bg:#0E100E;--pg-surf:#171A17;--pg-ink:#ECEFEC;--pg-dim:#9EA59E;
+  --pg-faint:#6F766F;--pg-line:#252925;--pg-accent:#C9F241}}
+:root[data-theme="dark"]{--pg-bg:#0E100E;--pg-surf:#171A17;--pg-ink:#ECEFEC;
+  --pg-dim:#9EA59E;--pg-faint:#6F766F;--pg-line:#252925;--pg-accent:#C9F241}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pg-bg);color:var(--pg-ink);
+  font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:56px 24px 90px}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 14px}
+h1{font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.05;letter-spacing:-.03em;
+  margin:0 0 18px;text-wrap:balance}
+.lede{font-size:16px;line-height:1.62;color:var(--pg-dim);max-width:64ch;margin:0}
+.rail{display:flex;gap:26px;overflow-x:auto;padding:44px 6px 24px;scroll-snap-type:x mandatory}
+.phonebox{scroll-snap-align:center;flex:0 0 auto}
+.caption{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pg-faint);margin:0 0 12px;text-align:center}
+.phone{width:344px;height:718px;border-radius:46px;padding:11px;
+  background:linear-gradient(160deg,#32363A,#0B0D0E);
+  box-shadow:0 28px 62px -24px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07) inset}
+.screen{width:100%;height:100%;border-radius:36px;overflow:hidden;display:flex;flex-direction:column;position:relative;
+  background:#0E0E0E;color:#FFF;font-family:"Plus Jakarta Sans",sans-serif}
+.sc{flex:1;overflow-y:auto;overflow-x:hidden;position:relative}
+.sc::-webkit-scrollbar{width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.stat{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 4px;
+  font:700 12px/1 "JetBrains Mono",monospace;flex:0 0 auto}
+.stat span{color:#7C7C7C}
+.top{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 20px 18px}
+.top h2{margin:0 0 5px;font-size:24px;font-weight:800;letter-spacing:-.03em}
+.top p{margin:0;font-size:12.5px;color:#8A8A8A;font-weight:500}
+.icobtn{width:40px;height:40px;border-radius:50%;background:#1C1C1C;display:flex;
+  align-items:center;justify-content:center;color:#FFF;flex:0 0 auto;position:relative;cursor:pointer}
+.icobtn.lime{background:#C9F241;color:#141414}
+.dot{position:absolute;top:9px;right:11px;width:7px;height:7px;border-radius:50%;background:#C9F241}
+.pd{padding:0 20px}
+.carou{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin-bottom:22px}
+.carou::-webkit-scrollbar{height:0}
+.plan{flex:0 0 250px;background:#C9F241;color:#141414;border-radius:26px;padding:20px}
+.plan.alt{background:#1C1C1C;color:#FFF}
+.plan u{display:block;text-decoration:none;font-size:11.5px;font-weight:600;opacity:.62;margin-bottom:9px}
+.plan h3{margin:0;font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.plan .mm{margin:16px 0 0;font-size:12px;font-weight:600;opacity:.72;line-height:1.7}
+.go{margin-top:16px;width:100%;min-height:46px;border:0;border-radius:999px;background:#141414;
+  color:#C9F241;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:9px;font-family:"Plus Jakarta Sans",sans-serif}
+.plan.alt .go{background:#C9F241;color:#141414}
+.shead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px}
+.shead h4{margin:0;font-size:16px;font-weight:700;letter-spacing:-.02em}
+.shead s{text-decoration:none;font-size:12px;color:#C9F241;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px}
+.tile{background:#1C1C1C;border-radius:20px;padding:15px}
+.tile .ic{width:30px;height:30px;border-radius:9px;background:#262626;display:flex;
+  align-items:center;justify-content:center;color:#C9F241;margin-bottom:11px}
+.tile b{display:block;font:800 21px/1 "JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.tile s{display:block;text-decoration:none;font-size:11px;color:#8A8A8A;margin-top:6px;font-weight:500}
+.seg{display:flex;gap:8px;margin-bottom:20px}
+.seg b{flex:1;text-align:center;padding:11px 0;border-radius:999px;background:#1C1C1C;
+  font-size:12.5px;font-weight:700;color:#8A8A8A;cursor:pointer}
+.seg b.on{background:#C9F241;color:#141414}
+.ringwrap{text-align:center;padding:6px 0 20px}
+.ringwrap .inner{position:relative;display:inline-block}
+.ringwrap .ctr{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.ringwrap .ctr u{text-decoration:none;font-size:11px;color:#8A8A8A;font-weight:600}
+.ringwrap .ctr b{font:800 38px/1 "JetBrains Mono",monospace;margin-top:5px;letter-spacing:-.03em}
+.ringwrap .ctr s{text-decoration:none;font-size:11px;color:#8A8A8A;margin-top:6px;font-weight:500}
+.goal{margin:12px 0 0;font-size:12px;color:#8A8A8A;font-weight:500}
+.rec{display:flex;align-items:center;gap:13px;background:#1C1C1C;border-radius:18px;
+  padding:11px;margin-bottom:10px;cursor:pointer}
+.rec.on{outline:1.5px solid #C9F241}
+.thumb{width:52px;height:52px;border-radius:13px;flex:0 0 auto;
+  background:linear-gradient(140deg,#3A3A3A,#1F1F1F);position:relative;overflow:hidden}
+.thumb::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 30% 30%,rgba(201,242,65,.16),transparent 62%)}
+.rec h5{margin:0 0 4px;font-size:13.5px;font-weight:700;line-height:1.2}
+.rec p{margin:0;font:400 10.5px/1 "JetBrains Mono",monospace;color:#8A8A8A}
+.chk{width:28px;height:28px;border-radius:50%;background:#C9F241;color:#141414;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font:700 11px/1 "JetBrains Mono",monospace}
+.chk.off{background:#262626;color:#7C7C7C}
+.nav{display:flex;justify-content:space-around;padding:11px 10px 21px;background:#141414;flex:0 0 auto}
+.nav i{display:flex;flex-direction:column;align-items:center;gap:4px;color:#6E6E6E;font-style:normal}
+.nav i.on{color:#C9F241}
+.nav i s{text-decoration:none;font-size:9px;font-weight:700}
+.foot{padding:13px 20px 20px;background:#141414;display:flex;gap:11px;flex:0 0 auto}
+.foot .sq{width:52px;border-radius:999px;background:#1C1C1C;color:#8A8A8A;border:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* set rows — execução */
+.setrow{display:grid;grid-template-columns:34px 1fr 1fr 1fr;align-items:center;gap:9px;
+  background:#1C1C1C;border-radius:16px;padding:9px;margin-bottom:8px}
+.setrow.done{background:rgba(201,242,65,.12)}
+.setring{width:30px;height:30px;border-radius:50%;background:#262626;color:#8A8A8A;
+  display:flex;align-items:center;justify-content:center;font:700 11.5px/1 "JetBrains Mono",monospace}
+.setrow.done .setring{background:#C9F241;color:#141414}
+.sfield label{display:block;font-size:9px;color:#7C7C7C;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:700;margin-bottom:3px}
+.sfield input{width:100%;background:#141414;border:1px solid #262626;color:#FFF;border-radius:9px;
+  padding:7px 8px;font:700 13px/1 "JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.hint{padding:2px 4px 16px;font-size:11.5px;color:#8A8A8A;font-weight:500}
+.hint b{color:#FFF;font-weight:800;font-variant-numeric:tabular-nums}
+.chkin{background:#1C1C1C;border-radius:20px;padding:16px;margin-bottom:20px}
+.chkin h4{margin:0 0 10px;font-size:14.5px;font-weight:700}
+.chkin .qbtns{display:flex;gap:6px}
+.chkin .qbtns b{flex:1;text-align:center;padding:9px 0;border-radius:999px;background:#262626;
+  font:700 13px/1 "JetBrains Mono",monospace;color:#8A8A8A;cursor:pointer}
+.chkin .qbtns b.on{background:#C9F241;color:#141414}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Protótipo · layout Emon</p>
+  <h1>Emon — lima sobre quase-preto</h1>
+  <p class="lede">
+    Layout dedicado à direção <b>Emon</b>: saudação com sino, carrossel de plano em lima,
+    grade 2×2 de atividade, anel de progresso na Fila do Dia e séries em lista na Execução.
+    As quatro telas seguem o fluxo real do app — <b>Início → Fila do Dia → Execução → Relatório</b>.
+  </p>
+
+  <div class="rail" id="rail"></div>
+</div>
+
+<script>
+const I={
+bell:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>`,
+plus:`<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+arr:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`,
+back:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>`,
+ck:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 6 6L20 6"/></svg>`,
+pl:`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>`,
+dot3:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>`,
+flame:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2s5 5 5 9a5 5 0 0 1-10 0c0-1.5.7-2.8.7-2.8S6 11 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></svg>`,
+dumb:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>`,
+clock:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`,
+bolt:`<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`,
+grid:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,
+chart:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 21h18M7 17v-6M12 17V5M17 17v-9"/></svg>`,
+user:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>`,
+trophy:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM7 5H4v1a4 4 0 0 0 4 4M17 5h3v1a4 4 0 0 1-4 4"/></svg>`};
+
+const SB=`<div class="stat"><b>9:41</b><span>5G ▮▮▮ 82%</span></div>`;
+
+const QUEUE=[
+ [1,"Supino inclinado com halteres","peito · 8–12 reps · RIR 2","dn",3],
+ [2,"Crucifixo no cabo","peito · 8–15 reps · RIR 2","dn",3],
+ [3,"Supino reto na máquina","peito · 8–15 reps · RIR 2","lv",1],
+ [4,"Puxada frente","costas · 8–12 reps · RIR 2","",0],
+ [5,"Remada baixa na máquina","costas · 8–15 reps · RIR 2","",0],
+ [6,"Desenvolvimento de ombro","ombro · 8–15 reps · RIR 2","",0],
+ [7,"Elevação lateral no cabo","ombro · 10–15 reps · RIR 2","",0]];
+
+function ring(pct,col,track,size,sw){
+  const r=(size-sw)/2,c=2*Math.PI*r,off=c*(1-pct);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+   <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${track}" stroke-width="${sw}"/>
+   <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}"
+    stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+    transform="rotate(-90 ${size/2} ${size/2})"/></svg>`;
+}
+const nav=(on)=>{const NAVI=[[I.grid,"Hoje"],[I.dumb,"Treino"],[I.chart,"Evolução"],[I.user,"Perfil"]];
+  return `<div class="nav">`+NAVI.map((x,k)=>`<i class="${k===on?"on":""}">${x[0]}<s>${x[1]}</s></i>`).join("")+`</div>`;};
+
+const totalFeitas=QUEUE.reduce((n,q)=>n+q[4],0);
+const concluidos=QUEUE.filter(q=>q[3]==="dn").length;
+
+const SCREENS={
+inicio:SB+`<div class="sc">
+ <div class="top">
+  <div><h2>Boa tarde, Cláudio 👋</h2><p>Pronto pra treinar?</p></div>
+  <div style="display:flex;gap:9px">
+   <div class="icobtn">${I.bell}<span class="dot"></span></div>
+   <div class="icobtn lime">${I.plus}</div></div>
+ </div>
+ <div class="pd">
+  <div class="carou">
+   <div class="plan"><u>Treino de hoje</u><h3>Peito · Costas<br>Ombro</h3>
+    <p class="mm">7 exercícios · 21 séries<br>~49 min</p>
+    <button class="go">Começar treino ${I.arr}</button></div>
+   <div class="plan alt"><u>Cardio</u><h3>Bicicleta<br>Zona 2</h3>
+    <p class="mm">Última: 30 min<br>Registre uma nova sessão</p>
+    <button class="go">Registrar ${I.arr}</button></div>
+  </div>
+  <div class="chkin"><h4>Check-in de hoje</h4>
+   <div class="qbtns"><b>1</b><b>2</b><b class="on">3</b><b>4</b><b>5</b></div></div>
+  <div class="shead"><h4>Minha atividade</h4><s>Ver tudo</s></div>
+  <div class="grid">
+   <div class="tile"><div class="ic">${I.dumb}</div><b>12</b><s>Treinos este mês</s></div>
+   <div class="tile"><div class="ic">${I.flame}</div><b>34</b><s>Séries esta semana</s></div>
+   <div class="tile"><div class="ic">${I.clock}</div><b>5h30</b><s>Tempo ativo</s></div>
+   <div class="tile"><div class="ic">${I.bolt}</div><b>6</b><s>Dias seguidos</s></div>
+  </div>
+ </div><div style="height:14px"></div></div>`+nav(0),
+
+fila:SB+`<div class="sc">
+ <div class="top" style="align-items:center">
+  <div style="display:flex;align-items:center;gap:12px">
+   <div class="icobtn">${I.back}</div>
+   <div><h2 style="font-size:20px">Peito · Costas · Ombro</h2><p>Fila do dia</p></div></div>
+  <div class="icobtn">✕</div>
+ </div>
+ <div class="pd">
+  <div class="seg"><b class="on">Todos</b><b>Restantes</b><b>Feitos</b></div>
+  <div class="ringwrap"><div class="inner">
+   ${ring(concluidos/QUEUE.length,"#C9F241","#1F1F1F",172,13)}
+   <div class="ctr"><u>Hoje</u><b>${concluidos}/${QUEUE.length}</b><s>exercícios</s></div>
+  </div><p class="goal">${QUEUE.length*3} séries no total · ${totalFeitas}/${QUEUE.length*3} feitas</p></div>
+  <div class="shead"><h4>Exercícios</h4><s>Ver tudo</s></div>
+  ${QUEUE.map(q=>`<div class="rec ${q[3]==="lv"?"on":""}">
+    <div class="thumb"></div>
+    <div style="flex:1;min-width:0"><h5>${q[1]}</h5><p>${q[2]}</p></div>
+    <div class="chk ${q[3]==="dn"?"":"off"}">${q[3]==="dn"?I.ck:(q[3]==="lv"?q[4]+"/3":q[0])}</div>
+   </div>`).join("")}
+ </div>
+ <div class="foot"><button class="go" style="margin:0;flex:1">Finalizar sessão</button></div></div>`+nav(1),
+
+execucao:SB+`<div class="sc">
+ <div class="top" style="align-items:center">
+  <div style="display:flex;align-items:center;gap:12px">
+   <div class="icobtn">${I.back}</div>
+   <div><h2 style="font-size:18px">Supino reto na máquina</h2><p>Exercício 3 de 7 · peito</p></div></div>
+  <div class="icobtn">${I.dot3}</div>
+ </div>
+ <div class="pd">
+  <div class="hint" style="padding-top:0">8–15 reps · <b>RIR 2</b></div>
+  <div class="setrow done"><div class="setring">${I.ck}</div>
+   <div class="sfield"><label>Carga</label><input value="32 kg" disabled></div>
+   <div class="sfield"><label>Reps</label><input value="12" disabled></div>
+   <div class="sfield"><label>RIR</label><input value="2" disabled></div></div>
+  <div class="setrow"><div class="setring">2</div>
+   <div class="sfield"><label>Carga</label><input placeholder="32 kg"></div>
+   <div class="sfield"><label>Reps</label><input placeholder="10"></div>
+   <div class="sfield"><label>RIR</label><input placeholder="2"></div></div>
+  <div class="setrow"><div class="setring">3</div>
+   <div class="sfield"><label>Carga</label><input placeholder="—"></div>
+   <div class="sfield"><label>Reps</label><input placeholder="—"></div>
+   <div class="sfield"><label>RIR</label><input placeholder="—"></div></div>
+  <div class="hint">Última vez: <b>30 kg × 12</b>, RIR 2. Sugestão de hoje: <b>32 kg</b>.</div>
+  <div class="plan" style="text-align:center;padding:22px">
+   <u>Descanso</u><h3 style="font-size:44px;font-family:'JetBrains Mono',monospace;letter-spacing:-.04em">01:12</h3>
+   <p class="mm" style="margin-top:10px">o relógio segue contando se você passar</p></div>
+ </div><div style="height:14px"></div></div>
+ <div class="foot"><button class="sq">${I.clock}</button>
+  <button class="go" style="margin:0;flex:1;background:#C9F241;color:#141414">Concluir exercício</button></div>`,
+
+relatorio:SB+`<div class="sc">
+ <div class="top">
+  <div><h2>Bom treino! 🎉</h2><p>Sessão concluída</p></div>
+  <div class="icobtn lime">${I.ck}</div>
+ </div>
+ <div class="pd">
+  <div class="shead"><h4>Resumo</h4></div>
+  <div class="grid">
+   <div class="tile"><div class="ic">${I.dumb}</div><b>21</b><s>Séries feitas</s></div>
+   <div class="tile"><div class="ic">${I.flame}</div><b>2.245</b><s>Volume (kg)</s></div>
+   <div class="tile"><div class="ic">${I.grid}</div><b>7</b><s>Exercícios</s></div>
+   <div class="tile"><div class="ic">${I.bolt}</div><b style="font-size:14px">Peito, Costas, Ombro</b><s>Músculos treinados</s></div>
+  </div>
+  <div class="shead"><h4>Recordes desta sessão</h4></div>
+  <div class="rec"><div class="thumb" style="background:linear-gradient(140deg,#C9F241,#5B7C1F)"></div>
+   <div style="flex:1;min-width:0"><h5>Supino reto na máquina</h5><p>32 kg × 12 — novo recorde de carga</p></div>
+   <div class="chk">${I.trophy}</div></div>
+  <div class="rec"><div class="thumb" style="background:linear-gradient(140deg,#C9F241,#5B7C1F)"></div>
+   <div style="flex:1;min-width:0"><h5>Puxada frente</h5><p>4 séries — novo recorde de volume</p></div>
+   <div class="chk">${I.trophy}</div></div>
+ </div><div style="height:14px"></div></div>
+ <div class="foot"><button class="go" style="margin:0;flex:1">Concluir</button></div>`};
+
+const CAPS=[["inicio","Início"],["fila","Fila do dia"],["execucao","Execução"],["relatorio","Relatório"]];
+document.getElementById("rail").innerHTML=CAPS.map(c=>
+ `<div class="phonebox"><p class="caption">${c[1]}</p>
+  <div class="phone"><div class="screen">${SCREENS[c[0]]}</div></div></div>`).join("");
+</script>
+</body>
+</html>

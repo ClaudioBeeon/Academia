@@ -58,17 +58,18 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const header = document.createElement("header");
   header.className = "top";
   header.innerHTML = `
-    <div class="date-label">Exercício ${indice} de ${total}</div>
-    <div class="day-title"></div>
+    <div>
+      <div class="date-label">Exercício ${indice} de ${total}</div>
+      <div class="day-title"></div>
+    </div>
   `;
   header.querySelector(".day-title").textContent = exercicio.nome;
   const fecharBtn = document.createElement("button");
   fecharBtn.type = "button";
-  fecharBtn.className = "swap-pill";
+  fecharBtn.className = "icon-btn";
+  fecharBtn.setAttribute("aria-label", "Fechar");
   fecharBtn.textContent = "✕";
-  fecharBtn.style.cssText = "position:absolute; top:14px; right:18px;";
   fecharBtn.addEventListener("click", () => { if (onFechar) onFechar(); });
-  header.style.position = "relative";
   header.appendChild(fecharBtn);
   root.appendChild(header);
 

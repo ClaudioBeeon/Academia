@@ -2,6 +2,29 @@
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 
+function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
+  const raio = (size - espessura) / 2;
+  const perimetro = 2 * Math.PI * raio;
+  const fracao = total > 0 ? concluidos / total : 0;
+  const offset = perimetro * (1 - fracao);
+  const svg = `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${raio}" fill="none" stroke="var(--card-2)" stroke-width="${espessura}" />
+      <circle cx="${size / 2}" cy="${size / 2}" r="${raio}" fill="none" stroke="var(--accent)" stroke-width="${espessura}"
+        stroke-linecap="round" stroke-dasharray="${perimetro.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+        transform="rotate(-90 ${size / 2} ${size / 2})" />
+    </svg>`;
+  const wrap = document.createElement("div");
+  wrap.className = "fila-progresso-ring";
+  wrap.innerHTML = `
+    <div class="ring-inner">
+      ${svg}
+      <div class="ring-ctr"><u>Hoje</u><b>${concluidos}/${total}</b><s>exercícios</s></div>
+    </div>
+  `;
+  return wrap;
+}
+
 export async function montarTelaFila(db, contexto, callbacks) {
   const { diaInfo, exerciciosHoje, hoje } = contexto;
   const { onExecutar, onFinalizarSessao, onVoltar } = callbacks;
@@ -26,16 +49,17 @@ export async function montarTelaFila(db, contexto, callbacks) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.style.position = "relative";
   header.innerHTML = `
-    <div class="date-label">${diaInfo.titulo}</div>
-    <div class="day-title">Fila do dia</div>
+    <div>
+      <div class="date-label">${diaInfo.titulo}</div>
+      <div class="day-title">Fila do dia</div>
+    </div>
   `;
   const voltarBtn = document.createElement("button");
   voltarBtn.type = "button";
-  voltarBtn.className = "swap-pill";
+  voltarBtn.className = "icon-btn";
+  voltarBtn.setAttribute("aria-label", "Fechar");
   voltarBtn.textContent = "✕";
-  voltarBtn.style.cssText = "position:absolute; top:14px; right:18px;";
   voltarBtn.addEventListener("click", () => { if (onVoltar) onVoltar(); });
   header.appendChild(voltarBtn);
   root.appendChild(header);
@@ -43,11 +67,11 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const progresso = document.createElement("div");
-  progresso.className = "prev-hint";
-  progresso.style.padding = "0 18px 14px";
-  progresso.textContent = `${exerciciosConcluidos}/${exerciciosHoje.length} exercícios · ${totalSeriesFeitas}/${exerciciosHoje.length * 3} séries`;
-  main.appendChild(progresso);
+  const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
+  const legenda = document.createElement("p");
+  legenda.textContent = `${exerciciosHoje.length * 3} séries no total · ${totalSeriesFeitas}/${exerciciosHoje.length * 3} feitas`;
+  anel.appendChild(legenda);
+  main.appendChild(anel);
 
   exerciciosHoje.forEach((exercicio, indice) => {
     const item = document.createElement("section");

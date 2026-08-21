@@ -1,12 +1,14 @@
 :root {
-  --paper: oklch(13% 0.012 145);
-  --card: oklch(18% 0.014 145);
-  --card-2: oklch(23% 0.016 145);
-  --ink: oklch(97% 0.006 145);
-  --ink-dim: oklch(72% 0.014 145);
-  --ink-faint: oklch(50% 0.012 145);
-  --accent: oklch(89% 0.21 128);
-  --accent-ink: oklch(19% 0.05 128);
-  --line: oklch(27% 0.016 145);
+  --paper: #0E0E0E;
+  --card: #1C1C1C;
+  --card-2: #262626;
+  --ink: #FFFFFF;
+  --ink-dim: #8A8A8A;
+  --ink-faint: #6E6E6E;
+  --accent: #C9F241;
+  --accent-ink: #141414;
+  --line: #262626;
   --radius: 26px;
+  --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }

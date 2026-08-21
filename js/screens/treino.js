@@ -18,6 +18,13 @@ function saudacaoPorHorario(agora = new Date()) {
   return "Boa noite";
 }
 
+const ICONE_SINO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>`;
+const ICONE_MAIS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`;
+const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>`;
+const ICONE_CHAMA = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 9a5 5 0 0 1-10 0c0-1.5.7-2.8.7-2.8S6 11 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></svg>`;
+const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
+const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
+
 function obterDataLocal() {
   const agora = new Date();
   const ano = agora.getFullYear();
@@ -64,8 +71,14 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino } =
   const header = document.createElement("header");
   header.className = "top greeting";
   header.innerHTML = `
-    <div class="date-label">${saudacaoPorHorario()}</div>
-    <div class="day-title">Pronto pra treinar?</div>
+    <div>
+      <div class="date-label">${saudacaoPorHorario()} 👋</div>
+      <div class="day-title">Pronto pra treinar?</div>
+    </div>
+    <div class="icon-row">
+      <button type="button" class="icon-btn" aria-label="Notificações">${ICONE_SINO}</button>
+      <button type="button" class="icon-btn lime" aria-label="Adicionar">${ICONE_MAIS}</button>
+    </div>
   `;
   root.appendChild(header);
 
@@ -169,13 +182,14 @@ function renderizarFormularioCheckin(corpo, db, hoje, checkinExistente) {
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
       <label>Como foi a sessão hoje, no geral? (1-5)</label>
-      <select name="qualidadePercebida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
-        <option value="1">1 — muito ruim</option>
-        <option value="2">2 — ruim</option>
-        <option value="3">3 — neutra</option>
-        <option value="4">4 — boa</option>
-        <option value="5">5 — muito boa</option>
-      </select>
+      <input type="hidden" name="qualidadePercebida" value="3" />
+      <div class="checkin-qual" role="radiogroup" aria-label="Qualidade percebida">
+        <button type="button" data-valor="1">1</button>
+        <button type="button" data-valor="2">2</button>
+        <button type="button" data-valor="3" class="on">3</button>
+        <button type="button" data-valor="4">4</button>
+        <button type="button" data-valor="5">5</button>
+      </div>
     </div>
     <div class="set-field" style="grid-column:1/-1;">
       <label><input type="checkbox" name="bemEstarBaixo" /> Sono ruim, motivação baixa ou irritação sustentada hoje?</label>
@@ -189,8 +203,17 @@ function renderizarFormularioCheckin(corpo, db, hoje, checkinExistente) {
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
   `;
 
+  const qualidadeInput = form.qualidadePercebida;
+  form.querySelectorAll(".checkin-qual button").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      qualidadeInput.value = botao.dataset.valor;
+      form.querySelectorAll(".checkin-qual button").forEach((b) => b.classList.toggle("on", b === botao));
+    });
+  });
+
   if (checkinExistente) {
-    form.qualidadePercebida.value = String(checkinExistente.qualidadePercebida ?? 3);
+    qualidadeInput.value = String(checkinExistente.qualidadePercebida ?? 3);
+    form.querySelectorAll(".checkin-qual button").forEach((b) => b.classList.toggle("on", b.dataset.valor === qualidadeInput.value));
     form.bemEstarBaixo.checked = !!checkinExistente.bemEstarBaixo;
     form.dorArticularOuTendinea.checked = !!checkinExistente.dorArticularOuTendinea;
     form.domsPersistente.checked = !!checkinExistente.domsPersistente;
@@ -284,22 +307,26 @@ function montarCardAtividade(atividade) {
 
   const grid = document.createElement("div");
   grid.className = "stats-grid";
-  grid.appendChild(criarStatTile(String(atividade.treinosEsteMes), "Treinos este mês"));
-  grid.appendChild(criarStatTile(String(atividade.seriesEstaSemana), "Séries esta semana"));
-  grid.appendChild(criarStatTile(`~${formatarMinutosAtivos(atividade.minutosAtivosEstaSemana)}`, "Tempo ativo (estimado)"));
-  grid.appendChild(criarStatTile(String(atividade.diasSeguidos), "Dias seguidos"));
+  grid.appendChild(criarStatTile(ICONE_HALTER, String(atividade.treinosEsteMes), "Treinos este mês"));
+  grid.appendChild(criarStatTile(ICONE_CHAMA, String(atividade.seriesEstaSemana), "Séries esta semana"));
+  grid.appendChild(criarStatTile(ICONE_RELOGIO, `~${formatarMinutosAtivos(atividade.minutosAtivosEstaSemana)}`, "Tempo ativo (estimado)"));
+  grid.appendChild(criarStatTile(ICONE_RAIO, String(atividade.diasSeguidos), "Dias seguidos"));
   section.appendChild(grid);
 
   return section;
 }
 
-function criarStatTile(valor, rotulo) {
+function criarStatTile(icone, valor, rotulo) {
   const tile = document.createElement("div");
   tile.className = "stat-tile";
+  const ic = document.createElement("div");
+  ic.className = "ic";
+  ic.innerHTML = icone;
   const b = document.createElement("b");
   b.textContent = valor;
   const span = document.createElement("span");
   span.textContent = rotulo;
+  tile.appendChild(ic);
   tile.appendChild(b);
   tile.appendChild(span);
   return tile;

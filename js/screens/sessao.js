@@ -7,6 +7,7 @@ import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
+import { trocarConteudo } from "./transicaoTela.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -47,67 +48,67 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
     }
   };
 
-  async function renderizar() {
+  async function renderizar(direcao = "trocarAba") {
     if (telaAtual && telaAtual._dispose) {
       telaAtual._dispose();
     }
-    root.innerHTML = "";
-    let tela;
-    if (estadoAtual === "fila") {
-      tela = await montarTelaFila(db, { diaInfo, exerciciosHoje, hoje }, {
-        onExecutar: async (indice) => {
-          indiceExercicioAtual = indice;
-          estadoAtual = "execucao";
-          await renderizar();
-        },
-        onFinalizarSessao: async () => {
-          estadoAtual = "relatorio";
-          await renderizar();
-        },
-        onVoltar: onVoltarParaHoje,
-      });
-    } else if (estadoAtual === "execucao") {
-      const exercicio = exerciciosHoje[indiceExercicioAtual];
-      const mostrarExplicacaoAberta = !explicacaoJaMostrada && Boolean(exercicio.observacoesExecucao);
-      if (exercicio.observacoesExecucao) {
-        explicacaoJaMostrada = true;
-      }
-      tela = await montarTelaExecucao(db, {
-        exercicio,
-        indice: indiceExercicioAtual + 1,
-        total: exerciciosHoje.length,
-        todosExercicios,
-        protocolo,
-        equipamento,
-        hoje,
-        mostrarExplicacaoAberta,
-      }, {
-        onFechar: async () => {
-          estadoAtual = "fila";
-          await renderizar();
-        },
-        onProximoExercicio: async () => {
-          if (indiceExercicioAtual < exerciciosHoje.length - 1) {
-            indiceExercicioAtual++;
-            await renderizar();
-          } else {
+
+    telaAtual = await trocarConteudo(root, async () => {
+      if (estadoAtual === "fila") {
+        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje }, {
+          onExecutar: async (indice) => {
+            indiceExercicioAtual = indice;
+            estadoAtual = "execucao";
+            await renderizar("avancar");
+          },
+          onFinalizarSessao: async () => {
             estadoAtual = "relatorio";
-            await renderizar();
-          }
-        },
-        onAbrirHistorico,
-        onSerieRegistrada: persistirDiaSeNecessario,
-        onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
-      });
-    } else {
+            await renderizar("avancar");
+          },
+          onVoltar: onVoltarParaHoje,
+        });
+      }
+
+      if (estadoAtual === "execucao") {
+        const exercicio = exerciciosHoje[indiceExercicioAtual];
+        const mostrarExplicacaoAberta = !explicacaoJaMostrada && Boolean(exercicio.observacoesExecucao);
+        if (exercicio.observacoesExecucao) {
+          explicacaoJaMostrada = true;
+        }
+        return montarTelaExecucao(db, {
+          exercicio,
+          indice: indiceExercicioAtual + 1,
+          total: exerciciosHoje.length,
+          todosExercicios,
+          protocolo,
+          equipamento,
+          hoje,
+          mostrarExplicacaoAberta,
+        }, {
+          onFechar: async () => {
+            estadoAtual = "fila";
+            await renderizar("voltar");
+          },
+          onProximoExercicio: async () => {
+            if (indiceExercicioAtual < exerciciosHoje.length - 1) {
+              indiceExercicioAtual++;
+            } else {
+              estadoAtual = "relatorio";
+            }
+            await renderizar("avancar");
+          },
+          onAbrirHistorico,
+          onSerieRegistrada: persistirDiaSeNecessario,
+          onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
+        });
+      }
+
       await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
       diaPersistido = true;
-      tela = await montarTelaRelatorio(db, { hoje, prsDaSessao }, {
+      return montarTelaRelatorio(db, { hoje, prsDaSessao }, {
         onConcluir: onVoltarParaHoje,
       });
-    }
-    root.appendChild(tela);
-    telaAtual = tela;
+    }, { direcao });
   }
 
   await renderizar();

@@ -8,6 +8,7 @@ import { montarTelaHistorico } from "./screens/historico.js";
 import { montarTelaConfig } from "./screens/config.js";
 import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
+import { trocarConteudo } from "./screens/transicaoTela.js";
 
 async function bootstrap() {
   if ("serviceWorker" in navigator) {
@@ -15,6 +16,12 @@ async function bootstrap() {
       console.error("Falha ao registrar service worker:", err);
     });
   }
+
+  // iOS Safari só aplica :active em elementos sem handler de toque nativo
+  // (divs/sections com onclick, não <button>) se existir algum listener de
+  // touchstart no documento — sem isso, o feedback de toque via CSS não
+  // aparece no iPhone.
+  document.addEventListener("touchstart", () => {}, { passive: true });
 
   const db = await openDatabase();
   await seedIfNeeded(db);
@@ -26,45 +33,32 @@ function renderShell(db) {
   const content = document.getElementById("tab-content");
   const tabs = document.querySelectorAll("#tab-bar button");
 
-  const renderTab = async (tabName) => {
+  const renderTab = async (tabName, direcao = "trocarAba") => {
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
     try {
       if (tabName === "hoje") {
-        content.textContent = "";
-        content.appendChild(await montarTelaTreino(db, {
+        await trocarConteudo(content, () => montarTelaTreino(db, {
           onIrParaCardio: () => renderTab("divisao"),
-          onComecarTreino: async () => {
-            content.textContent = "";
-            content.appendChild(await montarFluxoSessao(db, {
-              onVoltarParaHoje: () => renderTab("hoje"),
-              onAbrirHistorico: async (exercicio) => {
-                content.textContent = "";
-                content.appendChild(await montarTelaHistorico(db, exercicio, () => renderTab("hoje")));
-              },
-            }));
-          },
-        }));
+          onComecarTreino: () => trocarConteudo(content, () => montarFluxoSessao(db, {
+            onVoltarParaHoje: () => renderTab("hoje", "voltar"),
+            onAbrirHistorico: (exercicio) => trocarConteudo(content, () => montarTelaHistorico(db, exercicio, () => renderTab("hoje", "voltar")), { direcao: "avancar" }),
+          }), { direcao: "avancar" }),
+        }), { direcao });
         return;
       }
       if (tabName === "config") {
-        content.textContent = "";
-        content.appendChild(await montarTelaConfig(db, {
-          onAbrirBiblioteca: async () => {
-            content.textContent = "";
-            content.appendChild(await montarTelaBiblioteca(db, { aoVoltar: () => renderTab("config") }));
-          },
-        }));
+        await trocarConteudo(content, () => montarTelaConfig(db, {
+          onAbrirBiblioteca: () => trocarConteudo(content, () => montarTelaBiblioteca(db, { aoVoltar: () => renderTab("config", "voltar") }), { direcao: "avancar" }),
+        }), { direcao });
         return;
       }
       if (tabName === "evolucao") {
-        content.textContent = "";
-        content.appendChild(await montarTelaEvolucao(db));
+        await trocarConteudo(content, () => montarTelaEvolucao(db), { direcao });
         return;
       }
       if (tabName === "divisao") {
-        content.textContent = "";
-        content.appendChild(await montarTelaDivisao(db));
+        await trocarConteudo(content, () => montarTelaDivisao(db), { direcao });
         return;
       }
       content.textContent = `Tela "${tabName}" ainda não implementada (vem depois).`;

@@ -45,6 +45,23 @@ body {
 #tab-bar button svg { width: 20px; height: 20px; }
 #tab-bar button.active { color: var(--accent); }
 #tab-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+#tab-bar button { transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); }
+#tab-bar button:active { transform: scale(0.86); }
+
+/* Feedback de toque (estilo iOS: escala levemente ao pressionar) em todo
+   elemento tocável do app — cartões, pills, botões, chips. */
+button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel, .dia-chip,
+.exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
+.set-ring, .carga-sheet-acoes button {
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
+.plano-hero.clicavel:active, .dia-chip:active, .exec-carga-pill:active:not(:disabled),
+.exec-footer-primary:active, .exec-footer-sq:active {
+  transform: scale(0.96);
+  opacity: 0.88;
+}
 
 /* Treino screen component classes (consumed by js/screens/treino.js) */
 .top { padding: 22px 0 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -151,7 +168,8 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-carga-pill .editar { font-size: 0.72rem; color: var(--accent); font-weight: 700; }
 
 .exec-series { padding: 0 0 6px; display: flex; flex-direction: column; gap: 10px; }
-.exec-serie-row { display: flex; align-items: center; gap: 13px; background: var(--card-2); border-radius: 18px; padding: 12px; }
+.exec-serie-row { display: flex; align-items: center; gap: 13px; background: var(--card-2); border-radius: 18px; padding: 12px; animation: serie-surge 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes serie-surge { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .exec-serie-row.pendente { background: transparent; border: 1.5px solid var(--accent); }
 .exec-serie-chk { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
 .exec-serie-chk.off { background: var(--card); color: var(--ink-faint); font: 700 0.7rem/1 "JetBrains Mono", monospace; }
@@ -177,8 +195,10 @@ body:has(.tela-execucao) #tab-bar, body:has(.tela-fila) #tab-bar { display: none
 body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content { padding-bottom: 0; }
 
 /* Seletor de carga: folha modal com barra deslizável vertical (estilo volume do iOS) */
-.carga-sheet-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0.55); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
-.carga-sheet { width: 100%; max-width: 398px; background: var(--card); border-radius: 28px 28px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; }
+.carga-sheet-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0); display: flex; align-items: flex-end; justify-content: center; z-index: 50; transition: background-color 0.28s ease; }
+.carga-sheet-overlay.aberta { background: oklch(0% 0 0 / 0.55); }
+.carga-sheet-handle { width: 36px; height: 5px; border-radius: 999px; background: var(--line); margin-bottom: 14px; touch-action: none; }
+.carga-sheet { width: 100%; max-width: 398px; background: var(--card); border-radius: 28px 28px 0 0; padding: 14px 22px calc(22px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; will-change: transform; }
 .carga-sheet h3 { font-size: 0.78rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
 .carga-sheet .valor-grande { font: 900 3rem/1 "JetBrains Mono", monospace; letter-spacing: -0.03em; margin: 6px 0 22px; font-variant-numeric: tabular-nums; }
 .carga-slider { position: relative; width: 68px; height: 260px; background: var(--card-2); border-radius: 999px; overflow: hidden; touch-action: none; cursor: grab; }

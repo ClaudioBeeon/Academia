@@ -1,6 +1,5 @@
 // js/screens/sessao.js
 import { getAll } from "../data/db.js";
-import { getSeriesDoDia } from "../data/historico.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";

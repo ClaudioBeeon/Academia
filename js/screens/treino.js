@@ -4,7 +4,7 @@ import { getSeriesDoDia } from "../data/historico.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
-import { gerarSessaoDoDia } from "../engine/sessaoGerada.js";
+import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
 
@@ -48,22 +48,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino } =
   const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
   const ultimoCardio = cardioRecente[0] ?? null;
-  const TODOS_MUSCULOS_MAPEADOS = new Set(DIAS_SEQUENCIA.flatMap((d) => d.musculos));
-  const exerciciosDoGrupo = todosExercicios.filter((e) => {
-    return diaInfo.musculos.includes(e.musculoPrimario) || !TODOS_MUSCULOS_MAPEADOS.has(e.musculoPrimario);
-  });
-  const sessoesAnterioresDoGrupo = new Set(
-    todasAsSeries
-      .filter((s) => s.data !== hoje && diaInfo.musculos.includes(s.musculo))
-      .map((s) => s.data)
-  ).size;
-  const definicaoFase = protocolo?.volumeSemanalPorFase?.definicao;
-  const exerciciosHoje = gerarSessaoDoDia({
-    exerciciosDoGrupo,
-    musculosPriorizados: definicaoFase?.musculoPriorizadoCrescimento ?? [],
-    musculosEmManutencao: definicaoFase?.musculoEmManutencao ?? [],
-    sessoesAnterioresDoGrupo,
-  });
+  const { exerciciosHoje } = prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo });
 
   const root = document.createElement("div");
   root.className = "tela-treino";

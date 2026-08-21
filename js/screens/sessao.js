@@ -1,6 +1,7 @@
 // js/screens/sessao.js
 import { getAll } from "../data/db.js";
 import { getEquipamento } from "../data/equipamento.js";
+import { excluirSeriesDoDia } from "../data/historico.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
@@ -18,8 +19,9 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarFluxoSessao(db, { onVoltarParaHoje } = {}) {
+export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {}) {
   const hoje = obterDataLocal();
+  const modoPreview = diaForcado != null;
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
@@ -29,8 +31,11 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje } = {}) {
     getUltimoDiaRegistrado(db),
   ]);
 
-  const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
-  let diaPersistido = Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
+  // No modo preview (abrindo o card de um dia futuro pra só olhar/testar a
+  // fila), a sessão nunca grava o ponteiro de rotação — abrir ou até
+  // registrar séries aqui não pode mudar qual dia é "hoje" pro app.
+  const diaDaSessao = modoPreview ? diaForcado : determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+  let diaPersistido = modoPreview || Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
 
   const { exerciciosHoje } = prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo });
@@ -69,6 +74,14 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje } = {}) {
             await renderizar("avancar");
           },
           onVoltar: onVoltarParaHoje,
+          onPular: modoPreview ? null : async () => {
+            await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
+            if (onVoltarParaHoje) onVoltarParaHoje();
+          },
+          onReiniciar: async () => {
+            await excluirSeriesDoDia(db, exerciciosHoje.map((e) => e.id), hoje);
+            await renderizar("trocarAba");
+          },
         });
       }
 
@@ -118,8 +131,10 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje } = {}) {
         });
       }
 
-      await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
-      diaPersistido = true;
+      if (!modoPreview) {
+        await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
+        diaPersistido = true;
+      }
       return montarTelaRelatorio(db, { hoje, prsDaSessao }, {
         onConcluir: onVoltarParaHoje,
       });

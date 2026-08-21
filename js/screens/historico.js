@@ -7,7 +7,7 @@ export async function montarTelaHistorico(db, exercicio, aoVoltar) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div class="date-label">Histórico</div><div class="day-title"></div>`;
+  header.innerHTML = `<div><div class="date-label">Histórico</div><div class="day-title"></div></div>`;
   header.querySelector(".day-title").textContent = exercicio.nome;
   root.appendChild(header);
 

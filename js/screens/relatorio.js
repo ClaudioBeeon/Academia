@@ -15,8 +15,10 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
   const header = document.createElement("header");
   header.className = "top";
   header.innerHTML = `
-    <div class="date-label">Sessão concluída</div>
-    <div class="day-title">Bom treino! 🎉</div>
+    <div>
+      <div class="date-label">Sessão concluída</div>
+      <div class="day-title">Bom treino! 🎉</div>
+    </div>
   `;
   root.appendChild(header);
 

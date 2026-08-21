@@ -1,6 +1,5 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
-import { registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 
 function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
@@ -28,7 +27,7 @@ function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
 
 export async function montarTelaFila(db, contexto, callbacks) {
   const { diaInfo, exerciciosHoje, hoje } = contexto;
-  const { onExecutar, onFinalizarSessao, onVoltar } = callbacks;
+  const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
 
   const seriesPorExercicio = await Promise.all(
     exerciciosHoje.map((e) => getSeriesDoExercicioNaData(db, e.id, hoje))
@@ -100,15 +99,33 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const rodape = document.createElement("div");
   rodape.className = "foot";
   rodape.style.cssText = "padding:14px 18px 24px; text-align:center;";
-  rodape.innerHTML = `
-    <button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>
-    <button type="button" class="pular-treino-btn" style="margin:12px auto 0;">Já treinei — pular →</button>
-  `;
+  rodape.innerHTML = `<button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>`;
   rodape.querySelector(".finalizar-btn").addEventListener("click", () => { if (onFinalizarSessao) onFinalizarSessao(); });
-  rodape.querySelector(".pular-treino-btn").addEventListener("click", async () => {
-    await registrarDiaDaSessao(db, diaInfo.numero, hoje, true);
-    if (onVoltar) onVoltar();
-  });
+
+  if (onPular) {
+    const pularBtn = document.createElement("button");
+    pularBtn.type = "button";
+    pularBtn.className = "pular-treino-btn";
+    pularBtn.style.margin = "12px auto 0";
+    pularBtn.textContent = "Já treinei — pular →";
+    pularBtn.addEventListener("click", () => onPular());
+    rodape.appendChild(pularBtn);
+  }
+
+  if (onReiniciar && totalSeriesFeitas > 0) {
+    const reiniciarBtn = document.createElement("button");
+    reiniciarBtn.type = "button";
+    reiniciarBtn.className = "pular-treino-btn";
+    reiniciarBtn.style.cssText = "margin:12px auto 0; display:block; color:var(--ink-faint);";
+    reiniciarBtn.textContent = "Reiniciar este treino";
+    reiniciarBtn.addEventListener("click", () => {
+      if (confirm("Apagar todas as séries de hoje deste treino e começar do zero?")) {
+        onReiniciar();
+      }
+    });
+    rodape.appendChild(reiniciarBtn);
+  }
+
   root.appendChild(rodape);
 
   return root;

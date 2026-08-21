@@ -43,7 +43,7 @@ export async function montarTelaDivisao(db) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div class="date-label">Divisão de treino</div><div class="day-title">Divisão</div>`;
+  header.innerHTML = `<div><div class="date-label">Divisão de treino</div><div class="day-title">Divisão</div></div>`;
   root.appendChild(header);
 
   const main = document.createElement("main");

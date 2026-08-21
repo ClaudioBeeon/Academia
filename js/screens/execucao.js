@@ -12,6 +12,10 @@ import { abrirSeletorCarga } from "./seletorCarga.js";
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO = 3;
 
+const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>`;
+const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
+const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
+
 function obterConfigExercicio(protocolo, exercicio) {
   const config = protocolo?.tiposDeExercicio?.[exercicio.tipo];
   if (!config) return CONFIG_PADRAO;
@@ -205,8 +209,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       ? `${sugestao.cargaSugerida}kg`
       : (ultimaAnterior ? `${ultimaAnterior.carga}kg` : "—");
     tilesEl.innerHTML = `
-      <div class="exec-tile"><div class="ic">🏋️</div><b>${cargaSugeridaTexto}</b><s>Carga sugerida</s></div>
-      <div class="exec-tile"><div class="ic">⚡</div><b>${calcularProximoPasso(sugestao, ultimaAnterior)}</b><s>Próximo passo</s></div>
+      <div class="exec-tile"><div class="ic">${ICONE_HALTER}</div><b>${cargaSugeridaTexto}</b><s>Carga sugerida</s></div>
+      <div class="exec-tile"><div class="ic">${ICONE_RAIO}</div><b>${calcularProximoPasso(sugestao, ultimaAnterior)}</b><s>Próximo passo</s></div>
     `;
   }
 
@@ -400,7 +404,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const rodape = document.createElement("div");
   rodape.className = "exec-footer";
   rodape.innerHTML = `
-    <button type="button" class="exec-footer-sq historico-btn" aria-label="Histórico">🕐</button>
+    <button type="button" class="exec-footer-sq historico-btn" aria-label="Histórico">${ICONE_RELOGIO}</button>
     <button type="button" class="exec-footer-primary primario-btn"></button>
   `;
   rodape.querySelector(".historico-btn").addEventListener("click", () => {

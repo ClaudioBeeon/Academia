@@ -33,7 +33,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino } = {}) {
+export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, onAbrirDia } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -111,9 +111,8 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino } =
   carrossel.appendChild(montarCardCardio(ultimoCardio, onIrParaCardio));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
-    carrossel.appendChild(montarChipProximoDia(obterDiaPorNumero(numero), async () => {
-      await registrarDiaDaSessao(db, numero, hoje);
-      window.location.reload();
+    carrossel.appendChild(montarChipProximoDia(obterDiaPorNumero(numero), () => {
+      if (onAbrirDia) onAbrirDia(numero);
     }));
   }
   main.appendChild(carrossel);

@@ -8,7 +8,7 @@ export async function montarTelaBiblioteca(db, { aoVoltar } = {}) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div class="date-label">Config</div><div class="day-title">Biblioteca de exercícios</div>`;
+  header.innerHTML = `<div><div class="date-label">Config</div><div class="day-title">Biblioteca de exercícios</div></div>`;
   root.appendChild(header);
 
   if (aoVoltar) {

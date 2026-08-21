@@ -9,7 +9,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div class="date-label">Configurações</div><div class="day-title">Config</div>`;
+  header.innerHTML = `<div><div class="date-label">Configurações</div><div class="day-title">Config</div></div>`;
   root.appendChild(header);
 
   const main = document.createElement("main");

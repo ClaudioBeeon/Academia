@@ -18,7 +18,7 @@ export async function montarTelaEvolucao(db) {
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div class="date-label">Progressão</div><div class="day-title">Evolução</div>`;
+  header.innerHTML = `<div><div class="date-label">Progressão</div><div class="day-title">Evolução</div></div>`;
   root.appendChild(header);
 
   const main = document.createElement("main");

@@ -1,8 +1,16 @@
 // js/data/historico.js
-import { put, getAllByIndex, getAll } from "./db.js";
+import { put, del, getAllByIndex, getAll } from "./db.js";
 
 export function registrarSerie(db, serie) {
   return put(db, "historicoSeries", serie);
+}
+
+export async function excluirSeriesDoDia(db, exercicioIds, data) {
+  const todas = await getAll(db, "historicoSeries");
+  const alvo = todas.filter((s) => exercicioIds.includes(s.exercicioId) && s.data === data);
+  for (const serie of alvo) {
+    await del(db, "historicoSeries", serie.id);
+  }
 }
 
 export async function getSeriesDoExercicioNaData(db, exercicioId, data) {

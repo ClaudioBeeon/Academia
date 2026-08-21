@@ -29,15 +29,17 @@ body {
 }
 #tab-bar button {
   flex: 0 1 72px;
+  min-height: 44px;
   background: none;
   border: none;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
   font-family: inherit;
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 700;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   padding: 4px;
   cursor: pointer;
@@ -71,7 +73,7 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .vazio { color: var(--ink-faint); padding: 20px 0; }
 
 .icon-row { display: flex; gap: 9px; flex: 0 0 auto; }
-.icon-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: none; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
+.icon-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: none; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
 .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn.lime { background: var(--accent); color: var(--accent-ink); }
 .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -121,7 +123,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exercise-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 14px; }
 .exercise-name { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
 .exercise-meta { font-size: 0.78rem; color: var(--ink-dim); font-weight: 500; margin-top: 3px; }
-.swap-pill { background: var(--card-2); border: none; color: var(--ink-dim); font-size: 0.74rem; font-weight: 700; padding: 8px 14px; border-radius: 999px; cursor: pointer; font-family: var(--font-display); }
+.swap-pill { background: var(--card-2); border: none; color: var(--ink-dim); font-size: 0.875rem; font-weight: 700; padding: 8px 14px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; cursor: pointer; font-family: var(--font-display); }
 .swap-pill:hover { color: var(--accent); }
 .swap-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
@@ -156,7 +158,8 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 /* Execução: tiles, carga pill, lista de séries e card de descanso */
 .exec-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 16px; }
 .exec-tile { background: var(--card-2); border-radius: 20px; padding: 15px; }
-.exec-tile .ic { width: 30px; height: 30px; border-radius: 9px; background: var(--card); display: flex; align-items: center; justify-content: center; margin-bottom: 11px; font-size: 0.95rem; }
+.exec-tile .ic { width: 30px; height: 30px; border-radius: 9px; background: var(--card); display: flex; align-items: center; justify-content: center; margin-bottom: 11px; color: var(--accent); }
+.exec-tile .ic svg { width: 16px; height: 16px; }
 .exec-tile b { display: block; font: 800 1.3rem/1 "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
 .exec-tile s { display: block; text-decoration: none; font-size: 0.68rem; color: var(--ink-faint); margin-top: 6px; font-weight: 500; }
 
@@ -186,7 +189,8 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 .tela-execucao main { padding-bottom: 110px; }
 .exec-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line); display: flex; gap: 11px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); z-index: 11; }
-.exec-footer-sq { width: 52px; min-height: 52px; flex: 0 0 auto; border-radius: 999px; background: var(--card-2); border: none; color: var(--ink-dim); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.exec-footer-sq { width: 52px; min-height: 52px; flex: 0 0 auto; border-radius: 999px; background: var(--card-2); border: none; color: var(--ink-dim); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.exec-footer-sq svg { width: 20px; height: 20px; }
 .exec-footer-sq:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .exec-footer-primary { flex: 1; min-height: 52px; border: none; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-family: inherit; font-weight: 800; font-size: 1rem; cursor: pointer; }
 .exec-footer-primary:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
@@ -231,5 +235,8 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content { paddi
 
 /* Check-in card */
 .checkin-qual { display: flex; gap: 6px; margin-bottom: 4px; }
-.checkin-qual button { flex: 1; text-align: center; padding: 9px 0; border-radius: 999px; background: var(--card-2); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--ink-dim); border: none; cursor: pointer; }
+.checkin-qual button { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 9px 0; border-radius: 999px; background: var(--card-2); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--ink-dim); border: none; cursor: pointer; }
 .checkin-qual button.on { background: var(--accent); color: var(--accent-ink); }
+
+.import-input::file-selector-button { background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px; padding: 10px 16px; min-height: 44px; font-weight: 700; font-size: 0.85rem; font-family: var(--font-display); cursor: pointer; margin-right: 10px; }
+.import-input::file-selector-button:hover { opacity: 0.9; }

@@ -49,6 +49,10 @@ function renderShell(db) {
           onComecarTreino: () => trocarConteudo(content, () => montarFluxoSessao(db, {
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),
+          onAbrirDia: (numero) => trocarConteudo(content, () => montarFluxoSessao(db, {
+            diaForcado: numero,
+            onVoltarParaHoje: () => renderTab("hoje", "voltar"),
+          }), { direcao: "avancar" }),
         }), { direcao });
         return;
       }

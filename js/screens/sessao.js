@@ -52,6 +52,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
   let estadoAtual = "fila";
   let indiceExercicioAtual = 0;
   let explicacaoJaMostrada = false;
+  let telaAtual = null;
   const prsDaSessao = [];
 
   const persistirDiaSeNecessario = async () => {
@@ -62,6 +63,9 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
   };
 
   async function renderizar() {
+    if (telaAtual && telaAtual._dispose) {
+      telaAtual._dispose();
+    }
     root.innerHTML = "";
     let tela;
     if (estadoAtual === "fila") {
@@ -79,8 +83,10 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
       });
     } else if (estadoAtual === "execucao") {
       const exercicio = exerciciosHoje[indiceExercicioAtual];
-      const mostrarExplicacaoAberta = !explicacaoJaMostrada;
-      explicacaoJaMostrada = true;
+      const mostrarExplicacaoAberta = !explicacaoJaMostrada && Boolean(exercicio.observacoesExecucao);
+      if (exercicio.observacoesExecucao) {
+        explicacaoJaMostrada = true;
+      }
       tela = await montarTelaExecucao(db, {
         exercicio,
         indice: indiceExercicioAtual + 1,
@@ -114,6 +120,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onAbrirHistorico
       });
     }
     root.appendChild(tela);
+    telaAtual = tela;
   }
 
   await renderizar();

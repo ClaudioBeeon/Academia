@@ -27,6 +27,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
+  let cronometroAtivo = null;
+  let wakeLockAtivo = null;
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
   const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
@@ -136,6 +138,51 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   };
   atualizarProgressao();
 
+  function pararTudo() {
+    if (cronometroAtivo) {
+      cronometroAtivo.parar();
+      cronometroAtivo = null;
+    }
+    if (wakeLockAtivo) {
+      wakeLockAtivo.release().catch(() => {});
+      wakeLockAtivo = null;
+    }
+  }
+
+  function iniciarDescanso(restBar, descansoSegundos) {
+    if (!restBar || !restBar.classList || !restBar.classList.contains("rest-bar")) return;
+
+    if (cronometroAtivo) {
+      cronometroAtivo.parar();
+    }
+
+    restBar.classList.remove("rest-bar-hidden");
+    const timeEl = restBar.querySelector(".time");
+
+    const cronometro = criarCronometro({
+      duracaoInicialSegundos: descansoSegundos,
+      aoAtualizar: (restante) => {
+        const min = String(Math.floor(restante / 60)).padStart(2, "0");
+        const seg = String(restante % 60).padStart(2, "0");
+        timeEl.textContent = `${min}:${seg}`;
+      },
+      aoFinalizar: () => {
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      },
+    });
+
+    cronometroAtivo = cronometro;
+
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then((lock) => { wakeLockAtivo = lock; }).catch(() => {});
+    }
+
+    restBar.querySelector('[data-action="menos"]').addEventListener("click", () => cronometro.ajustar(-30));
+    restBar.querySelector('[data-action="mais"]').addEventListener("click", () => cronometro.ajustar(30));
+
+    cronometro.iniciar();
+  }
+
   setsContainer.addEventListener("submit", async (event) => {
     const linha = event.target.closest(".set-row");
     if (!linha) return;
@@ -201,7 +248,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
     const restBar = linha.nextElementSibling && linha.nextElementSibling.classList.contains("rest-bar")
       ? linha.nextElementSibling
-      : card.nextElementSibling;
+      : null;
     iniciarDescanso(restBar, cfg.descansoSegundos);
 
     const prsRelevantes = prs.filter((p) => p.tipo !== "primeira_serie");
@@ -275,6 +322,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   });
   root.appendChild(rodape);
 
+  root._dispose = pararTudo;
+
   return root;
 }
 
@@ -302,34 +351,6 @@ function criarPlaceholderDescanso() {
     <div class="rest-ctl"><button type="button" data-action="menos">−30s</button><button type="button" data-action="mais">+30s</button></div>
   `;
   return div;
-}
-
-function iniciarDescanso(restBar, descansoSegundos) {
-  if (!restBar || !restBar.classList || !restBar.classList.contains("rest-bar")) return;
-
-  restBar.classList.remove("rest-bar-hidden");
-  const timeEl = restBar.querySelector(".time");
-
-  const cronometro = criarCronometro({
-    duracaoInicialSegundos: descansoSegundos,
-    aoAtualizar: (restante) => {
-      const min = String(Math.floor(restante / 60)).padStart(2, "0");
-      const seg = String(restante % 60).padStart(2, "0");
-      timeEl.textContent = `${min}:${seg}`;
-    },
-    aoFinalizar: () => {
-      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    },
-  });
-
-  if ("wakeLock" in navigator) {
-    navigator.wakeLock.request("screen").catch(() => {});
-  }
-
-  restBar.querySelector('[data-action="menos"]').addEventListener("click", () => cronometro.ajustar(-30));
-  restBar.querySelector('[data-action="mais"]').addEventListener("click", () => cronometro.ajustar(30));
-
-  cronometro.iniciar();
 }
 
 function mostrarToastRir(mensagem) {

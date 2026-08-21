@@ -357,11 +357,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   });
 
   const rodape = document.createElement("div");
-  rodape.className = "foot";
-  rodape.style.cssText = "padding:14px 18px 24px; display:flex; gap:10px;";
+  rodape.className = "exec-footer";
   rodape.innerHTML = `
-    <button type="button" class="swap-pill historico-btn" aria-label="Histórico" style="width:52px; border-radius:999px; display:flex; align-items:center; justify-content:center;">🕐</button>
-    <button type="button" class="swap-pill primario-btn" style="flex:1; background:var(--accent); color:var(--accent-ink);"></button>
+    <button type="button" class="exec-footer-sq historico-btn" aria-label="Histórico">🕐</button>
+    <button type="button" class="exec-footer-primary primario-btn"></button>
   `;
   rodape.querySelector(".historico-btn").addEventListener("click", () => {
     if (onAbrirHistorico) onAbrirHistorico(exercicio);

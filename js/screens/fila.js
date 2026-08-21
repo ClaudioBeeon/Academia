@@ -1,5 +1,6 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
+import { registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 
 function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
@@ -98,9 +99,16 @@ export async function montarTelaFila(db, contexto, callbacks) {
 
   const rodape = document.createElement("div");
   rodape.className = "foot";
-  rodape.style.cssText = "padding:14px 18px 24px;";
-  rodape.innerHTML = `<button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>`;
+  rodape.style.cssText = "padding:14px 18px 24px; text-align:center;";
+  rodape.innerHTML = `
+    <button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>
+    <button type="button" class="pular-treino-btn" style="margin:12px auto 0;">Já treinei — pular →</button>
+  `;
   rodape.querySelector(".finalizar-btn").addEventListener("click", () => { if (onFinalizarSessao) onFinalizarSessao(); });
+  rodape.querySelector(".pular-treino-btn").addEventListener("click", async () => {
+    await registrarDiaDaSessao(db, diaInfo.numero, hoje, true);
+    if (onVoltar) onVoltar();
+  });
   root.appendChild(rodape);
 
   return root;

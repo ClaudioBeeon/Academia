@@ -105,24 +105,18 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino } =
     planoCard.insertBefore(seletorDia, planoCard.querySelector("button"));
   }
 
-  const pularBtn = document.createElement("button");
-  pularBtn.type = "button";
-  pularBtn.className = "pular-treino-btn";
-  pularBtn.textContent = "Já treinei — pular →";
-  pularBtn.addEventListener("click", async (event) => {
-    event.stopPropagation();
-    await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
-    window.location.reload();
-  });
-  planoCard.appendChild(pularBtn);
-
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
   carrossel.appendChild(montarCardCardio(ultimoCardio, onIrParaCardio));
+  for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
+    const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
+    carrossel.appendChild(montarChipProximoDia(obterDiaPorNumero(numero), async () => {
+      await registrarDiaDaSessao(db, numero, hoje);
+      window.location.reload();
+    }));
+  }
   main.appendChild(carrossel);
-
-  main.appendChild(montarSecaoProximosDias(diaDaSessao));
 
   main.appendChild(montarCardAtividade(atividade));
 
@@ -285,32 +279,17 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
   return card;
 }
 
-function montarSecaoProximosDias(diaDaSessao) {
-  const section = document.createElement("section");
-  section.className = "atividade-secao";
-
-  const cabecalho = document.createElement("div");
-  cabecalho.className = "shead";
-  cabecalho.innerHTML = "<h4>Próximos dias</h4>";
-  section.appendChild(cabecalho);
-
-  const strip = document.createElement("div");
-  strip.className = "dias-strip";
-  for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
-    const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
-    const dia = obterDiaPorNumero(numero);
-    const chip = document.createElement("div");
-    chip.className = "dia-chip";
-    chip.innerHTML = `
-      <div class="num">Dia ${dia.numero}</div>
-      <div class="titulo">${dia.titulo}</div>
-      <div class="musc">${dia.musculos.join(", ")}</div>
-    `;
-    strip.appendChild(chip);
-  }
-  section.appendChild(strip);
-
-  return section;
+function montarChipProximoDia(dia, aoClicar) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "dia-chip";
+  chip.innerHTML = `
+    <div class="num">Dia ${dia.numero}</div>
+    <div class="titulo">${dia.titulo}</div>
+    <div class="musc">${dia.musculos.join(", ")}</div>
+  `;
+  chip.addEventListener("click", aoClicar);
+  return chip;
 }
 
 function formatarMinutosAtivos(minutos) {

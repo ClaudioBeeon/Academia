@@ -2,13 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcularFrequenciaSemanalPorMusculo, calcularContadorPorMusculo, prepararSessaoDoDia } from "./contextoSessao.js";
 
-test("calcularFrequenciaSemanalPorMusculo reflete a sequência real: peito 3x, tríceps 2x, pernas 1x cada", () => {
+test("calcularFrequenciaSemanalPorMusculo reflete a sequência real: peito 3x, tríceps 2x, bíceps e ombro 2x/3x, pernas 1x", () => {
   const frequencia = calcularFrequenciaSemanalPorMusculo();
   assert.equal(frequencia.peito, 3);
   assert.equal(frequencia.triceps, 2);
   assert.equal(frequencia.costas, 1);
-  assert.equal(frequencia.biceps, 1);
-  assert.equal(frequencia.ombro, 1);
+  assert.equal(frequencia.biceps, 2);
+  assert.equal(frequencia.ombro, 3);
   assert.equal(frequencia.quadriceps, 1);
 });
 
@@ -66,6 +66,35 @@ test("prepararSessaoDoDia aplica a faixa de manutenção do protocolo real e lim
   });
   const doPeito = exerciciosHoje.filter((e) => e.musculoPrimario === "peito");
   assert.equal(doPeito.length, 1);
+});
+
+test("prepararSessaoDoDia repassa musculosEmRecomposicao e faixasRecomposicao do protocolo real", () => {
+  const protocolo = {
+    volumeSemanalPorFase: {
+      definicao: {
+        musculoPriorizadoCrescimento: [],
+        musculoEmManutencao: [],
+        musculoEmRecomposicao: ["peito"],
+        faixasPadrao: { alvo_max: 16 },
+        faixasRecomposicao: { alvo_max: 15, seriesPorExercicio: 4 },
+      },
+    },
+  };
+  const todosExercicios = [
+    exercicio("inclinado", "peito"),
+    exercicio("reto", "peito"),
+    exercicio("crucifixo", "peito"),
+  ];
+  const diaInfo = { numero: 1, titulo: "Peito", musculos: ["peito"] };
+  const { exerciciosHoje } = prepararSessaoDoDia({
+    todosExercicios,
+    protocolo,
+    todasAsSeries: [],
+    hoje: "2026-08-21",
+    diaInfo,
+  });
+  assert.equal(exerciciosHoje.length, 1);
+  assert.equal(exerciciosHoje[0].seriesAlvo, 4);
 });
 
 test("prepararSessaoDoDia ordena o músculo prioritário do dia (primeiro da lista) antes do secundário", () => {

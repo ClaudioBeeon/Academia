@@ -22,10 +22,17 @@
 //   onde ela tentaria empurrar a semana inteira pra uma sessão só. Quando
 //   frequência/faixas não são informadas, cai no teto de 2 (comportamento
 //   legado).
-// - Prioridade: musculosPriorizados > padrão > musculosEmManutencao, lida de
-//   protocolo.json.volumeSemanalPorFase.definicao. Só decide QUEM ganha o
-//   2º exercício quando o alvo de 7 já cobriu 1 de cada músculo — nunca
-//   exclui um músculo em manutenção da sessão.
+// - Prioridade: musculosPriorizados > recomposicao/padrão > musculosEmManutencao,
+//   lida de protocolo.json.volumeSemanalPorFase.definicao. Só decide QUEM
+//   ganha o 2º exercício quando o alvo de 7 já cobriu 1 de cada músculo —
+//   nunca exclui um músculo em manutenção da sessão.
+// - musculosEmRecomposicao é uma 4ª faixa (entre priorizado e padrão) pra
+//   músculos com prioridade real de crescimento mas volume ainda contido
+//   pelo déficit calórico da fase (ex.: peito na fase "definicao" —
+//   referencia-consolidada-app-treino.md seção 4). A faixa correspondente
+//   (faixasRecomposicao) pode declarar seriesPorExercicio próprio — cada
+//   exercício selecionado sai com esse valor em `seriesAlvo`, consumido
+//   pela UI de execução em vez do fixo de 3 séries.
 // - Rotação: o offset de cada músculo vem de contadorPorMusculo[musculo]
 //   (quantas sessões anteriores já treinaram aquele músculo especificamente)
 //   quando informado, com sessoesAnterioresDoGrupo como fallback legado. Um
@@ -46,32 +53,41 @@ const MAX_SERIES_DIRETAS_POR_MUSCULO = 8;
 const SERIES_POR_EXERCICIO = 3;
 const MAX_EXERCICIOS_POR_MUSCULO = Math.floor(MAX_SERIES_DIRETAS_POR_MUSCULO / SERIES_POR_EXERCICIO);
 
-function ordemPrioridade(musculo, musculosPriorizados, musculosEmManutencao) {
-  if (musculosPriorizados.includes(musculo)) return 0;
-  if (musculosEmManutencao.includes(musculo)) return 2;
-  return 1;
+// Ordem de prioridade das rodadas (quem ganha a 2ª vaga primeiro quando o
+// alvo de 7 exercícios/sessão sobra espaço) — não é a mesma coisa que a
+// faixa de volume do músculo, só quem preenche primeiro.
+function determinarTier(musculo, { musculosPriorizados, musculosEmRecomposicao, musculosEmManutencao }) {
+  if (musculosPriorizados.includes(musculo)) return "priorizado";
+  if (musculosEmRecomposicao.includes(musculo)) return "recomposicao";
+  if (musculosEmManutencao.includes(musculo)) return "manutencao";
+  return "padrao";
 }
 
-function calcularExerciciosAlvo(musculo, { musculosPriorizados, musculosEmManutencao, frequenciaSemanalPorMusculo, faixasVolume }) {
+const ORDEM_POR_TIER = { priorizado: 0, recomposicao: 1, padrao: 1, manutencao: 2 };
+
+// Cada faixa de volume pode declarar seriesPorExercicio (ex.: peito em
+// recomposição usa 4-5 em vez do padrão de 3 — referencia-consolidada-app-
+// treino.md seção 4) pra caber o volume-alvo em 1 exercício/dia sem
+// precisar de um 2º exercício que estouraria a faixa.
+function calcularExerciciosAlvo(musculo, tier, { frequenciaSemanalPorMusculo, faixasVolume }) {
   const frequencia = frequenciaSemanalPorMusculo[musculo];
-  if (!frequencia || !faixasVolume) return MAX_EXERCICIOS_POR_MUSCULO;
+  const faixa = faixasVolume?.[tier] ?? faixasVolume?.padrao;
+  const seriesPorExercicio = faixa?.seriesPorExercicio ?? SERIES_POR_EXERCICIO;
 
-  const tier = musculosPriorizados.includes(musculo)
-    ? "priorizado"
-    : musculosEmManutencao.includes(musculo)
-      ? "manutencao"
-      : "padrao";
-  const faixa = faixasVolume[tier] ?? faixasVolume.padrao;
-  if (!faixa || faixa.alvo_max == null) return MAX_EXERCICIOS_POR_MUSCULO;
+  if (!frequencia || !faixasVolume || !faixa || faixa.alvo_max == null) {
+    return { qtdExercicios: MAX_EXERCICIOS_POR_MUSCULO, seriesPorExercicio: SERIES_POR_EXERCICIO };
+  }
 
-  const bruto = Math.round(faixa.alvo_max / frequencia / SERIES_POR_EXERCICIO);
-  return Math.min(Math.max(bruto, 1), MAX_EXERCICIOS_POR_MUSCULO);
+  const bruto = Math.round(faixa.alvo_max / frequencia / seriesPorExercicio);
+  const qtdExercicios = Math.min(Math.max(bruto, 1), MAX_EXERCICIOS_POR_MUSCULO);
+  return { qtdExercicios, seriesPorExercicio };
 }
 
 export function gerarSessaoDoDia({
   exerciciosDoGrupo,
   musculosPriorizados = [],
   musculosEmManutencao = [],
+  musculosEmRecomposicao = [],
   sessoesAnterioresDoGrupo = 0,
   contadorPorMusculo = {},
   frequenciaSemanalPorMusculo = {},
@@ -84,15 +100,18 @@ export function gerarSessaoDoDia({
     porMusculo.get(exercicio.musculoPrimario).push(exercicio);
   }
 
+  const tierPorMusculo = new Map(
+    [...porMusculo.keys()].map((musculo) => [musculo, determinarTier(musculo, { musculosPriorizados, musculosEmRecomposicao, musculosEmManutencao })])
+  );
+
   const musculosOrdenados = [...porMusculo.keys()].sort(
-    (a, b) => ordemPrioridade(a, musculosPriorizados, musculosEmManutencao)
-      - ordemPrioridade(b, musculosPriorizados, musculosEmManutencao)
+    (a, b) => ORDEM_POR_TIER[tierPorMusculo.get(a)] - ORDEM_POR_TIER[tierPorMusculo.get(b)]
   );
 
   const alvoPorMusculo = new Map(
     musculosOrdenados.map((musculo) => [
       musculo,
-      calcularExerciciosAlvo(musculo, { musculosPriorizados, musculosEmManutencao, frequenciaSemanalPorMusculo, faixasVolume }),
+      calcularExerciciosAlvo(musculo, tierPorMusculo.get(musculo), { frequenciaSemanalPorMusculo, faixasVolume }),
     ])
   );
 
@@ -106,9 +125,10 @@ export function gerarSessaoDoDia({
   for (let rodada = 0; rodada < MAX_EXERCICIOS_POR_MUSCULO && selecionados.length < ALVO_MAXIMO; rodada++) {
     musculosOrdenados.forEach((musculo, indiceMusculo) => {
       if (selecionados.length >= ALVO_MAXIMO) return;
-      if (rodada >= alvoPorMusculo.get(musculo)) return;
+      const alvo = alvoPorMusculo.get(musculo);
+      if (rodada >= alvo.qtdExercicios) return;
       const proximo = filas[indiceMusculo][rodada];
-      if (proximo) selecionados.push(proximo);
+      if (proximo) selecionados.push({ ...proximo, seriesAlvo: alvo.seriesPorExercicio });
     });
   }
 

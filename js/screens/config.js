@@ -5,6 +5,7 @@ import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 import { getApiKey, salvarApiKey } from "../ai/gemini.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas } from "../engine/lembretes.js";
+import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -34,6 +35,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
 
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(criarSecaoGemini());
+  main.appendChild(criarSecaoLembretes());
   main.appendChild(await criarSecaoSugestoes(db));
 
   const importCard = document.createElement("section");
@@ -109,6 +111,43 @@ function criarSecaoGemini() {
     salvarApiKey(form.chave.value.trim());
     status.textContent = form.chave.value.trim() ? "Chave salva." : "Chave removida.";
   });
+  return card;
+}
+
+const TEXTO_STATUS_PERMISSAO = {
+  granted: "Ativado.",
+  denied: "Bloqueado — reative nas permissões do navegador/site pra receber lembretes.",
+  default: "Ainda não ativado.",
+  indisponivel: "Notificações não são suportadas neste navegador.",
+};
+
+function criarSecaoLembretes() {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Lembretes</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:10px;">
+      <div class="prev-hint">Creatina do dia, foto/medida a cada 2 semanas e reavaliação de fase — só chegam enquanto o app estiver aberto (ou for reaberto), sem servidor de push não dá pra garantir aviso com o app fechado.</div>
+      <button type="button" class="swap-pill ativar-lembretes-btn"></button>
+      <div class="prev-hint lembretes-status"></div>
+    </div>
+  `;
+  const botao = card.querySelector(".ativar-lembretes-btn");
+  const status = card.querySelector(".lembretes-status");
+
+  const atualizar = () => {
+    const permissao = statusPermissao();
+    status.textContent = TEXTO_STATUS_PERMISSAO[permissao] ?? "";
+    botao.disabled = permissao === "granted" || permissao === "denied" || permissao === "indisponivel";
+    botao.textContent = permissao === "granted" ? "Ativado" : "Ativar lembretes";
+  };
+  atualizar();
+
+  botao.addEventListener("click", async () => {
+    await pedirPermissaoNotificacao();
+    atualizar();
+  });
+
   return card;
 }
 

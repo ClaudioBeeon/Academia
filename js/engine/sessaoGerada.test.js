@@ -150,6 +150,47 @@ test("sem frequência/faixas informadas, mantém o teto legado de 2 exercícios/
   assert.equal(sessao.length, 2);
 });
 
+test("sem seriesAlvo declarado, exercícios saem com o padrão de 3 séries", () => {
+  const exercicios = [ex("p1", "peito")];
+  const sessao = gerarSessaoDoDia({
+    exerciciosDoGrupo: exercicios,
+    frequenciaSemanalPorMusculo: { peito: 3 },
+    faixasVolume: FAIXAS_FASE_DEFINICAO,
+  });
+  assert.equal(sessao[0].seriesAlvo, 3);
+});
+
+// --- músculo em recomposição: faixa própria (entre priorizado e padrão) com seriesPorExercicio dedicado ---
+
+const FAIXAS_FASE_DEFINICAO_COM_RECOMPOSICAO = {
+  ...FAIXAS_FASE_DEFINICAO,
+  recomposicao: { alvo_max: 15, seriesPorExercicio: 4 },
+};
+
+test("peito em recomposição (3x/semana, alvo 15, 4 séries/exercício) recebe 1 exercício/dia com seriesAlvo=4 — 12 séries/semana", () => {
+  const exercicios = [ex("inclinado", "peito"), ex("reto", "peito"), ex("crucifixo", "peito")];
+  const sessao = gerarSessaoDoDia({
+    exerciciosDoGrupo: exercicios,
+    musculosEmRecomposicao: ["peito"],
+    frequenciaSemanalPorMusculo: { peito: 3 },
+    faixasVolume: FAIXAS_FASE_DEFINICAO_COM_RECOMPOSICAO,
+  });
+  assert.equal(sessao.length, 1);
+  assert.equal(sessao[0].seriesAlvo, 4);
+});
+
+test("músculo priorizado sem faixasPriorizado definida cai no padrão (fallback seguro)", () => {
+  const exercicios = [ex("b1", "biceps"), ex("b2", "biceps"), ex("b3", "biceps")];
+  const sessao = gerarSessaoDoDia({
+    exerciciosDoGrupo: exercicios,
+    musculosPriorizados: ["biceps"],
+    frequenciaSemanalPorMusculo: { biceps: 2 },
+    faixasVolume: FAIXAS_FASE_DEFINICAO,
+  });
+  assert.equal(sessao.length, 2);
+  assert.equal(sessao[0].seriesAlvo, 3);
+});
+
 // --- contador de rotação por músculo, compartilhado entre dias (correcao-volume-peito.md, item 2) ---
 
 test("contadorPorMusculo tem prioridade sobre sessoesAnterioresDoGrupo e é específico por músculo", () => {

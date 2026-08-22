@@ -33,3 +33,9 @@ export function deveLembrarFotosMedidas(ultimaDataRegistrada, hoje, diasInterval
   if (!ultimaDataRegistrada) return true;
   return diferencaEmDias(ultimaDataRegistrada, hoje) >= diasIntervalo;
 }
+
+// Usuário já usa creatina e só quer o lembrete diário até marcar — sem dose
+// nem horário, só o check binário (adendo seção Sugestões, Parte 1).
+export function deveLembrarCreatina(habitoHoje) {
+  return habitoHoje?.creatina !== true;
+}

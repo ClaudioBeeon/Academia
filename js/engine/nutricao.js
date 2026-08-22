@@ -74,6 +74,11 @@ export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, tem
     }
   }
 
+  return alertas.concat(checarFibraEVariedade(temFibraOuVegetais));
+}
+
+function checarFibraEVariedade(temFibraOuVegetais) {
+  const alertas = [];
   if (!temFibraOuVegetais) {
     alertas.push({
       eixo: "fibraEVariedade",
@@ -82,4 +87,21 @@ export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, tem
   }
 
   return alertas;
+}
+
+// Cruza os últimos dias de dieta efetivamente registrada com a meta calórica
+// pra decidir se "déficit consistente" é uma causa provável de queda de
+// desempenho (js/engine/autorregulacao.js). Só considera dias com refeições
+// de fato marcadas pelo usuário — sem dado registrado, não afirma déficit.
+export function avaliarDeficitConsistente({ totaisDiarios = [], metaCalorica } = {}) {
+  if (!metaCalorica || totaisDiarios.length === 0) return false;
+
+  const diasEmDeficit = totaisDiarios.filter((total) => {
+    const deficitReal = metaCalorica.tmb_kcal > 0
+      ? (metaCalorica.tmb_kcal - total.kcal) / metaCalorica.tmb_kcal
+      : 0;
+    return total.kcal < metaCalorica.piso_kcal || deficitReal > PERCENTUAL_MAXIMO_DEFICIT;
+  }).length;
+
+  return diasEmDeficit >= Math.min(2, totaisDiarios.length);
 }

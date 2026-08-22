@@ -34,6 +34,7 @@ function montarFaixasVolume(definicaoFase) {
     padrao: definicaoFase.faixasPadrao ?? null,
     manutencao: definicaoFase.faixasManutencao ?? null,
     priorizado: definicaoFase.faixasPriorizado ?? null,
+    recomposicao: definicaoFase.faixasRecomposicao ?? null,
   };
 }
 
@@ -60,6 +61,7 @@ export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries,
     exerciciosDoGrupo,
     musculosPriorizados: definicaoFase?.musculoPriorizadoCrescimento ?? [],
     musculosEmManutencao: definicaoFase?.musculoEmManutencao ?? [],
+    musculosEmRecomposicao: definicaoFase?.musculoEmRecomposicao ?? [],
     frequenciaSemanalPorMusculo: calcularFrequenciaSemanalPorMusculo(),
     faixasVolume: montarFaixasVolume(definicaoFase),
     contadorPorMusculo: calcularContadorPorMusculo(todasAsSeries, hoje),

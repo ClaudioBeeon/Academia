@@ -10,7 +10,7 @@ import { criarCronometro } from "./timer.js";
 import { abrirSeletorCarga } from "./seletorCarga.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
-const TOTAL_SERIES_ALVO = 3;
+const TOTAL_SERIES_ALVO_PADRAO = 3;
 
 const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>`;
 const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
@@ -44,6 +44,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
+  const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
   let cronometroAtivo = null;
   let wakeLockAtivo = null;
   let numeroEmAndamento = null;
@@ -136,7 +137,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   const shead = document.createElement("div");
   shead.className = "shead";
-  shead.innerHTML = `<h4>Séries</h4><s>${TOTAL_SERIES_ALVO} no total</s>`;
+  shead.innerHTML = `<h4>Séries</h4><s>${totalSeriesAlvo} no total</s>`;
   main.appendChild(shead);
 
   const seriesListEl = document.createElement("div");
@@ -198,7 +199,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   };
 
   function numeroPendenteAtual() {
-    for (let numero = 1; numero <= TOTAL_SERIES_ALVO; numero++) {
+    for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
       if (!seriesHoje.find((s) => s.serieNumero === numero)) return numero;
     }
     return null;
@@ -225,7 +226,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   function renderizarSeries() {
     const pendente = numeroPendenteAtual();
     seriesListEl.innerHTML = "";
-    for (let numero = 1; numero <= TOTAL_SERIES_ALVO; numero++) {
+    for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
       const feita = seriesHoje.find((s) => s.serieNumero === numero);
       const row = document.createElement("div");
       row.className = "exec-serie-row" + (!feita && numero === pendente ? " pendente" : "");

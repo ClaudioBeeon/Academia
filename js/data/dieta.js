@@ -1,5 +1,5 @@
 // js/data/dieta.js
-import { get, put } from "./db.js";
+import { get, put, getAll } from "./db.js";
 import { getCheckin, registrarCheckin } from "./checkin.js";
 
 const REFEICOES_ORDEM = ["cafeDaManha", "almoco", "cafeDaTarde", "janta"];
@@ -18,6 +18,17 @@ export async function salvarSelecaoRefeicao(db, data, refeicaoChave, opcaoId) {
   const refeicoes = { ...(registro?.refeicoes ?? {}), [refeicaoChave]: opcaoId };
   await registrarCheckin(db, data, { refeicoes });
   return refeicoes;
+}
+
+// Dias recentes com pelo menos uma refeição marcada pelo usuário — usado
+// pra decidir se há dado suficiente pra afirmar déficit consistente (nunca
+// assume déficit sem refeição de fato registrada).
+export async function getSelecoesRecentes(db, limite = 3) {
+  const todos = await getAll(db, "registrosDiarios");
+  return todos
+    .filter((r) => r.refeicoes && Object.keys(r.refeicoes).length > 0)
+    .sort((a, b) => b.data.localeCompare(a.data))
+    .slice(0, limite);
 }
 
 export async function adicionarAlimentoPessoal(db, alimento) {

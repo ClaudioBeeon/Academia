@@ -1,5 +1,5 @@
 // js/screens/divisao.js
-import { getAll } from "../data/db.js";
+import { getAll, get } from "../data/db.js";
 import { getUltimaSerieGeral, getSeriesDoDia, getUltimasSessoesPorExercicio, getSeriesDesde } from "../data/historico.js";
 import { obterDiaPorNumero, obterDiaPeloMusculo, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
@@ -11,6 +11,8 @@ import { avaliarCardio } from "../engine/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 import { getHabitosRecentes } from "../data/habitos.js";
 import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
+import { getSelecoesRecentes, getDietaBase, calcularTotalDoDia } from "../data/dieta.js";
+import { calcularTMB, calcularMetaCalorica, avaliarDeficitConsistente } from "../engine/nutricao.js";
 
 const MODALIDADES_CARDIO = ["bicicleta", "eliptico", "escada", "caminhada", "corrida"];
 const NOME_MODALIDADE = {
@@ -36,6 +38,25 @@ function subtrairDias(dataISO, dias) {
   const mes = String(d.getMonth() + 1).padStart(2, "0");
   const dia = String(d.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
+}
+
+async function calcularHouveDeficitConsistente(db) {
+  const perfil = await get(db, "perfil", "1.0");
+  if (!perfil?.dadosBasicos?.idade) return false; // sem idade, não dá pra calcular TMB — não afirma déficit sem base
+
+  const [dietaBase, selecoesRecentes] = await Promise.all([getDietaBase(db), getSelecoesRecentes(db)]);
+  if (!dietaBase || selecoesRecentes.length === 0) return false;
+
+  const tmb = calcularTMB({
+    sexo: perfil.dadosBasicos.sexo,
+    pesoKg: perfil.dadosBasicos.peso_kg,
+    alturaCm: perfil.dadosBasicos.altura_cm,
+    idade: perfil.dadosBasicos.idade,
+  });
+  const metaCalorica = calcularMetaCalorica({ tmb, fase: perfil.fase?.atual });
+  const totaisDiarios = selecoesRecentes.map((registro) => calcularTotalDoDia(dietaBase, registro.refeicoes).total);
+
+  return avaliarDeficitConsistente({ totaisDiarios, metaCalorica });
 }
 
 export async function montarTelaDivisao(db) {
@@ -81,15 +102,15 @@ export async function montarTelaDivisao(db) {
     hoje,
   });
 
-  // Antes de deixar "desempenho caindo" implicar déficit por padrão, cruza com
-  // hábitos recentes — sono ruim e álcool são apontados primeiro, por serem
-  // mais fáceis de corrigir rápido do que reavaliar a dieta toda (adendo
-  // seção Sugestões). Detecção fina de déficit consistente por dieta
-  // registrada fica pra depois — por ora a causa "déficit" é o fallback já
-  // implícito nesses alertas quando nenhum hábito explica a queda.
+  // Antes de deixar "desempenho caindo" implicar déficit, cruza com hábitos
+  // recentes — sono ruim e álcool são apontados primeiro, por serem mais
+  // fáceis de corrigir rápido do que reavaliar a dieta toda (adendo seção
+  // Sugestões) — e só afirma déficit quando os últimos dias de dieta
+  // efetivamente registrada mostram isso; sem registro, não afirma nada.
+  const houveDeficitConsistente = await calcularHouveDeficitConsistente(db);
   const alertasDesempenhoComCausa = alertasDesempenho.map((alerta) => {
     if (alerta.tipo !== "desempenho_caindo") return alerta;
-    const causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes, houveDeficitConsistente: true });
+    const causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes, houveDeficitConsistente });
     if (!causaProvavel || causaProvavel.causa === "deficit") return alerta;
     return { ...alerta, mensagem: `${alerta.mensagem} ${causaProvavel.mensagem}` };
   });

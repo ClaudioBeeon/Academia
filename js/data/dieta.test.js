@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, clearStore } from "./db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia } from "./dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes } from "./dieta.js";
 
 const DIETA_EXEMPLO = {
   versao: "1.0",
@@ -59,6 +59,17 @@ test("adicionarAlimentoPessoal acrescenta à lista sem apagar os anteriores", as
   const dieta = await getDietaBase(db);
   assert.equal(dieta.listaAlimentosPessoal.length, 1);
   assert.equal(dieta.listaAlimentosPessoal[0].nome, "pizza");
+  db.close();
+});
+
+test("getSelecoesRecentes só retorna dias com ao menos uma refeição marcada", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  await salvarSelecaoRefeicao(db, "2026-08-20", "cafeDaManha", "unica");
+  const { registrarCheckin } = await import("./checkin.js");
+  await registrarCheckin(db, "2026-08-21", { qualidadePercebida: 4 }); // check-in sem refeições marcadas
+  const recentes = await getSelecoesRecentes(db);
+  assert.deepEqual(recentes.map((r) => r.data), ["2026-08-20"]);
   db.close();
 });
 

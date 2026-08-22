@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, pisoCaloricoSeguranca } from "./nutricao.js";
+import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, pisoCaloricoSeguranca, avaliarDeficitConsistente } from "./nutricao.js";
 
 test("calcularTMB usa Mifflin-St Jeor para homem", () => {
   const tmb = calcularTMB({ sexo: "masculino", pesoKg: 71, alturaCm: 170, idade: 30 });
@@ -66,6 +66,38 @@ test("checarAdequacaoNutricional sinaliza lacuna de fibra/variedade quando não 
     temFibraOuVegetais: false,
   });
   assert.ok(alertas.some((a) => a.eixo === "fibraEVariedade"));
+});
+
+test("avaliarDeficitConsistente retorna false sem dias registrados", () => {
+  assert.equal(avaliarDeficitConsistente({ totaisDiarios: [], metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500 } }), false);
+});
+
+test("avaliarDeficitConsistente retorna false sem meta calórica calculável", () => {
+  assert.equal(avaliarDeficitConsistente({ totaisDiarios: [{ kcal: 1200 }], metaCalorica: null }), false);
+});
+
+test("avaliarDeficitConsistente retorna true quando 2 de 3 dias recentes estão em déficit", () => {
+  const metaCalorica = { tmb_kcal: 1700, piso_kcal: 1500 };
+  const resultado = avaliarDeficitConsistente({
+    totaisDiarios: [{ kcal: 1400 }, { kcal: 1450 }, { kcal: 1650 }],
+    metaCalorica,
+  });
+  assert.equal(resultado, true);
+});
+
+test("avaliarDeficitConsistente retorna false quando só 1 dia está em déficit", () => {
+  const metaCalorica = { tmb_kcal: 1700, piso_kcal: 1500 };
+  const resultado = avaliarDeficitConsistente({
+    totaisDiarios: [{ kcal: 1400 }, { kcal: 1650 }, { kcal: 1680 }],
+    metaCalorica,
+  });
+  assert.equal(resultado, false);
+});
+
+test("avaliarDeficitConsistente exige déficit no único dia disponível quando há menos de 2 dias", () => {
+  const metaCalorica = { tmb_kcal: 1700, piso_kcal: 1500 };
+  assert.equal(avaliarDeficitConsistente({ totaisDiarios: [{ kcal: 1400 }], metaCalorica }), true);
+  assert.equal(avaliarDeficitConsistente({ totaisDiarios: [{ kcal: 1650 }], metaCalorica }), false);
 });
 
 test("checarAdequacaoNutricional não gera alertas quando tudo está dentro das faixas", () => {

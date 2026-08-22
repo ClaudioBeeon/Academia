@@ -1,6 +1,10 @@
 // js/app.js
-import { openDatabase } from "./data/db.js";
+import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
+import { getHabito } from "./data/habitos.js";
+import { getMedidas } from "./data/medidas.js";
+import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida } from "./engine/lembretes.js";
+import { permissaoConcedida, mostrarNotificacao } from "./lib/notificacoes.js";
 import { montarTelaTreino } from "./screens/treino.js";
 import { montarFluxoSessao } from "./screens/sessao.js";
 import { montarTelaBiblioteca } from "./screens/biblioteca.js";
@@ -34,6 +38,49 @@ async function bootstrap() {
   await seedIfNeeded(db);
 
   renderShell(db);
+  verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
+}
+
+function obterDataLocal() {
+  const agora = new Date();
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+}
+
+// Limitação real de PWA sem servidor de push: isso só dispara enquanto o
+// app está aberto (ou é reaberto), nunca com o app fechado em background —
+// documentado em js/lib/notificacoes.js. Verifica no máximo 1x/dia (marcador
+// em config) pra não repetir notificação a cada troca de aba.
+async function verificarEEnviarLembretes(db) {
+  if (!permissaoConcedida()) return;
+
+  const hoje = obterDataLocal();
+  const marcador = await get(db, "config", "lembretesEnviadosEm");
+  if (marcador?.valor === hoje) return;
+
+  const [habitoHoje, medidas, perfil] = await Promise.all([
+    getHabito(db, hoje),
+    getMedidas(db),
+    get(db, "perfil", "1.0"),
+  ]);
+
+  if (deveLembrarCreatina(habitoHoje)) {
+    await mostrarNotificacao("Creatina hoje?", { body: "Ainda não marcada — um toque em Início pra registrar.", tag: "lembrete-creatina" });
+  }
+
+  const ultimaMedida = medidas.length > 0 ? [...medidas].sort((a, b) => b.data.localeCompare(a.data))[0].data : undefined;
+  if (deveLembrarFotosMedidas(ultimaMedida, hoje)) {
+    await mostrarNotificacao("Hora da foto/medida de cintura", { body: "Já fazem 2 semanas ou mais desde o último registro.", tag: "lembrete-medidas" });
+  }
+
+  if (perfil?.fase) {
+    const dataInicioFase = perfil.fase.historico?.at(-1)?.data ?? perfil.dataAtualizacao;
+    const dataReavaliacao = perfil.fase.dataReavaliacao ?? calcularDataReavaliacaoSugerida(dataInicioFase);
+    if (devePedirReavaliacaoFase(dataReavaliacao, hoje)) {
+      await mostrarNotificacao("Hora de reavaliar a fase", { body: `Confira a tendência das últimas semanas antes de decidir sobre a fase "${perfil.fase.atual}".`, tag: "lembrete-fase" });
+    }
+  }
+
+  await put(db, "config", { chave: "lembretesEnviadosEm", valor: hoje });
 }
 
 function renderShell(db) {

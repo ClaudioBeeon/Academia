@@ -51,10 +51,13 @@ export async function montarTelaFila(db, contexto, callbacks) {
   );
 
   let totalSeriesFeitas = 0;
+  let totalSeriesPrevistas = 0;
   let exerciciosConcluidos = 0;
-  const estados = seriesPorExercicio.map((series) => {
+  const estados = seriesPorExercicio.map((series, indice) => {
+    const seriesAlvo = exerciciosHoje[indice].seriesAlvo ?? 3;
     totalSeriesFeitas += series.length;
-    if (series.length >= 3) {
+    totalSeriesPrevistas += seriesAlvo;
+    if (series.length >= seriesAlvo) {
       exerciciosConcluidos++;
       return "concluido";
     }
@@ -88,7 +91,7 @@ export async function montarTelaFila(db, contexto, callbacks) {
 
   const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
   const legenda = document.createElement("p");
-  legenda.textContent = `${exerciciosHoje.length * 3} séries no total · ${totalSeriesFeitas}/${exerciciosHoje.length * 3} feitas`;
+  legenda.textContent = `${totalSeriesPrevistas} séries no total · ${totalSeriesFeitas}/${totalSeriesPrevistas} feitas`;
   anel.appendChild(legenda);
   main.appendChild(anel);
 
@@ -110,7 +113,7 @@ export async function montarTelaFila(db, contexto, callbacks) {
     item.querySelector(".exercise-name").textContent = exercicio.nome;
     item.querySelector(".exercise-meta").textContent = exercicio.musculoPrimario;
     const statusEl = item.querySelector(".fila-status");
-    statusEl.textContent = estados[indice] === "concluido" ? "✓" : estados[indice] === "andamento" ? `${seriesPorExercicio[indice].length}/3` : "";
+    statusEl.textContent = estados[indice] === "concluido" ? "✓" : estados[indice] === "andamento" ? `${seriesPorExercicio[indice].length}/${exercicio.seriesAlvo ?? 3}` : "";
     item.addEventListener("click", () => { if (onExecutar) onExecutar(indice); });
     main.appendChild(item);
   });

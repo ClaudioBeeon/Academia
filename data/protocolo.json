@@ -11,9 +11,10 @@
 
   "volumeSemanalPorFase": {
     "definicao": {
-      "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico). Peito em manutenção, demais músculos em faixa padrão de intermediário — não maximizada, porque recuperação está reduzida pelo déficit.",
-      "musculoPriorizadoCrescimento": [],
-      "musculoEmManutencao": ["peito"],
+      "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico), prioridade 2 = peito, prioridade 3 = bíceps. Peito em volume de recomposição (9-15 séries/semana, contido pelo déficit, não maximizado); bíceps com volume priorizado real (prioridade declarada, não é limitado pela prioridade 1 do mesmo jeito); demais músculos em faixa padrão de intermediário. referencia-consolidada-app-treino.md seção 1 e 4.",
+      "musculoPriorizadoCrescimento": ["biceps"],
+      "musculoEmManutencao": [],
+      "musculoEmRecomposicao": ["peito"],
       "faixasPadrao": {
         "min": 8,
         "alvo_min": 10,
@@ -27,6 +28,14 @@
         "alvo_min": 6,
         "alvo_max": 9,
         "max": 10
+      },
+      "faixasRecomposicao": {
+        "min": 8,
+        "alvo_min": 9,
+        "alvo_max": 15,
+        "max": 16,
+        "seriesPorExercicio": 4,
+        "obs": "peito na fase definicao — referencia-consolidada-app-treino.md seção 4: '9-15 séries/semana → ~4-5 séries por exercício'"
       }
     },
     "hipertrofia_peito": {

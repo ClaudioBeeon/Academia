@@ -1,19 +1,20 @@
 // js/engine/sequenciaSemanal.js
 //
-// Sequência de 5 dias fornecida pelo usuário (sequenciasemanaltreino.md),
-// substituindo a divisão binária Superior/Inferior. Peito aparece 3x por
-// ciclo (frequência, não volume — protocolo.json continua controlando o
-// volume-alvo via musculoEmManutencao/musculoPriorizadoCrescimento). Dias
-// 1 e 5 são idênticos de propósito (mesmo par de músculos), por isso a
-// rotação precisa de um número de dia explícito e persistido — não dá pra
-// inferir "dia 1 ou dia 5" só olhando o músculo da última série.
+// Sequência de 5 dias — referencia-consolidada-app-treino.md seção 4.
+// Peito aparece 3x por ciclo, um ângulo por dia (inclinado/horizontal/
+// alongado — a rotação de exercício de fato vem do catálogo em
+// exercicios.json via contadorPorMusculo, isso aqui só fixa a frequência).
+// Bíceps é foco em 2 dias (2 e 5), cada um também com ombro como secundário.
+// Nenhum dia é idêntico a outro em músculos — a rotação ainda precisa de um
+// número de dia explícito e persistido, porque peito repete em 3 dias
+// diferentes e não dá pra inferir o dia só olhando o músculo da última série.
 
 export const DIAS_SEQUENCIA = [
-  { numero: 1, titulo: "Peito + Tríceps", musculos: ["peito", "triceps"] },
-  { numero: 2, titulo: "Costas + Bíceps", musculos: ["costas", "biceps"] },
-  { numero: 3, titulo: "Peito + Ombro", musculos: ["peito", "ombro"] },
-  { numero: 4, titulo: "Pernas", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha", "abdomen"] },
-  { numero: 5, titulo: "Peito + Tríceps", musculos: ["peito", "triceps"] },
+  { numero: 1, titulo: "Peito (inclinado) + Tríceps", musculos: ["peito", "triceps"] },
+  { numero: 2, titulo: "Costas + Bíceps + Ombro", musculos: ["costas", "biceps", "ombro"] },
+  { numero: 3, titulo: "Peito (horizontal) + Tríceps + Ombro", musculos: ["peito", "triceps", "ombro"] },
+  { numero: 4, titulo: "Pernas + Abdômen", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha", "abdomen"] },
+  { numero: 5, titulo: "Peito (alongado) + Bíceps + Ombro", musculos: ["peito", "biceps", "ombro"] },
 ];
 
 export function obterDiaPorNumero(numero) {

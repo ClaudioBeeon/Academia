@@ -71,7 +71,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const totalSeriesPrevistas = exerciciosHoje.length * 3;
+  const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
   const minutosEstimados = exerciciosHoje.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
   const planoCard = document.createElement("section");
   planoCard.className = "plano-hero";
@@ -342,7 +342,7 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
 }
 
 function montarCardProximoDia(dia, exerciciosDoDia, aoClicar) {
-  const totalSeries = exerciciosDoDia.length * 3;
+  const totalSeries = exerciciosDoDia.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
   const minutosEstimados = exerciciosDoDia.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
   const card = document.createElement("section");
   card.className = "plano-hero alt clicavel";

@@ -2,6 +2,7 @@
 import { getAll } from "../data/db.js";
 import { getSeriesDoDia } from "../data/historico.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
+import { getHabito, registrarHabito } from "../data/habitos.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
@@ -124,8 +125,66 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   main.appendChild(montarCardAtividade(atividade));
 
   main.appendChild(await montarCardCheckin(db, hoje));
+  main.appendChild(await montarCardHabitos(db, hoje));
 
   return root;
+}
+
+async function montarCardHabitos(db, hoje) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Hábitos de hoje</div></div>`;
+
+  const corpo = document.createElement("div");
+  corpo.className = "sets";
+  corpo.style.cssText = "padding:0 18px 18px; display:flex; flex-direction:column; gap:12px;";
+  card.appendChild(corpo);
+
+  const habito = (await getHabito(db, hoje)) ?? {};
+
+  const linhaToggle = (campo, rotulo) => {
+    const linha = document.createElement("div");
+    linha.style.cssText = "display:flex; align-items:center; justify-content:space-between;";
+    linha.innerHTML = `<span>${rotulo}</span>`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swap-pill";
+    const atualizarTexto = (valor) => { btn.textContent = valor === true ? "Sim" : valor === false ? "Não" : "Marcar"; };
+    atualizarTexto(habito[campo]);
+    btn.addEventListener("click", async () => {
+      const novoValor = !habito[campo];
+      habito[campo] = novoValor;
+      await registrarHabito(db, hoje, { [campo]: novoValor });
+      atualizarTexto(novoValor);
+    });
+    linha.appendChild(btn);
+    return linha;
+  };
+
+  corpo.appendChild(linhaToggle("creatina", "Creatina hoje"));
+  corpo.appendChild(linhaToggle("alcool", "Álcool hoje"));
+
+  const linhaSono = document.createElement("div");
+  linhaSono.innerHTML = `<span>Sono de ontem</span>`;
+  const opcoesSono = document.createElement("div");
+  opcoesSono.style.cssText = "display:flex; gap:8px; margin-top:6px;";
+  for (const [valor, rotulo] of [["bom", "Bom"], ["medio", "Médio"], ["ruim", "Ruim"]]) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swap-pill";
+    btn.textContent = rotulo;
+    btn.style.opacity = habito.sonoOntem === valor ? "1" : "0.5";
+    btn.addEventListener("click", async () => {
+      habito.sonoOntem = valor;
+      await registrarHabito(db, hoje, { sonoOntem: valor });
+      opcoesSono.querySelectorAll("button").forEach((b) => { b.style.opacity = b === btn ? "1" : "0.5"; });
+    });
+    opcoesSono.appendChild(btn);
+  }
+  linhaSono.appendChild(opcoesSono);
+  corpo.appendChild(linhaSono);
+
+  return card;
 }
 
 async function montarCardCheckin(db, hoje) {

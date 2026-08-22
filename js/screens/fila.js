@@ -1,6 +1,7 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
+import { getHabito, registrarHabito } from "../data/habitos.js";
 
 function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
   const raio = (size - espessura) / 2;
@@ -23,6 +24,22 @@ function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
     </div>
   `;
   return wrap;
+}
+
+async function montarChecklistAquecimento(db, hoje) {
+  const habito = (await getHabito(db, hoje)) ?? {};
+
+  const card = document.createElement("label");
+  card.className = "exercise-card";
+  card.style.cssText = "display:flex; align-items:center; gap:10px; padding:14px 18px; cursor:pointer;";
+  card.innerHTML = `
+    <input type="checkbox" ${habito.aquecimentoFeito ? "checked" : ""} />
+    <span>Aquecimento feito (1-2 séries leves antes do primeiro composto)</span>
+  `;
+  card.querySelector("input").addEventListener("change", async (event) => {
+    await registrarHabito(db, hoje, { aquecimentoFeito: event.target.checked });
+  });
+  return card;
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
@@ -66,6 +83,8 @@ export async function montarTelaFila(db, contexto, callbacks) {
 
   const main = document.createElement("main");
   root.appendChild(main);
+
+  main.appendChild(await montarChecklistAquecimento(db, hoje));
 
   const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
   const legenda = document.createElement("p");

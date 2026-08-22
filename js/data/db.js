@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 const STORES = {
   perfil: "versao",
@@ -12,6 +12,7 @@ const STORES = {
   registrosDiarios: "data",
   config: "chave",
   registrosCardio: { keyPath: "id", autoIncrement: true },
+  habitos: "data",
 };
 
 export function openDatabase(indexedDBImpl = globalThis.indexedDB) {

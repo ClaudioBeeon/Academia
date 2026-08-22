@@ -9,6 +9,8 @@ import { avaliarAlertasVolume } from "../engine/alertasVolume.js";
 import { registrarCardio, getCardioRecente, getCardioDesde } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
+import { getHabitosRecentes } from "../data/habitos.js";
+import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
 
 const MODALIDADES_CARDIO = ["bicicleta", "eliptico", "escada", "caminhada", "corrida"];
 const NOME_MODALIDADE = {
@@ -49,7 +51,7 @@ export async function montarTelaDivisao(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente, ultimoDiaRegistrado] = await Promise.all([
+  const [ultimaSerieGeral, todasAsSeries, seriesDeHoje, checkinsRecentes, sessoesPorExercicio, seriesUltimos7Dias, exercicios, cardioRecente, ultimoDiaRegistrado, habitosRecentes] = await Promise.all([
     getUltimaSerieGeral(db),
     getAll(db, "historicoSeries"),
     getSeriesDoDia(db, hoje),
@@ -59,6 +61,7 @@ export async function montarTelaDivisao(db) {
     getAll(db, "exercicios"),
     getCardioRecente(db),
     getUltimoDiaRegistrado(db),
+    getHabitosRecentes(db),
   ]);
 
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
@@ -78,7 +81,20 @@ export async function montarTelaDivisao(db) {
     hoje,
   });
 
-  const todosAlertas = [...alertasRecuperacao, ...alertasDesempenho, ...alertasVolume];
+  // Antes de deixar "desempenho caindo" implicar déficit por padrão, cruza com
+  // hábitos recentes — sono ruim e álcool são apontados primeiro, por serem
+  // mais fáceis de corrigir rápido do que reavaliar a dieta toda (adendo
+  // seção Sugestões). Detecção fina de déficit consistente por dieta
+  // registrada fica pra depois — por ora a causa "déficit" é o fallback já
+  // implícito nesses alertas quando nenhum hábito explica a queda.
+  const alertasDesempenhoComCausa = alertasDesempenho.map((alerta) => {
+    if (alerta.tipo !== "desempenho_caindo") return alerta;
+    const causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes, houveDeficitConsistente: true });
+    if (!causaProvavel || causaProvavel.causa === "deficit") return alerta;
+    return { ...alerta, mensagem: `${alerta.mensagem} ${causaProvavel.mensagem}` };
+  });
+
+  const todosAlertas = [...alertasRecuperacao, ...alertasDesempenhoComCausa, ...alertasVolume];
   if (todosAlertas.length > 0) {
     main.appendChild(montarCardAlertas(todosAlertas, exercicioPorId));
   }

@@ -7,6 +7,7 @@ import { montarTelaBiblioteca } from "./screens/biblioteca.js";
 import { montarTelaConfig } from "./screens/config.js";
 import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
+import { montarTelaDieta } from "./screens/dieta.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
 
 function criarMensagem(texto) {
@@ -68,6 +69,10 @@ function renderShell(db) {
       }
       if (tabName === "divisao") {
         await trocarConteudo(content, () => montarTelaDivisao(db), { direcao });
+        return;
+      }
+      if (tabName === "dieta") {
+        await trocarConteudo(content, () => montarTelaDieta(db), { direcao });
         return;
       }
       await trocarConteudo(content, () => criarMensagem(`Tela "${tabName}" ainda não implementada (vem depois).`), { direcao });

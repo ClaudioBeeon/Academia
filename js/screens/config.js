@@ -2,6 +2,7 @@
 import { exportarTudo, importarTudo, historicoParaCsv } from "../data/exportImport.js";
 import { getAll } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
+import { getApiKey, salvarApiKey } from "../ai/gemini.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -30,6 +31,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   }));
 
   main.appendChild(await criarSecaoEquipamento(db));
+  main.appendChild(criarSecaoGemini());
 
   const importCard = document.createElement("section");
   importCard.className = "exercise-card";
@@ -80,6 +82,31 @@ function baixarArquivo(nomeArquivo, conteudo, tipo) {
   link.download = nomeArquivo;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function criarSecaoGemini() {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Chave de IA (Gemini)</div></div>
+    <form class="sets gemini-form" style="padding:0 18px 18px;">
+      <div class="set-field" style="grid-column:1/-1;">
+        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar</label>
+        <input name="chave" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar chave</button>
+      <div class="prev-hint gemini-status" style="grid-column:1/-1;"></div>
+    </form>
+  `;
+  const form = card.querySelector(".gemini-form");
+  form.chave.value = getApiKey();
+  const status = card.querySelector(".gemini-status");
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    salvarApiKey(form.chave.value.trim());
+    status.textContent = form.chave.value.trim() ? "Chave salva." : "Chave removida.";
+  });
+  return card;
 }
 
 function dataDeHoje() {

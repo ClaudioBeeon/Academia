@@ -1,6 +1,8 @@
 // js/app.js
 import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
+import { initAutoSync } from "./data/sync.js";
+import { isConfigured as supabaseConfigurado } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
 import { getMedidas } from "./data/medidas.js";
 import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida } from "./engine/lembretes.js";
@@ -36,6 +38,11 @@ async function bootstrap() {
 
   const db = await openDatabase();
   await seedIfNeeded(db);
+
+  // Sem credenciais salvas isso é praticamente um no-op — o gancho fica
+  // registrado, mas isConfigured() barra tudo antes de tocar rede. Nunca
+  // atrasa a abertura do app: initAutoSync() não é awaited.
+  if (supabaseConfigurado()) initAutoSync(db);
 
   renderShell(db);
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));

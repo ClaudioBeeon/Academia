@@ -2,13 +2,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calcularFrequenciaSemanalPorMusculo, calcularContadorPorMusculo, prepararSessaoDoDia } from "./contextoSessao.js";
 
-test("calcularFrequenciaSemanalPorMusculo reflete a sequência real: peito 3x, tríceps 2x, bíceps e ombro 2x/3x, pernas 1x", () => {
+// Frequências da estrutura revisada pela auditoria de 2026-08-23: costas subiu
+// de 1x para 2x e deltoide posterior passou a existir com 2x (antes tinha zero
+// séries no programa), pra inverter a proporção empurrar:puxar. O
+// desenvolvimento de ombro saiu, então "ombro" (lateral) caiu de 3x para 2x.
+test("calcularFrequenciaSemanalPorMusculo reflete a sequência revisada: peito 3x, costas e deltoide posterior 2x", () => {
   const frequencia = calcularFrequenciaSemanalPorMusculo();
   assert.equal(frequencia.peito, 3);
   assert.equal(frequencia.triceps, 2);
-  assert.equal(frequencia.costas, 1);
+  assert.equal(frequencia.costas, 2, "costas dobrou de frequência pela correção postural");
+  assert.equal(frequencia.deltoide_posterior, 2, "músculo novo — era zero no programa antigo");
   assert.equal(frequencia.biceps, 2);
-  assert.equal(frequencia.ombro, 3);
+  assert.equal(frequencia.ombro, 2);
   assert.equal(frequencia.quadriceps, 1);
 });
 

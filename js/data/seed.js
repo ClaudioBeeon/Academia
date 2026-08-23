@@ -5,14 +5,16 @@ const DATA_FILES = {
   protocolo: "data/protocolo.json",
   exercicios: "data/exercicios.json",
   dieta: "data/dieta.json",
+  ficha: "data/ficha.json",
 };
 
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
-  const [perfil, protocolo, exercicios, dieta] = await Promise.all([
+  const [perfil, protocolo, exercicios, dieta, ficha] = await Promise.all([
     fetchImpl(DATA_FILES.perfil).then((r) => r.json()),
     fetchImpl(DATA_FILES.protocolo).then((r) => r.json()),
     fetchImpl(DATA_FILES.exercicios).then((r) => r.json()),
     fetchImpl(DATA_FILES.dieta).then((r) => r.json()),
+    fetchImpl(DATA_FILES.ficha).then((r) => r.json()),
   ]);
 
   const currentConfig = await get(db, "config", "seedVersion");
@@ -23,6 +25,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   await put(db, "perfil", perfil);
   await put(db, "protocolo", protocolo);
   await put(db, "dietaBase", dieta);
+  await put(db, "ficha", ficha);
   const existentes = await getAll(db, "exercicios");
   const observacoesExistentes = new Map(existentes.map((e) => [e.id, e.observacoesExecucao]));
   const exerciciosMesclados = exercicios.exercicios.map((seedExercicio) => {

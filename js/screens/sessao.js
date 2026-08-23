@@ -5,6 +5,8 @@ import { excluirSeriesDoDia } from "../data/historico.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
+import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
@@ -26,10 +28,20 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [todasAsSeries, ultimoDiaRegistrado] = await Promise.all([
+  const [todasAsSeries, ultimoDiaRegistrado, ficha] = await Promise.all([
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
+    getFicha(db),
   ]);
+
+  // O bloco começa no primeiro treino aberto e a partir daí a semana do
+  // mesociclo é derivada da data — o usuário não precisa marcar nada.
+  let inicioDoBloco = await getInicioDoBloco(db);
+  if (!inicioDoBloco && !modoPreview) {
+    inicioDoBloco = hoje;
+    await definirInicioDoBloco(db, hoje);
+  }
+  const semanaDoBloco = calcularSemanaDoBloco(inicioDoBloco, hoje);
 
   // No modo preview (abrindo o card de um dia futuro pra só olhar/testar a
   // fila), a sessão nunca grava o ponteiro de rotação — abrir ou até
@@ -38,7 +50,9 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
   let diaPersistido = modoPreview || Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
 
-  const { exerciciosHoje } = prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo });
+  const { exerciciosHoje, diaDaFicha } = prepararSessaoDoDia({
+    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
+  });
 
   const root = document.createElement("div");
   let estadoAtual = "fila";
@@ -63,7 +77,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
 
     telaAtual = await trocarConteudo(root, async () => {
       if (estadoAtual === "fila") {
-        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje }, {
+        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco }, {
           onExecutar: async (indice) => {
             indiceExercicioAtual = indice;
             estadoAtual = "execucao";

@@ -40,7 +40,7 @@ test("um banco academiaDB criado na v1 (sem índices) ganha os índices ao abrir
 
   const nomes = Array.from(dbNovo.objectStoreNames).sort();
   assert.deepEqual(nomes, [
-    "cargas", "config", "dietaBase", "exercicios", "habitos",
+    "cargas", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "perfil", "protocolo",
     "registrosCardio", "registrosDiarios",
   ]);
@@ -51,7 +51,7 @@ test("openDatabase creates all expected object stores", async () => {
   const db = await openDatabase();
   const names = Array.from(db.objectStoreNames).sort();
   assert.deepEqual(names, [
-    "cargas", "config", "dietaBase", "exercicios", "habitos",
+    "cargas", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "perfil", "protocolo",
     "registrosCardio", "registrosDiarios",
   ]);

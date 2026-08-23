@@ -16,7 +16,19 @@ const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
 const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
 
+// A prescrição da ficha vence o padrão por tipo de exercício: é o que permite
+// a cadeira extensora pedir RIR 0 e o stiff pedir RIR 3, sendo os dois
+// exercícios de perna. Sem ficha, cai no padrão do protocolo como antes.
 function obterConfigExercicio(protocolo, exercicio) {
+  const prescricao = exercicio.prescricao;
+  if (prescricao?.repeticoes) {
+    return {
+      repsMin: prescricao.repeticoes.min,
+      repsMax: prescricao.repeticoes.max,
+      rirAlvo: prescricao.rirAlvo ?? 2,
+      descansoSegundos: prescricao.descansoSegundos ?? 90,
+    };
+  }
   const config = protocolo?.tiposDeExercicio?.[exercicio.tipo];
   if (!config) return CONFIG_PADRAO;
   return {
@@ -170,12 +182,53 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   `;
   main.appendChild(restCard);
 
-  if (exercicio.observacoesExecucao) {
+  const prescricao = exercicio.prescricao;
+
+  // Faixa de trabalho sempre visível — é a informação que o usuário precisa
+  // olhar durante a série, não escondida atrás de um accordion.
+  if (prescricao) {
+    const guia = document.createElement("div");
+    guia.className = "guia-prescricao";
+    const falha = prescricao.falhaNaUltimaSerie
+      ? "falha permitida na última série"
+      : "sem falha — pare com folga";
+    guia.innerHTML = `
+      <div class="guia-linha">
+        <span><b>${cfg.repsMin}–${cfg.repsMax}</b> reps</span>
+        <span><b>RIR ${cfg.rirAlvo}</b></span>
+        <span><b>${Math.round(cfg.descansoSegundos / 60 * 10) / 10}</b> min descanso</span>
+      </div>
+      <div class="guia-tempo"></div>
+      <div class="guia-falha"></div>
+    `;
+    guia.querySelector(".guia-tempo").textContent = `⏱ ${prescricao.tempo}`;
+    guia.querySelector(".guia-falha").textContent = falha;
+    main.appendChild(guia);
+  }
+
+  const blocos = [];
+  if (prescricao?.comoExecutar) blocos.push(["Como executar", prescricao.comoExecutar]);
+  if (prescricao?.quandoSubirCarga) blocos.push(["Quando subir a carga", prescricao.quandoSubirCarga]);
+  if (prescricao?.atencao) blocos.push(["Atenção", prescricao.atencao]);
+  if (prescricao?.porqueEstaAqui) blocos.push(["Por que este exercício está aqui", prescricao.porqueEstaAqui]);
+  if (blocos.length === 0 && exercicio.observacoesExecucao) {
+    blocos.push(["Como executar", exercicio.observacoesExecucao]);
+  }
+
+  if (blocos.length > 0) {
     const explicacao = document.createElement("details");
     explicacao.className = "explicacao-execucao";
     explicacao.open = Boolean(mostrarExplicacaoAberta);
-    explicacao.innerHTML = `<summary>Como executar</summary><p></p>`;
-    explicacao.querySelector("p").textContent = exercicio.observacoesExecucao;
+    const summary = document.createElement("summary");
+    summary.textContent = prescricao ? "Guia do exercício" : "Como executar";
+    explicacao.appendChild(summary);
+    for (const [titulo, texto] of blocos) {
+      const h = document.createElement("h5");
+      h.textContent = titulo;
+      const p = document.createElement("p");
+      p.textContent = texto;
+      explicacao.append(h, p);
+    }
     main.appendChild(explicacao);
   }
 

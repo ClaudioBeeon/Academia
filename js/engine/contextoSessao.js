@@ -15,6 +15,7 @@
 
 import { DIAS_SEQUENCIA } from "./sequenciaSemanal.js";
 import { gerarSessaoDoDia } from "./sessaoGerada.js";
+import { montarSessaoDaFicha, aplicarSemanaDoMesociclo } from "./fichaFixa.js";
 
 const TODOS_MUSCULOS_MAPEADOS = new Set(DIAS_SEQUENCIA.flatMap((d) => d.musculos));
 
@@ -52,10 +53,23 @@ export function calcularContadorPorMusculo(todasAsSeries, hoje) {
   return contador;
 }
 
-export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo }) {
+export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha = null, semanaDoBloco = 1 }) {
   const exerciciosDoGrupo = todosExercicios.filter((e) => {
     return diaInfo.musculos.includes(e.musculoPrimario) || !TODOS_MUSCULOS_MAPEADOS.has(e.musculoPrimario);
   });
+
+  // A ficha prescrita tem precedência sobre o gerador (auditoria 2026-08-23).
+  // O gerador segue vivo como fallback pra qualquer dia que a ficha não cubra.
+  const daFicha = ficha ? montarSessaoDaFicha({ ficha, numeroDoDia: diaInfo.numero, todosExercicios }) : null;
+  if (daFicha) {
+    return {
+      exerciciosDoGrupo,
+      exerciciosHoje: aplicarSemanaDoMesociclo(daFicha.exercicios, semanaDoBloco),
+      diaDaFicha: daFicha.dia,
+      origem: "ficha",
+    };
+  }
+
   const definicaoFase = protocolo?.volumeSemanalPorFase?.definicao;
   const exerciciosHoje = gerarSessaoDoDia({
     exerciciosDoGrupo,
@@ -67,5 +81,5 @@ export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries,
     contadorPorMusculo: calcularContadorPorMusculo(todasAsSeries, hoje),
     ordemMusculosDoDia: diaInfo.musculos,
   });
-  return { exerciciosDoGrupo, exerciciosHoje };
+  return { exerciciosDoGrupo, exerciciosHoje, diaDaFicha: null, origem: "gerador" };
 }

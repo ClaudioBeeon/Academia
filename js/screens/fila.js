@@ -26,24 +26,155 @@ function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
   return wrap;
 }
 
-async function montarChecklistAquecimento(db, hoje) {
+async function montarChecklistAquecimento(db, hoje, aquecimento) {
   const habito = (await getHabito(db, hoje)) ?? {};
 
-  const card = document.createElement("label");
-  card.className = "exercise-card";
-  card.style.cssText = "display:flex; align-items:center; gap:10px; padding:14px 18px; cursor:pointer;";
-  card.innerHTML = `
+  const card = document.createElement("section");
+  card.className = "exercise-card bloco-apoio";
+
+  const head = document.createElement("label");
+  head.className = "bloco-apoio-head";
+  head.innerHTML = `
     <input type="checkbox" ${habito.aquecimentoFeito ? "checked" : ""} />
-    <span>Aquecimento feito (1-2 séries leves antes do primeiro composto)</span>
+    <div>
+      <div class="bloco-apoio-titulo"></div>
+      <div class="bloco-apoio-sub"></div>
+    </div>
   `;
-  card.querySelector("input").addEventListener("change", async (event) => {
+  head.querySelector(".bloco-apoio-titulo").textContent = aquecimento?.nome ?? "Aquecimento";
+  head.querySelector(".bloco-apoio-sub").textContent = aquecimento
+    ? `${aquecimento.duracaoMin} min · antes de tudo`
+    : "1-2 séries leves antes do primeiro composto";
+  head.querySelector("input").addEventListener("change", async (event) => {
     await registrarHabito(db, hoje, { aquecimentoFeito: event.target.checked });
   });
+  card.appendChild(head);
+
+  if (aquecimento?.exercicios?.length) {
+    const det = document.createElement("details");
+    det.className = "bloco-apoio-lista";
+    const sum = document.createElement("summary");
+    sum.textContent = `Ver os ${aquecimento.exercicios.length} movimentos`;
+    det.appendChild(sum);
+
+    if (aquecimento.porque) {
+      const porque = document.createElement("p");
+      porque.className = "bloco-apoio-porque";
+      porque.textContent = aquecimento.porque;
+      det.appendChild(porque);
+    }
+
+    for (const item of aquecimento.exercicios) {
+      const li = document.createElement("div");
+      li.className = "bloco-apoio-item";
+      const nome = document.createElement("h5");
+      nome.textContent = item.nome;
+      const presc = document.createElement("span");
+      presc.className = "bloco-apoio-presc";
+      presc.textContent = item.prescricao;
+      const como = document.createElement("p");
+      como.textContent = item.como;
+      li.append(nome, presc, como);
+      det.appendChild(li);
+    }
+    card.appendChild(det);
+  }
+
+  return card;
+}
+
+function montarBlocoAlongamento(alongamento) {
+  if (!alongamento) return null;
+  const card = document.createElement("section");
+  card.className = "exercise-card bloco-apoio";
+
+  const head = document.createElement("div");
+  head.className = "bloco-apoio-head sem-check";
+  head.innerHTML = `<div><div class="bloco-apoio-titulo"></div><div class="bloco-apoio-sub"></div></div>`;
+  head.querySelector(".bloco-apoio-titulo").textContent = alongamento.nome;
+  head.querySelector(".bloco-apoio-sub").textContent = alongamento.quando;
+  card.appendChild(head);
+
+  const det = document.createElement("details");
+  det.className = "bloco-apoio-lista";
+  const sum = document.createElement("summary");
+  sum.textContent = `Ver os ${alongamento.exercicios.length} alongamentos`;
+  det.appendChild(sum);
+
+  if (alongamento.porque) {
+    const porque = document.createElement("p");
+    porque.className = "bloco-apoio-porque";
+    porque.textContent = alongamento.porque;
+    det.appendChild(porque);
+  }
+
+  for (const item of alongamento.exercicios) {
+    const li = document.createElement("div");
+    li.className = "bloco-apoio-item";
+    const nome = document.createElement("h5");
+    nome.textContent = item.nome;
+    const presc = document.createElement("span");
+    presc.className = "bloco-apoio-presc";
+    presc.textContent = item.prescricao;
+    const como = document.createElement("p");
+    como.textContent = item.como;
+    li.append(nome, presc, como);
+    det.appendChild(li);
+  }
+  card.appendChild(det);
+  return card;
+}
+
+const NOME_MODALIDADE_CARDIO = {
+  bicicleta: "Bicicleta", eliptico: "Elíptico", escada: "Escada",
+  caminhada: "Caminhada", corrida: "Corrida",
+};
+
+const NOME_MUSCULO = {
+  peito: "Peito", costas: "Costas", biceps: "Bíceps", triceps: "Tríceps",
+  ombro: "Ombro (lateral)", deltoide_posterior: "Deltoide posterior",
+  quadriceps: "Quadríceps", posterior_coxa: "Posterior de coxa",
+  gluteo: "Glúteo", panturrilha: "Panturrilha", abdomen: "Abdômen",
+  antebraco: "Antebraço", ombro_anterior: "Ombro (anterior)",
+};
+
+function nomeDoMusculo(chave) {
+  return NOME_MUSCULO[chave] ?? chave.replace(/_/g, " ");
+}
+
+function montarBlocoCardio(cardio, regras) {
+  if (!cardio) return null;
+  const card = document.createElement("section");
+  card.className = "exercise-card bloco-apoio";
+
+  const head = document.createElement("div");
+  head.className = "bloco-apoio-head sem-check";
+  head.innerHTML = `<div><div class="bloco-apoio-titulo"></div><div class="bloco-apoio-sub"></div></div>`;
+  head.querySelector(".bloco-apoio-titulo").textContent =
+    `Cardio — ${NOME_MODALIDADE_CARDIO[cardio.modalidade] ?? cardio.modalidade}`;
+  head.querySelector(".bloco-apoio-sub").textContent =
+    `${cardio.duracaoMin} min · intensidade ${cardio.intensidade} · depois do treino`;
+  card.appendChild(head);
+
+  if (regras) {
+    const det = document.createElement("details");
+    det.className = "bloco-apoio-lista";
+    const sum = document.createElement("summary");
+    sum.textContent = "Como fazer";
+    det.appendChild(sum);
+    for (const chave of ["ordem", "intensidade", "modalidade", "caminhada"]) {
+      if (!regras[chave]) continue;
+      const p = document.createElement("p");
+      p.textContent = regras[chave];
+      det.appendChild(p);
+    }
+    card.appendChild(det);
+  }
   return card;
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
-  const { diaInfo, exerciciosHoje, hoje } = contexto;
+  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1 } = contexto;
   const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
 
   const seriesPorExercicio = await Promise.all(
@@ -87,13 +218,36 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  main.appendChild(await montarChecklistAquecimento(db, hoje));
+  main.appendChild(await montarChecklistAquecimento(db, hoje, ficha?.aquecimento));
 
   const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
   const legenda = document.createElement("p");
   legenda.textContent = `${totalSeriesPrevistas} séries no total · ${totalSeriesFeitas}/${totalSeriesPrevistas} feitas`;
   anel.appendChild(legenda);
   main.appendChild(anel);
+
+  // Semana do mesociclo: o volume da ficha muda a partir da semana 3, então
+  // dizer em que semana o usuário está evita ele achar que o app se perdeu.
+  if (ficha?.mesociclo?.semanas) {
+    const info = ficha.mesociclo.semanas.find((s) => s.semana === semanaDoBloco);
+    if (info) {
+      const faixa = document.createElement("div");
+      faixa.className = "faixa-semana";
+      const titulo = document.createElement("b");
+      titulo.textContent = `Semana ${info.semana} de 5 · RIR ${info.rirAlvo} · ${info.volume}`;
+      const obj = document.createElement("span");
+      obj.textContent = info.objetivo;
+      faixa.append(titulo, obj);
+      main.appendChild(faixa);
+    }
+  }
+
+  if (diaDaFicha?.notaDoDia) {
+    const nota = document.createElement("p");
+    nota.className = "nota-do-dia";
+    nota.textContent = diaDaFicha.notaDoDia;
+    main.appendChild(nota);
+  }
 
   exerciciosHoje.forEach((exercicio, indice) => {
     const item = document.createElement("section");
@@ -111,12 +265,24 @@ export async function montarTelaFila(db, contexto, callbacks) {
     `;
     item.querySelector(".fila-item-info").prepend(criarIconeExercicio(exercicio.id, 52));
     item.querySelector(".exercise-name").textContent = exercicio.nome;
-    item.querySelector(".exercise-meta").textContent = exercicio.musculoPrimario;
+    item.querySelector(".exercise-meta").textContent = nomeDoMusculo(exercicio.musculoPrimario);
     const statusEl = item.querySelector(".fila-status");
     statusEl.textContent = estados[indice] === "concluido" ? "✓" : estados[indice] === "andamento" ? `${seriesPorExercicio[indice].length}/${exercicio.seriesAlvo ?? 3}` : "";
     item.addEventListener("click", () => { if (onExecutar) onExecutar(indice); });
     main.appendChild(item);
   });
+
+  // Cardio e alongamento vêm DEPOIS dos exercícios na tela porque é essa a
+  // ordem da sessão: musculação primeiro (cardio antes rouba a qualidade das
+  // séries), alongamento da frente por último, quando o peitoral está quente.
+  const blocoCardio = montarBlocoCardio(diaDaFicha?.cardio, ficha?.cardioRegras);
+  if (blocoCardio) main.appendChild(blocoCardio);
+
+  const chaveAlongamento = diaDaFicha?.alongamentoFinal;
+  const blocoAlongamento = chaveAlongamento
+    ? montarBlocoAlongamento(ficha?.alongamentos?.[chaveAlongamento])
+    : null;
+  if (blocoAlongamento) main.appendChild(blocoAlongamento);
 
   const rodape = document.createElement("div");
   rodape.className = "foot";

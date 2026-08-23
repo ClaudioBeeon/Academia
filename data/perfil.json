@@ -46,9 +46,11 @@
   "prioridades": {
     "prioridade1": "reducao_gordura_abdominal",
     "prioridade2": "peito",
-    "musculosEmVolumeDeCrescimento": [],
-    "musculosEmVolumeDeManutencao": ["peito"],
-    "obs": "durante a fase 'definicao', peito fica em volume de manutenção, não de crescimento máximo. Quando a fase mudar para 'hipertrofia_peito', peito entra em musculosEmVolumeDeCrescimento."
+    "prioridade3": "biceps",
+    "prioridade4": "correcao_postural_ombros_e_pescoco_pra_frente",
+    "secundario": "melhorar coxas (quadríceps e posterior) sem que perna vire prioridade",
+    "obs": "DADO DESCRITIVO, não executável. A fonte de verdade para o motor é protocolo.json.volumeSemanalPorFase — este bloco existe só para leitura humana. Antes da auditoria de 2026-08-23 ele dizia que peito estava em manutenção enquanto o protocolo o tratava como recomposição e elegia o bíceps como único priorizado; nada aqui era lido por nenhuma linha do app. Mantido apenas como registro das prioridades declaradas, agora coerente com o protocolo.",
+    "restricoesConhecidas": "postura de ombros e pescoço pra frente (padrão de upper crossed syndrome). Se houver assimetria real entre os lados, pede avaliação de fisioterapeuta — o treino trata o padrão simétrico."
   },
   "disponibilidade": {
     "diasPorSemana": 5,

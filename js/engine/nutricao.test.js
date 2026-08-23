@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, pisoCaloricoSeguranca, avaliarDeficitConsistente } from "./nutricao.js";
+import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, pisoCaloricoSeguranca, avaliarDeficitConsistente, calcularMetaProteina, avaliarProteinaDoDia } from "./nutricao.js";
 
 test("calcularTMB usa Mifflin-St Jeor para homem", () => {
   const tmb = calcularTMB({ sexo: "masculino", pesoKg: 71, alturaCm: 170, idade: 30 });
@@ -108,4 +108,60 @@ test("checarAdequacaoNutricional não gera alertas quando tudo está dentro das 
     temFibraOuVegetais: true,
   });
   assert.deepEqual(alertas, []);
+});
+
+// --- meta de proteína (adicionada 2026-08-23) ---
+
+test("calcularMetaProteina usa a faixa de déficit (1,8-2,2 g/kg) na fase definicao", () => {
+  const meta = calcularMetaProteina({ pesoKg: 71, fase: "definicao" });
+  assert.equal(meta.min_g, 128);
+  assert.equal(meta.max_g, 156);
+  assert.equal(meta.emDeficit, true);
+});
+
+test("calcularMetaProteina usa a faixa padrão (1,6-2,2 g/kg) fora do déficit", () => {
+  const meta = calcularMetaProteina({ pesoKg: 71, fase: "hipertrofia_peito" });
+  assert.equal(meta.min_g, 114);
+  assert.equal(meta.emDeficit, false);
+});
+
+test("calcularMetaProteina devolve null sem peso válido", () => {
+  assert.equal(calcularMetaProteina({ pesoKg: 0 }), null);
+  assert.equal(calcularMetaProteina({}), null);
+});
+
+test("avaliarProteinaDoDia marca ok ao bater o mínimo e calcula o que falta abaixo dele", () => {
+  const meta = calcularMetaProteina({ pesoKg: 71, fase: "definicao" });
+  assert.deepEqual(avaliarProteinaDoDia({ proteinaG: 130, metaProteina: meta }), { status: "ok", faltam_g: 0 });
+  assert.deepEqual(avaliarProteinaDoDia({ proteinaG: 128, metaProteina: meta }), { status: "ok", faltam_g: 0 });
+  assert.deepEqual(avaliarProteinaDoDia({ proteinaG: 100, metaProteina: meta }), { status: "abaixo", faltam_g: 28 });
+});
+
+test("avaliarProteinaDoDia não alerta acima do máximo — proteína extra não é problema", () => {
+  const meta = calcularMetaProteina({ pesoKg: 71, fase: "definicao" });
+  assert.equal(avaliarProteinaDoDia({ proteinaG: 200, metaProteina: meta }).status, "ok");
+});
+
+test("checarAdequacaoNutricional inclui o eixo proteína quando a meta é informada", () => {
+  const meta = calcularMetaProteina({ pesoKg: 71, fase: "definicao" });
+  const alertas = checarAdequacaoNutricional({
+    totalDia: { kcal: 1800, proteina_g: 90, gordura_g: 60 },
+    metaCalorica: { meta_kcal: 1800, piso_kcal: 1500, tmb_kcal: 1650 },
+    pesoKg: 71,
+    temFibraOuVegetais: true,
+    metaProteina: meta,
+  });
+  const proteina = alertas.find((a) => a.eixo === "proteina");
+  assert.ok(proteina, "deve sinalizar proteína abaixo da meta");
+  assert.match(proteina.mensagem, /faltam 38g/);
+});
+
+test("checarAdequacaoNutricional não quebra quando metaProteina não é passada", () => {
+  const alertas = checarAdequacaoNutricional({
+    totalDia: { kcal: 1800, proteina_g: 90, gordura_g: 60 },
+    metaCalorica: { meta_kcal: 1800, piso_kcal: 1500, tmb_kcal: 1650 },
+    pesoKg: 71,
+    temFibraOuVegetais: true,
+  });
+  assert.equal(alertas.find((a) => a.eixo === "proteina"), undefined);
 });

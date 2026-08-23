@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = "app-treino-shell-v24";
+const CACHE_NAME = "app-treino-shell-v25";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -46,12 +46,14 @@ const APP_SHELL = [
   "./js/data/postura.js",
   "./js/engine/autorregulacao.js",
   "./js/engine/lembretes.js",
+  "./js/engine/perguntasDiarias.js",
   "./js/lib/notificacoes.js",
   "./js/screens/treino.js",
   "./js/screens/timer.js",
   "./js/screens/biblioteca.js",
   "./js/screens/historico.js",
   "./js/screens/config.js",
+  "./js/screens/perguntasDiarias.js",
   "./js/screens/evolucao.js",
   "./js/screens/divisao.js",
   "./js/screens/execucao.js",

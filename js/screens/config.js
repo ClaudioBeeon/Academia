@@ -3,6 +3,11 @@ import { exportarTudo, importarTudo, historicoParaCsv } from "../data/exportImpo
 import { getAll, get, put } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 import { getApiKey, salvarApiKey } from "../ai/gemini.js";
+import {
+  getUrl, getAnonKey, salvarCredenciais, isConfigured,
+  cadastrar, entrar, sair, getUsuario,
+} from "../data/supabaseClient.js";
+import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas } from "../engine/lembretes.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
@@ -34,6 +39,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   }));
 
   main.appendChild(await criarSecaoEquipamento(db));
+  main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini());
   main.appendChild(criarSecaoLembretes());
   main.appendChild(await criarSecaoSugestoes(db));
@@ -87,6 +93,166 @@ function baixarArquivo(nomeArquivo, conteudo, tipo) {
   link.download = nomeArquivo;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+// Sincronização automática com o Supabase — o app funciona 100% sem isso
+// configurado (regra permanente do projeto: sem sinal não pode travar o
+// registro de treino). Esta seção só existe pra quem quiser backup na nuvem
+// e uso em mais de um aparelho.
+async function criarSecaoSupabase(db) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Sincronização (Supabase)</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:14px;">
+      <div class="prev-hint">
+        Guarda uma cópia de tudo na nuvem e mantém o app igual em mais de um aparelho.
+        O app continua funcionando 100% sem isso — o banco local é sempre a fonte principal,
+        isto aqui só replica.
+      </div>
+
+      <form class="creds-form" style="display:grid; gap:10px;">
+        <div class="set-field">
+          <label>URL do projeto Supabase</label>
+          <input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        </div>
+        <div class="set-field">
+          <label>Chave anon (pública) do projeto</label>
+          <input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        </div>
+        <button type="submit" class="swap-pill">Salvar credenciais</button>
+      </form>
+
+      <div class="auth-secao"></div>
+
+      <div class="prev-hint sync-status"></div>
+      <button type="button" class="swap-pill sync-agora-btn">Sincronizar agora</button>
+    </div>
+  `;
+
+  const formCreds = card.querySelector(".creds-form");
+  formCreds.url.value = getUrl();
+  formCreds.anonKey.value = getAnonKey();
+
+  const authSecao = card.querySelector(".auth-secao");
+  const status = card.querySelector(".sync-status");
+  const botaoSync = card.querySelector(".sync-agora-btn");
+
+  async function atualizarStatus() {
+    if (!isConfigured()) {
+      status.textContent = "Configure a URL e a chave acima pra ativar.";
+      botaoSync.style.display = "none";
+      return;
+    }
+    const usuario = await getUsuario();
+    const pendentes = await pendentesNaFila(db);
+    botaoSync.style.display = usuario ? "" : "none";
+    if (!usuario) {
+      status.textContent = "Configurado, mas sem login — entre abaixo pra começar a sincronizar.";
+    } else if (pendentes > 0) {
+      status.textContent = `${usuario.email} · ${pendentes} alteração${pendentes > 1 ? "ões" : ""} aguardando envio.`;
+    } else {
+      status.textContent = `${usuario.email} · tudo sincronizado.`;
+    }
+  }
+
+  function montarFormAuth() {
+    authSecao.innerHTML = `
+      <form class="auth-form" style="display:grid; gap:10px;">
+        <div class="set-field">
+          <label>E-mail</label>
+          <input name="email" type="email" autocomplete="username" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        </div>
+        <div class="set-field">
+          <label>Senha</label>
+          <input name="senha" type="password" autocomplete="current-password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="submit" class="swap-pill entrar-btn" style="flex:1;">Entrar</button>
+          <button type="button" class="swap-pill cadastrar-btn" style="flex:1;">Criar conta</button>
+        </div>
+        <div class="prev-hint auth-erro"></div>
+      </form>
+    `;
+    const formAuth = authSecao.querySelector(".auth-form");
+    const erro = authSecao.querySelector(".auth-erro");
+
+    formAuth.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      erro.textContent = "Entrando...";
+      try {
+        await entrar(formAuth.email.value.trim(), formAuth.senha.value);
+        erro.textContent = "";
+        await aposLogin();
+      } catch (err) {
+        erro.textContent = err.message ?? "Não foi possível entrar.";
+      }
+    });
+
+    authSecao.querySelector(".cadastrar-btn").addEventListener("click", async () => {
+      erro.textContent = "Criando conta...";
+      try {
+        await cadastrar(formAuth.email.value.trim(), formAuth.senha.value);
+        erro.textContent = "Conta criada. Se o projeto exigir confirmação por e-mail, confirme antes de entrar.";
+      } catch (err) {
+        erro.textContent = err.message ?? "Não foi possível criar a conta.";
+      }
+    });
+  }
+
+  function montarBotaoSair(usuario) {
+    authSecao.innerHTML = "";
+    const linha = document.createElement("div");
+    linha.style.cssText = "display:flex; align-items:center; justify-content:space-between; gap:10px;";
+    linha.innerHTML = `<span>Conectado como <b>${usuario.email}</b></span>`;
+    const botaoSair = document.createElement("button");
+    botaoSair.type = "button";
+    botaoSair.className = "swap-pill";
+    botaoSair.textContent = "Sair";
+    botaoSair.addEventListener("click", async () => {
+      await sair();
+      montarFormAuth();
+      await atualizarStatus();
+    });
+    linha.appendChild(botaoSair);
+    authSecao.appendChild(linha);
+  }
+
+  // Primeiro login num aparelho novo: puxa tudo que já existe no servidor
+  // antes de ativar o envio automático, senão o dispositivo vazio empurraria
+  // "apagar tudo" pro servidor por engano.
+  async function aposLogin() {
+    status.textContent = "Trazendo dados do servidor...";
+    await pullFromSupabase(db);
+    initAutoSync(db);
+    await flushSyncQueue(db);
+    const usuario = await getUsuario();
+    if (usuario) montarBotaoSair(usuario);
+    await atualizarStatus();
+  }
+
+  formCreds.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    salvarCredenciais(formCreds.url.value.trim(), formCreds.anonKey.value.trim());
+    montarFormAuth();
+    await atualizarStatus();
+  });
+
+  botaoSync.addEventListener("click", async () => {
+    status.textContent = "Sincronizando...";
+    await flushSyncQueue(db);
+    await pullFromSupabase(db);
+    await atualizarStatus();
+  });
+
+  if (isConfigured()) {
+    const usuario = await getUsuario();
+    if (usuario) montarBotaoSair(usuario);
+    else montarFormAuth();
+  }
+  await atualizarStatus();
+
+  return card;
 }
 
 function criarSecaoGemini() {

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
-import { openDatabase, get, put, getAll, putAll, clearStore } from "./db.js";
+import { openDatabase, get, put, getAll, putAll, clearStore, del, registerWriteHook, withHooksSuspended } from "./db.js";
 
 test("um banco academiaDB criado na v1 (sem índices) ganha os índices ao abrir com a openDatabase() real, sem perder dados", async () => {
   // Simula o cenário real: um navegador que já tinha "academiaDB" na v1,
@@ -42,7 +42,7 @@ test("um banco academiaDB criado na v1 (sem índices) ganha os índices ao abrir
   assert.deepEqual(nomes, [
     "cargas", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "perfil", "protocolo",
-    "registrosCardio", "registrosDiarios",
+    "registrosCardio", "registrosDiarios", "syncOutbox",
   ]);
   dbNovo.close();
 });
@@ -53,7 +53,7 @@ test("openDatabase creates all expected object stores", async () => {
   assert.deepEqual(names, [
     "cargas", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "perfil", "protocolo",
-    "registrosCardio", "registrosDiarios",
+    "registrosCardio", "registrosDiarios", "syncOutbox",
   ]);
   db.close();
 });
@@ -171,4 +171,72 @@ test("um banco academiaDB criado na v3 (sem registrosCardio) ganha a store nova 
   });
   assert.equal(perfilRegistros.length, 1);
   dbNovo.close();
+});
+
+// --- write hooks (adicionado 2026-08-24, base do sync com Supabase) ---
+
+test("registerWriteHook é chamado após put(), com a chave real (importante em autoIncrement)", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "exercicios");
+  const chamadas = [];
+  registerWriteHook((...args) => chamadas.push(args));
+
+  await put(db, "exercicios", { id: "supino_x", nome: "Supino X" });
+  const chamada = chamadas.find((c) => c[0] === "exercicios");
+  assert.deepEqual(chamada, ["exercicios", "supino_x", { id: "supino_x", nome: "Supino X" }, false]);
+  db.close();
+});
+
+test("registerWriteHook recebe a chave gerada em stores autoIncrement", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "historicoSeries");
+  const chamadas = [];
+  registerWriteHook((...args) => chamadas.push(args));
+
+  const chaveGerada = await put(db, "historicoSeries", { exercicioId: "x", carga: 10 });
+  const chamada = chamadas.find((c) => c[0] === "historicoSeries");
+  assert.equal(chamada[1], chaveGerada, "hook recebe a mesma chave que put() devolveu, não undefined");
+  db.close();
+});
+
+test("registerWriteHook é chamado após del(), com deletado=true e value=null", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "exercicios");
+  await put(db, "exercicios", { id: "temp", nome: "Temp" });
+  const chamadas = [];
+  registerWriteHook((...args) => chamadas.push(args));
+
+  await del(db, "exercicios", "temp");
+  const chamada = chamadas.find((c) => c[0] === "exercicios" && c[3] === true);
+  assert.deepEqual(chamada, ["exercicios", "temp", null, true]);
+  db.close();
+});
+
+test("withHooksSuspended impede os hooks de disparar durante a função", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "exercicios");
+  const chamadas = [];
+  registerWriteHook((...args) => chamadas.push(args));
+
+  await withHooksSuspended(async () => {
+    await put(db, "exercicios", { id: "silencioso", nome: "Silencioso" });
+  });
+  assert.equal(chamadas.some((c) => c[1] === "silencioso"), false, "nenhum hook disparou dentro do suspend");
+
+  await put(db, "exercicios", { id: "normal", nome: "Normal" });
+  assert.ok(chamadas.some((c) => c[1] === "normal"), "hooks voltam a disparar depois do suspend");
+  db.close();
+});
+
+test("withHooksSuspended reativa os hooks mesmo se a função lançar erro", async () => {
+  const db = await openDatabase();
+  const chamadas = [];
+  registerWriteHook((...args) => chamadas.push(args));
+
+  await assert.rejects(withHooksSuspended(async () => { throw new Error("falha proposital"); }));
+
+  await clearStore(db, "exercicios");
+  await put(db, "exercicios", { id: "pos-erro", nome: "Pós erro" });
+  assert.ok(chamadas.some((c) => c[1] === "pos-erro"), "hooks voltaram mesmo após o erro");
+  db.close();
 });

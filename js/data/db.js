@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 const STORES = {
   perfil: "versao",
@@ -15,7 +15,21 @@ const STORES = {
   registrosCardio: { keyPath: "id", autoIncrement: true },
   habitos: "data",
   fotosPostura: { keyPath: "id", autoIncrement: true },
+  // Fila de escritas pendentes de sincronização com o Supabase (js/data/sync.js).
+  // Fica no mesmo banco local por simplicidade — não é lida/gravada por
+  // nenhuma tela, só pelo módulo de sync.
+  syncOutbox: { keyPath: "id", autoIncrement: true },
 };
+
+// Stores cuja chave é numérica autoIncrement (as demais usam chave string:
+// versão, data, chave de exercício, etc.). js/data/sync.js precisa disso pra
+// saber se converte a chave de volta pra número ao aplicar dados vindos do
+// servidor — lá a chave sempre trafega como texto.
+export const STORES_COM_CHAVE_NUMERICA = Object.freeze(
+  Object.entries(STORES)
+    .filter(([, spec]) => typeof spec === "object" && spec.autoIncrement)
+    .map(([nome]) => nome)
+);
 
 export function openDatabase(indexedDBImpl = globalThis.indexedDB) {
   return new Promise((resolve, reject) => {
@@ -69,6 +83,42 @@ export function openDatabase(indexedDBImpl = globalThis.indexedDB) {
   });
 }
 
+// Ganchos de escrita — como o app sincroniza com o Supabase (js/data/sync.js)
+// sem que db.js precise saber que sync existe (importar sync.js aqui criaria
+// um ciclo, já que sync.js precisa das funções deste arquivo). sync.js se
+// registra uma vez em app.js via registerWriteHook(); put()/del() avisam
+// depois de cada escrita bem-sucedida, com a chave real (importante pros
+// stores autoIncrement, cuja chave só existe depois do put).
+const writeHooks = [];
+let hooksSuspensos = false;
+
+export function registerWriteHook(fn) {
+  writeHooks.push(fn);
+}
+
+// Usado só na aplicação de dados vindos do servidor (pull): escrever o que
+// já veio de lá não deve gerar uma nova entrada na fila de envio, senão
+// cada sincronização reenviaria o que acabou de receber.
+export async function withHooksSuspended(fn) {
+  hooksSuspensos = true;
+  try {
+    return await fn();
+  } finally {
+    hooksSuspensos = false;
+  }
+}
+
+function notificarWriteHooks(storeName, key, value, deletado) {
+  if (hooksSuspensos) return;
+  for (const hook of writeHooks) {
+    try {
+      hook(storeName, key, value, deletado);
+    } catch (err) {
+      console.error("Falha num write hook:", err);
+    }
+  }
+}
+
 export function get(db, storeName, key) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readonly");
@@ -91,7 +141,10 @@ export function put(db, storeName, value) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");
     const req = tx.objectStore(storeName).put(value);
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      notificarWriteHooks(storeName, req.result, value, false);
+      resolve(req.result);
+    };
     req.onerror = () => reject(req.error);
   });
 }
@@ -115,7 +168,10 @@ export function del(db, storeName, key) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, "readwrite");
     const req = tx.objectStore(storeName).delete(key);
-    req.onsuccess = () => resolve();
+    req.onsuccess = () => {
+      notificarWriteHooks(storeName, key, null, true);
+      resolve();
+    };
     req.onerror = () => reject(req.error);
   });
 }

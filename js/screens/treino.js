@@ -93,7 +93,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   if (seriesDeHoje.length === 0) {
     const seletorDia = document.createElement("select");
     seletorDia.className = "trocar-dia-select";
-    seletorDia.style.cssText = "background:var(--accent-ink); color:var(--accent); border:none; border-radius:8px; font-size:0.85rem; padding:6px 8px; margin-top:8px; cursor:pointer; font-family:inherit;";
+    seletorDia.style.cssText = "width:100%; max-width:100%; background:var(--accent-ink); color:var(--accent); border:none; border-radius:8px; font-size:0.85rem; padding:6px 8px; margin-top:8px; cursor:pointer; font-family:inherit;";
     seletorDia.innerHTML = DIAS_SEQUENCIA.map((d) =>
       `<option value="${d.numero}">Dia ${d.numero}: ${d.titulo}</option>`
     ).join("");

@@ -100,7 +100,7 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 
 .carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 22px; }
 .carrossel-plano::-webkit-scrollbar { display: none; }
-.carrossel-plano .plano-hero { flex: 0 0 84%; scroll-snap-align: start; margin-bottom: 0; }
+.carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
 .atividade-secao { margin-bottom: 20px; }
 .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .shead h4 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }

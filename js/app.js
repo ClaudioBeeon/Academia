@@ -4,6 +4,7 @@ import { seedIfNeeded } from "./data/seed.js";
 import { initAutoSync } from "./data/sync.js";
 import { isConfigured as supabaseConfigurado } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
+import { montarPopupPerguntasDiarias } from "./screens/perguntasDiarias.js";
 import { getMedidas } from "./data/medidas.js";
 import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida } from "./engine/lembretes.js";
 import { permissaoConcedida, mostrarNotificacao } from "./lib/notificacoes.js";
@@ -46,6 +47,16 @@ async function bootstrap() {
 
   renderShell(db);
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
+
+  // Dispara uma vez por abertura do app (não por troca de aba), com o que
+  // ainda não foi respondido hoje. Reaparece na próxima abertura enquanto
+  // sobrar pergunta, e recomeça sozinho quando o registro do dia muda à
+  // meia-noite — não precisa de nenhum agendamento, só de ler a data local.
+  const hoje = obterDataLocal();
+  const habitoHoje = await getHabito(db, hoje);
+  montarPopupPerguntasDiarias(db, hoje, habitoHoje).catch((err) =>
+    console.error("Falha ao montar o popup de perguntas diárias:", err)
+  );
 }
 
 function obterDataLocal() {

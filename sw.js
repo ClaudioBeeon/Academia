@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = "app-treino-shell-v22";
+const CACHE_NAME = "app-treino-shell-v23";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -30,6 +30,8 @@ const APP_SHELL = [
   "./js/engine/alertasVolume.js",
   "./js/engine/cardio.js",
   "./js/engine/sessaoGerada.js",
+  "./js/engine/contextoSessao.js",
+  "./js/engine/fichaFixa.js",
   "./js/engine/atividade.js",
   "./js/data/equipamento.js",
   "./js/data/medidas.js",
@@ -38,6 +40,8 @@ const APP_SHELL = [
   "./js/engine/nutricao.js",
   "./js/ai/gemini.js",
   "./js/data/habitos.js",
+  "./js/data/ficha.js",
+  "./js/data/postura.js",
   "./js/engine/autorregulacao.js",
   "./js/engine/lembretes.js",
   "./js/lib/notificacoes.js",
@@ -56,12 +60,14 @@ const APP_SHELL = [
   "./js/screens/iconeExercicio.js",
   "./js/screens/transicaoTela.js",
   "./js/screens/dieta.js",
+  "./js/screens/postura.js",
   "./js/lib/spring.js",
   "./js/data/iconesExercicio.js",
   "./data/perfil.json",
   "./data/protocolo.json",
   "./data/exercicios.json",
   "./data/dieta.json",
+  "./data/ficha.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
 ];

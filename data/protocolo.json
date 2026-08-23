@@ -1,7 +1,9 @@
 {
-  "versao": "1.0",
-  "dataAtualizacao": "2026-08-19",
-  "baseadoEm": "base-cientifica-hipertrofia-forca.md (documento completo, especialmente seções 21 e 22)",
+  "versao": "1.1",
+  "dataAtualizacao": "2026-08-23",
+  "baseadoEm": "base-cientifica-hipertrofia-forca.md (documento completo, especialmente seções 21 e 22) + auditoria 2026-08-23",
+
+  "notaDaAuditoria": "A partir da versão 1.1 os exercícios da sessão vêm de data/ficha.json (ficha prescrita), não do gerador automático. O gerador segue como fallback. As faixas abaixo continuam valendo para os alertas de volume — e três delas foram corrigidas: glúteo, panturrilha e abdômen estavam na faixa 'padrão' (10-16 séries) quando são manutenção deliberada, o que fazia o app tratá-los como deficientes sem que ninguém tivesse decidido isso.",
 
   "contagemDeVolume": {
     "pesoTrabalhoDireto": 1.0,
@@ -11,10 +13,10 @@
 
   "volumeSemanalPorFase": {
     "definicao": {
-      "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico), prioridade 2 = peito, prioridade 3 = bíceps. Peito em volume de recomposição (9-15 séries/semana, contido pelo déficit, não maximizado); bíceps com volume priorizado real (prioridade declarada, não é limitado pela prioridade 1 do mesmo jeito); demais músculos em faixa padrão de intermediário. referencia-consolidada-app-treino.md seção 1 e 4.",
-      "musculoPriorizadoCrescimento": ["biceps"],
-      "musculoEmManutencao": [],
-      "musculoEmRecomposicao": ["peito"],
+      "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico), prioridades de treino = peito E bíceps (confirmadas pelo usuário em 2026-08-23), mais correção postural de ombros e pescoço pra frente. Peito e bíceps priorizados; deltoide posterior e costas em crescimento pela postura; glúteo, panturrilha e abdômen em manutenção deliberada; pernas em faixa intermediária baixa (usuário quer melhorar coxas sem que perna vire prioridade).",
+      "musculoPriorizadoCrescimento": ["peito", "biceps"],
+      "musculoEmManutencao": ["gluteo", "panturrilha", "abdomen"],
+      "musculoEmRecomposicao": ["costas", "deltoide_posterior"],
       "faixasPadrao": {
         "min": 8,
         "alvo_min": 10,
@@ -31,11 +33,19 @@
       },
       "faixasRecomposicao": {
         "min": 8,
-        "alvo_min": 9,
-        "alvo_max": 15,
-        "max": 16,
-        "seriesPorExercicio": 4,
-        "obs": "peito na fase definicao — referencia-consolidada-app-treino.md seção 4: '9-15 séries/semana → ~4-5 séries por exercício'"
+        "alvo_min": 10,
+        "alvo_max": 17,
+        "max": 19,
+        "seriesPorExercicio": 3,
+        "obs": "costas e deltoide posterior — em crescimento pela correção postural. Faixa mais larga que a padrão porque a fase de correção pede volume de puxar igual ou maior que o de empurrar."
+      },
+      "faixasPriorizado": {
+        "min": 12,
+        "alvo_min": 15,
+        "alvo_max": 20,
+        "max": 22,
+        "seriesPorExercicio": 5,
+        "obs": "peito e bíceps. Peito fecha 15 séries/semana com 5 por sessão em 3 dias; bíceps fecha 18 fracionadas (12 diretas + 6 indiretas das costas). 5 séries por sessão está bem abaixo do ponto de retorno indetectável de ~11 séries fracionadas por sessão (Remmert 2025)."
       }
     },
     "hipertrofia_peito": {

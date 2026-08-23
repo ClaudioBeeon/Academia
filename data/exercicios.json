@@ -1,15 +1,21 @@
 {
-  "versao": "1.0",
-  "dataAtualizacao": "2026-08-19",
-  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa",
+  "versao": "1.1",
+  "dataAtualizacao": "2026-08-23",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps)",
   "exercicios": [
     {
       "id": "supino_inclinado_halteres",
       "nome": "Supino inclinado com halteres (~30°)",
       "musculoPrimario": "peito",
       "musculosSecundarios": [
-        { "musculo": "triceps", "contribuicao": 0.5 },
-        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+        {
+          "musculo": "triceps",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "ombro_anterior",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "halteres",
@@ -22,8 +28,14 @@
       "nome": "Supino reto na máquina",
       "musculoPrimario": "peito",
       "musculosSecundarios": [
-        { "musculo": "triceps", "contribuicao": 0.5 },
-        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+        {
+          "musculo": "triceps",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "ombro_anterior",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "maquina",
       "equipamento": "maquina",
@@ -47,7 +59,10 @@
       "nome": "Puxada frente (pegada aberta)",
       "musculoPrimario": "costas",
       "musculosSecundarios": [
-        { "musculo": "biceps", "contribuicao": 0.5 }
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "cabos_polias",
@@ -60,7 +75,10 @@
       "nome": "Remada baixa na máquina/cabo",
       "musculoPrimario": "costas",
       "musculosSecundarios": [
-        { "musculo": "biceps", "contribuicao": 0.5 }
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "maquina",
       "equipamento": "cabos_polias",
@@ -73,7 +91,10 @@
       "nome": "Remada curvada com barra",
       "musculoPrimario": "costas",
       "musculosSecundarios": [
-        { "musculo": "biceps", "contribuicao": 0.5 }
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_pesado",
       "equipamento": "barra",
@@ -86,7 +107,10 @@
       "nome": "Desenvolvimento de ombro na máquina",
       "musculoPrimario": "ombro",
       "musculosSecundarios": [
-        { "musculo": "triceps", "contribuicao": 0.5 }
+        {
+          "musculo": "triceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "maquina",
       "equipamento": "maquina",
@@ -154,8 +178,14 @@
       "nome": "Leg press 45°",
       "musculoPrimario": "quadriceps",
       "musculosSecundarios": [
-        { "musculo": "gluteo", "contribuicao": 0.5 },
-        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "posterior_coxa",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "maquina",
@@ -228,6 +258,117 @@
       "cargaAlongada": false,
       "incrementoMinimo_kg": 0,
       "observacoesExecucao": "quadril alinhado (nem subido, nem caído), progressão é tempo sustentado em vez de carga."
+    },
+    {
+      "id": "face_pull_polia",
+      "nome": "Face pull na polia alta",
+      "musculoPrimario": "deltoide_posterior",
+      "musculosSecundarios": [
+        {
+          "musculo": "costas",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "Corda na altura do rosto. Puxe separando as mãos e levando os cotovelos pra trás e pra cima, terminando com as mãos ao lado das orelhas. Aperte as escápulas no fim. É o exercício mais importante do seu programa pra postura — capriche na execução, não na carga."
+    },
+    {
+      "id": "crucifixo_inverso_maquina",
+      "nome": "Crucifixo inverso na máquina (peck deck invertido)",
+      "musculoPrimario": "deltoide_posterior",
+      "musculosSecundarios": [
+        {
+          "musculo": "costas",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "Peito apoiado, braços quase estendidos. Abra puxando com os cotovelos, não com as mãos. Não deixe o trapézio superior subir junto — ombro longe da orelha o tempo todo."
+    },
+    {
+      "id": "remada_serrote_halter",
+      "nome": "Remada serrote (unilateral com halter)",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "deltoide_posterior",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "Um joelho e uma mão no banco, costas neutras. Puxe o halter em direção ao quadril, cotovelo rente ao corpo. Sendo unilateral, é o melhor exercício do programa pra equilibrar diferença de força entre os lados — faça o lado mais fraco primeiro e iguale as repetições pelo lado fraco."
+    },
+    {
+      "id": "rosca_martelo_halteres",
+      "nome": "Rosca martelo com halteres",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [
+        {
+          "musculo": "antebraco",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "Pegada neutra (palmas viradas uma pra outra), cotovelos fixos ao lado do corpo. Pega o braquial e o braquiorradial, que engrossam o braço por baixo do bíceps — complementa a rosca direta em vez de repetir."
+    },
+    {
+      "id": "rosca_punho_barra",
+      "nome": "Rosca de punho com barra",
+      "musculoPrimario": "antebraco",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "barra",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "Antebraços apoiados no banco, punhos pra fora da borda. Deixe a barra rolar até a ponta dos dedos, feche a mão e suba só com o punho. Amplitude pequena, carga leve, muitas repetições."
+    },
+    {
+      "id": "agachamento_hack_maquina",
+      "nome": "Agachamento hack na máquina",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "Pés na largura do quadril, um pouco à frente. Desça controlado até a coxa passar da paralela, sem tirar o lombar do apoio. Carrega o quadríceps na posição alongada — é o que a máquina extensora não faz."
+    },
+    {
+      "id": "stiff_halteres",
+      "nome": "Stiff com halteres (RDL)",
+      "musculoPrimario": "posterior_coxa",
+      "musculosSecundarios": [
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "Joelhos levemente flexionados e FIXOS. Empurre o quadril pra trás deixando os halteres deslizarem rente à perna, até sentir o alongamento atrás da coxa. A coluna não arredonda em nenhum momento — se arredondar, você desceu demais."
     }
   ]
 }

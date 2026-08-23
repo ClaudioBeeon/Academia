@@ -3,6 +3,7 @@ import { getAll } from "../data/db.js";
 import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
 import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
+import { montarCardPostura } from "./postura.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -30,8 +31,26 @@ export async function montarTelaEvolucao(db) {
     getMedidas(db),
   ]);
 
+  // Postura abre a tela: virou prioridade declarada na auditoria e é a única
+  // das quatro que não tinha nenhum acompanhamento. Vem antes dos gráficos de
+  // carga porque é a que o usuário esqueceria de olhar.
+  const hoje = obterDataLocal();
+  const slotPostura = document.createElement("div");
+  main.appendChild(slotPostura);
+  const redesenharPostura = async () => {
+    const novo = await montarCardPostura(db, hoje, redesenharPostura);
+    slotPostura.replaceChildren(novo);
+  };
+  await redesenharPostura();
+
   if (todasAsSeries.length === 0) {
-    main.innerHTML = `<p class="vazio">Sem treinos registrados ainda.</p>`;
+    // append, não innerHTML: o card de postura já está no main e faz sentido
+    // existir mesmo antes do primeiro treino registrado — a foto inicial é
+    // justamente pra ser tirada antes de começar.
+    const vazio = document.createElement("p");
+    vazio.className = "vazio";
+    vazio.textContent = "Sem treinos registrados ainda.";
+    main.appendChild(vazio);
   } else {
     montarSecaoCarga(main, exercicios, todasAsSeries);
     montarSecaoVolume(main, todasAsSeries);

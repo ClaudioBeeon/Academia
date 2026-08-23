@@ -43,11 +43,50 @@ export function calcularMetaCalorica({ tmb, fase = "definicao", historicoPesoTen
   };
 }
 
+// Meta de proteína — protocolo.json.regrasNutricao.proteina. Em déficit a
+// faixa é mais alta (1,8-2,2 g/kg em vez de 1,6-2,2) porque é a proteína que
+// protege massa magra durante a perda de peso (seção 19 da pesquisa, ponto de
+// quebra de Morton 2018 em ~1,6 g/kg com IC subindo até ~2,2).
+const PROTEINA_G_POR_KG = { padrao: { min: 1.6, max: 2.2 }, deficit: { min: 1.8, max: 2.2 } };
+
+export function calcularMetaProteina({ pesoKg, fase = "definicao" }) {
+  if (!pesoKg || pesoKg <= 0) return null;
+  const emDeficit = fase === "definicao";
+  const faixa = emDeficit ? PROTEINA_G_POR_KG.deficit : PROTEINA_G_POR_KG.padrao;
+  return {
+    min_g: Math.round(pesoKg * faixa.min),
+    max_g: Math.round(pesoKg * faixa.max),
+    g_por_kg: faixa,
+    emDeficit,
+  };
+}
+
+// Só sinaliza abaixo do mínimo. Acima do máximo não é alerta: proteína extra
+// não faz mal, só não entrega ganho adicional — avisar seria ruído.
+export function avaliarProteinaDoDia({ proteinaG, metaProteina }) {
+  if (!metaProteina || proteinaG == null) return null;
+  if (proteinaG >= metaProteina.min_g) {
+    return { status: "ok", faltam_g: 0 };
+  }
+  return {
+    status: "abaixo",
+    faltam_g: Math.round(metaProteina.min_g - proteinaG),
+  };
+}
+
 // checagemTresEixos (protocolo.json): calorias, gordura, fibra/variedade.
 // Cada eixo só sinaliza — nunca reescreve a dieta nem prescreve substituição.
-export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, temFibraOuVegetais = false }) {
+export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, temFibraOuVegetais = false, metaProteina = null }) {
   const alertas = [];
   if (!totalDia || !metaCalorica) return alertas;
+
+  const proteina = avaliarProteinaDoDia({ proteinaG: totalDia.proteina_g, metaProteina });
+  if (proteina?.status === "abaixo") {
+    alertas.push({
+      eixo: "proteina",
+      mensagem: `${totalDia.proteina_g.toFixed(0)}g de proteína hoje — faltam ${proteina.faltam_g}g pra meta mínima de ${metaProteina.min_g}g. Em déficit, proteína abaixo da meta é o que mais custa massa magra.`,
+    });
+  }
 
   const deficitReal = metaCalorica.tmb_kcal > 0
     ? (metaCalorica.tmb_kcal - totalDia.kcal) / metaCalorica.tmb_kcal

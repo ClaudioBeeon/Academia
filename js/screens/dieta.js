@@ -2,12 +2,36 @@
 import { get, put } from "../data/db.js";
 import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional } from "../engine/nutricao.js";
+import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
 import { interpretarComida } from "../ai/gemini.js";
 
 function obterDataLocal() {
   const agora = new Date();
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+}
+
+// Proteína ganha barra própria em vez de virar mais um alerta: em déficit é o
+// número que mais protege massa magra e precisa estar visível todo dia, não só
+// nos dias em que falha.
+function montarBarraProteina(proteinaG, metaProteina) {
+  if (!metaProteina) return "";
+  const avaliacao = avaliarProteinaDoDia({ proteinaG, metaProteina });
+  const ok = avaliacao?.status === "ok";
+  const percentual = Math.min(100, (proteinaG / metaProteina.min_g) * 100).toFixed(0);
+  const nota = ok
+    ? "Meta batida — é isso que protege sua massa magra no déficit."
+    : `Faltam ${avaliacao?.faltam_g ?? metaProteina.min_g}g. Em déficit, proteína abaixo da meta é o que mais custa massa magra.`;
+  return `
+    <div class="meta-proteina" style="grid-column:1/-1;">
+      <div class="meta-proteina-topo">
+        <span>Proteína</span>
+        <b>${proteinaG.toFixed(0)}g <s>/ ${metaProteina.min_g}–${metaProteina.max_g}g</s></b>
+      </div>
+      <div class="meta-proteina-trilho">
+        <div class="meta-proteina-barra ${ok ? "ok" : "abaixo"}" style="width:${percentual}%"></div>
+      </div>
+      <div class="meta-proteina-nota">${nota}</div>
+    </div>`;
 }
 
 export async function montarTelaDieta(db) {
@@ -69,10 +93,20 @@ export async function montarTelaDieta(db) {
     `;
 
     alertasCard.innerHTML = "";
+    // Proteína só depende do peso, então é montada fora da porteira da idade:
+    // a meta calórica precisa de idade (Mifflin-St Jeor), a de proteína não, e
+    // em déficit ela é o número mais importante da tela.
+    const metaProteina = calcularMetaProteina({
+      pesoKg: perfil?.dadosBasicos?.peso_kg,
+      fase: perfil?.fase?.atual,
+    });
+    const barraProteina = montarBarraProteina(total.proteina_g, metaProteina);
+
     if (!perfil?.dadosBasicos?.idade) {
       alertasCard.innerHTML = `
         <div class="exercise-head"><div class="exercise-name">Meta calórica</div></div>
         <div class="sets idade-form" style="padding:0 18px 18px;">
+          ${barraProteina}
           <div class="set-field" style="grid-column:1/-1;">
             <label>Sua idade (necessária pra calcular a meta calórica)</label>
             <input name="idade" type="number" min="10" max="100" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
@@ -105,13 +139,15 @@ export async function montarTelaDieta(db) {
       metaCalorica,
       pesoKg: perfil.dadosBasicos.peso_kg,
       temFibraOuVegetais: false,
+      metaProteina,
     });
 
     alertasCard.innerHTML = `
       <div class="exercise-head"><div class="exercise-name">Meta calórica: ${metaCalorica.meta_kcal} kcal</div></div>
       <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+        ${barraProteina}
         <div class="prev-hint">${metaCalorica.obs}</div>
-        ${alertas.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
+        ${alertas.filter((a) => a.eixo !== "proteina").map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
       </div>
     `;
   }

@@ -200,6 +200,44 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
   color: var(--ink-faint); font-style: italic;
 }
 
+/* Meta de proteína — em déficit é o número que mais protege massa magra */
+.meta-proteina { background: var(--card-2); border-radius: 14px; padding: 12px 14px; }
+.meta-proteina-topo {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.82rem; color: var(--ink-dim);
+}
+.meta-proteina-topo b { color: var(--ink); font-family: var(--font-mono); font-size: 0.9rem; }
+.meta-proteina-topo s { text-decoration: none; color: var(--ink-faint); font-weight: 400; font-size: 0.78rem; }
+.meta-proteina-trilho {
+  height: 8px; background: var(--card); border-radius: 999px;
+  overflow: hidden; margin-top: 8px;
+}
+.meta-proteina-barra { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.meta-proteina-barra.ok { background: var(--accent); }
+.meta-proteina-barra.abaixo { background: #e0b04a; }
+.meta-proteina-nota { margin-top: 7px; font-size: 0.76rem; line-height: 1.45; color: var(--ink-dim); }
+
+/* Comparação de fotos de postura */
+.postura-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.postura-grade:has(.postura-col:only-child) { grid-template-columns: 1fr; }
+.postura-col { display: flex; flex-direction: column; gap: 6px; }
+.postura-col img {
+  width: 100%; aspect-ratio: 3 / 4; object-fit: cover;
+  border-radius: 12px; background: var(--card-2); display: block;
+}
+.postura-cap { display: flex; flex-direction: column; gap: 1px; }
+.postura-cap b { font-size: 0.76rem; color: var(--accent); font-weight: 700; }
+.postura-cap span { font-size: 0.72rem; color: var(--ink-faint); font-family: var(--font-mono); }
+
+.pausa-contador {
+  font-family: var(--font-mono); font-size: 0.95rem; font-weight: 800;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meta-proteina-barra { transition: none; }
+}
+
 /* Execução: tiles, carga pill, lista de séries e card de descanso */
 .exec-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 16px; }
 .exec-tile { background: var(--card-2); border-radius: 20px; padding: 15px; }

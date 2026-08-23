@@ -97,6 +97,36 @@
     }
   },
 
+  "pausaPostural": {
+    "nome": "Pausa postural no expediente",
+    "quando": "A cada ~1h30 entre 9h e 18h, sem contar o almoço",
+    "duracaoMin": 2,
+    "porque": "Você passa 8 horas por dia sentado em frente ao computador e treina 4 vezes por semana. O corpo pratica muito mais a postura da cadeira do que a do face pull — por isso o que acontece no expediente pesa mais na correção de ombros e pescoço pra frente do que o que acontece na academia. Estes 2 minutos, 4 ou 5 vezes ao dia, somam mais tempo semanal de correção que o treino inteiro.",
+    "limitacao": "O app não consegue te acordar sozinho com ele fechado — isso é limitação de PWA, não escolha de projeto. Use como plano do dia e contador, não como alarme.",
+    "exercicios": [
+      {
+        "nome": "Chin tuck sentado",
+        "prescricao": "10 repetições, segurando 3 segundos",
+        "como": "Sem sair da cadeira. Olhando pra frente, empurre o queixo pra trás alongando a nuca, como se fizesse papada. Segure 3s. É o mesmo do aquecimento — e é o único trabalho direto contra o pescoço pra frente."
+      },
+      {
+        "nome": "Retração escapular",
+        "prescricao": "10 repetições, apertando 3 segundos",
+        "como": "Braços soltos, aperte as escápulas uma contra a outra e pra baixo, afastando o ombro da orelha. Segure 3s e solte. Acorda o trapézio médio e os romboides, que passam o dia alongados e desligados."
+      },
+      {
+        "nome": "Extensão torácica na cadeira",
+        "prescricao": "5 repetições lentas",
+        "como": "Mãos atrás da cabeça, apoie a parte de cima das costas no encosto da cadeira e deixe o peito abrir pra trás por cima dele. Desfaz a curvatura de horas sentado."
+      },
+      {
+        "nome": "Levantar e andar",
+        "prescricao": "1 a 2 minutos",
+        "como": "Só levantar e caminhar. Além da coluna, soma passos — que é o que sustenta o déficit calórico sem competir com a recuperação do treino."
+      }
+    ]
+  },
+
   "cardioRegras": {
     "ordem": "SEMPRE depois da musculação, nunca antes. Cardio antes rouba a qualidade das séries, que é onde está o resultado.",
     "modalidade": "Bicicleta, elíptico ou escada. Evite corrida — o componente excêntrico gera mais dano muscular e é a modalidade que mais interfere na hipertrofia de perna.",

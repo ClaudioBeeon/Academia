@@ -10,6 +10,7 @@ import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
 import { getFicha, getInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
+import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
 
 const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
 
@@ -136,9 +137,94 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   main.appendChild(montarCardAtividade(atividade));
 
   main.appendChild(await montarCardCheckin(db, hoje));
+  const cardPausa = await montarCardPausaPostural(db, hoje, ficha?.pausaPostural);
+  if (cardPausa) main.appendChild(cardPausa);
+
   main.appendChild(await montarCardHabitos(db, hoje));
 
   return root;
+}
+
+function horaAgora(agora = new Date()) {
+  return `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
+}
+
+async function montarCardPausaPostural(db, hoje, pausaPostural) {
+  if (!pausaPostural) return null;
+
+  const habito = (await getHabito(db, hoje)) ?? {};
+  const feitas = habito.pausasPosturais ?? 0;
+  const horarios = planejarPausasPosturais();
+  const agora = horaAgora();
+  const proxima = proximaPausaPostural(horarios, agora);
+  const pendentes = pausasPendentes(horarios, agora, feitas);
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head">
+      <div>
+        <div class="exercise-name">Pausa postural</div>
+        <div class="exercise-meta"></div>
+      </div>
+      <div class="pausa-contador"></div>
+    </div>
+  `;
+  card.querySelector(".exercise-meta").textContent = `${horarios.length} no expediente · ~2 min cada`;
+  card.querySelector(".pausa-contador").textContent = `${feitas}/${horarios.length}`;
+
+  const corpo = document.createElement("div");
+  corpo.style.cssText = "padding:0 18px 18px;";
+  card.appendChild(corpo);
+
+  const status = document.createElement("p");
+  status.className = "prev-hint";
+  if (pendentes > 0) {
+    status.style.color = "var(--accent)";
+    status.textContent = `${pendentes} pausa${pendentes > 1 ? "s" : ""} pendente${pendentes > 1 ? "s" : ""} — faça agora, leva 2 minutos.`;
+  } else if (proxima) {
+    status.textContent = `Em dia. Próxima às ${proxima}.`;
+  } else {
+    status.textContent = feitas > 0 ? "Expediente encerrado — tudo feito por hoje." : "Fora do horário de expediente.";
+  }
+  corpo.appendChild(status);
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "swap-pill";
+  botao.style.cssText = "width:100%; margin-top:10px;";
+  botao.textContent = "Marcar pausa feita";
+  botao.addEventListener("click", async () => {
+    const novo = Math.min(horarios.length, feitas + 1);
+    await registrarHabito(db, hoje, { pausasPosturais: novo });
+    const atualizado = await montarCardPausaPostural(db, hoje, pausaPostural);
+    card.replaceWith(atualizado);
+  });
+  corpo.appendChild(botao);
+
+  const det = document.createElement("details");
+  det.className = "explicacao-execucao";
+  det.style.marginTop = "12px";
+  const sum = document.createElement("summary");
+  sum.textContent = "Os 4 movimentos";
+  det.appendChild(sum);
+  const porque = document.createElement("p");
+  porque.textContent = pausaPostural.porque;
+  det.appendChild(porque);
+  for (const item of pausaPostural.exercicios) {
+    const h = document.createElement("h5");
+    h.textContent = `${item.nome} — ${item.prescricao}`;
+    const p = document.createElement("p");
+    p.textContent = item.como;
+    det.append(h, p);
+  }
+  const lim = document.createElement("p");
+  lim.style.cssText = "color:var(--ink-faint); margin-top:10px;";
+  lim.textContent = pausaPostural.limitacao;
+  det.appendChild(lim);
+  corpo.appendChild(det);
+
+  return card;
 }
 
 async function montarCardHabitos(db, hoje) {
@@ -194,6 +280,43 @@ async function montarCardHabitos(db, hoje) {
   }
   linhaSono.appendChild(opcoesSono);
   corpo.appendChild(linhaSono);
+
+  // Hidratação por cor da urina, não por litros. Meta fixa de litros tem
+  // evidência fraca e vira contabilidade inútil; a cor é o marcador prático
+  // que a própria pessoa consegue ler várias vezes por dia.
+  const linhaAgua = document.createElement("div");
+  linhaAgua.innerHTML = `<span>Hidratação hoje</span>`;
+  const opcoesAgua = document.createElement("div");
+  opcoesAgua.style.cssText = "display:flex; gap:8px; margin-top:6px;";
+  const OPCOES_AGUA = [
+    ["clara", "Clara", "Urina clara ao longo do dia — hidratação boa."],
+    ["media", "Amarela", "Amarelo médio — dá pra beber um pouco mais."],
+    ["escura", "Escura", "Urina escura — beba mais água hoje."],
+  ];
+  const notaAgua = document.createElement("div");
+  notaAgua.className = "prev-hint";
+  notaAgua.style.marginTop = "6px";
+  const atualizarNotaAgua = (valor) => {
+    const opcao = OPCOES_AGUA.find(([v]) => v === valor);
+    notaAgua.textContent = opcao ? opcao[2] : "Marque pela cor da urina — é mais útil que contar litros.";
+  };
+  for (const [valor, rotulo] of OPCOES_AGUA) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swap-pill";
+    btn.textContent = rotulo;
+    btn.style.opacity = habito.hidratacao === valor ? "1" : "0.5";
+    btn.addEventListener("click", async () => {
+      habito.hidratacao = valor;
+      await registrarHabito(db, hoje, { hidratacao: valor });
+      opcoesAgua.querySelectorAll("button").forEach((b) => { b.style.opacity = b === btn ? "1" : "0.5"; });
+      atualizarNotaAgua(valor);
+    });
+    opcoesAgua.appendChild(btn);
+  }
+  atualizarNotaAgua(habito.hidratacao);
+  linhaAgua.append(opcoesAgua, notaAgua);
+  corpo.appendChild(linhaAgua);
 
   return card;
 }

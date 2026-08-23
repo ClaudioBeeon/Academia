@@ -2,6 +2,8 @@
 
 **Este arquivo é a fonte de verdade acumulada.** Junta a base científica original, todas as correções feitas durante o desenvolvimento, e a estrutura de treino final. Deve ser consultado pelo Claude Code sempre que houver dúvida sobre por que uma regra existe.
 
+> **Atualização de 23/08/2026:** a divisão de 5 dias descrita na seção 4 abaixo foi substituída por uma ficha prescrita (`data/ficha.json`), depois de uma auditoria encontrar prioridade invertida e desequilíbrio empurra-puxa no gerador. Ver `atualizacao-2026-08-23-auditoria-e-ficha-prescrita.md` pro pacote completo — o que mudou, por quê, e o que a literatura mais recente trouxe de novo. Este arquivo continua valendo como histórico de decisões e princípios; a estrutura de dias em números está desatualizada.
+
 ---
 
 ## 1. Perfil e objetivos

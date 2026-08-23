@@ -8,6 +8,8 @@ import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../eng
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
+import { getFicha, getInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 
 const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
 
@@ -39,17 +41,22 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
-  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente] = await Promise.all([
+  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
     getCardioRecente(db, 1),
+    getFicha(db),
+    getInicioDoBloco(db),
   ]);
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
   const ultimoCardio = cardioRecente[0] ?? null;
-  const { exerciciosHoje } = prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo });
+  const semanaDoBloco = calcularSemanaDoBloco(inicioDoBloco, hoje);
+  const { exerciciosHoje } = prepararSessaoDoDia({
+    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
+  });
 
   const root = document.createElement("div");
   root.className = "tela-treino";
@@ -72,7 +79,11 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   root.appendChild(main);
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
-  const minutosEstimados = exerciciosHoje.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+  // A ficha traz a duração real de cada dia (séries × descanso prescrito). Só
+  // cai na heurística de minutos-por-exercício quando o dia vem do gerador.
+  const diaDaFichaHoje = ficha?.dias?.find((d) => d.numero === diaDaSessao) ?? null;
+  const minutosEstimados = diaDaFichaHoje?.duracaoEstimadaMin
+    ?? exerciciosHoje.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
   const planoCard = document.createElement("section");
   planoCard.className = "plano-hero";
   planoCard.innerHTML = `
@@ -114,7 +125,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
     const { exerciciosHoje: exerciciosDoDiaFuturo } = prepararSessaoDoDia({
-      todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo,
+      todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo, ficha, semanaDoBloco,
     });
     carrossel.appendChild(montarCardProximoDia(diaFuturoInfo, exerciciosDoDiaFuturo, () => {
       if (onAbrirDia) onAbrirDia(numero);

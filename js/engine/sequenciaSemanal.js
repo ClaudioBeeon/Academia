@@ -1,20 +1,27 @@
 // js/engine/sequenciaSemanal.js
 //
-// Sequência de 5 dias — referencia-consolidada-app-treino.md seção 4.
-// Peito aparece 3x por ciclo, um ângulo por dia (inclinado/horizontal/
-// alongado — a rotação de exercício de fato vem do catálogo em
-// exercicios.json via contadorPorMusculo, isso aqui só fixa a frequência).
-// Bíceps é foco em 2 dias (2 e 5), cada um também com ombro como secundário.
-// Nenhum dia é idêntico a outro em músculos — a rotação ainda precisa de um
-// número de dia explícito e persistido, porque peito repete em 3 dias
-// diferentes e não dá pra inferir o dia só olhando o músculo da última série.
+// Sequência de 5 dias. Os exercícios de cada dia vêm da ficha prescrita
+// (data/ficha.json); esta lista fixa os títulos e a frequência por músculo,
+// e é o fallback do gerador pros dias que a ficha não cobrir.
+//
+// Estrutura revisada pela auditoria de 2026-08-23:
+// - Dia 1 deixou de ser "Peito + Tríceps" (3 exercícios, nenhum trabalho de
+//   puxar) e passou a carregar costas e deltoide posterior. Era o dia mais
+//   vazio da semana e virou o principal dia de correção postural.
+// - Deltoide posterior virou músculo próprio, separado de "ombro": ele tinha
+//   zero séries no programa antigo e é o alvo direto da queixa de ombros e
+//   pescoço pra frente.
+// - O desenvolvimento de ombro saiu: é press, reforça o deltoide anterior já
+//   dominante, e o anterior já recebe trabalho indireto de todo supino.
+// Peito segue 3x por ciclo, um ângulo por dia (inclinado/horizontal/alongado),
+// sempre no primeiro exercício da sessão.
 
 export const DIAS_SEQUENCIA = [
-  { numero: 1, titulo: "Peito (inclinado) + Tríceps", musculos: ["peito", "triceps"] },
-  { numero: 2, titulo: "Costas + Bíceps + Ombro", musculos: ["costas", "biceps", "ombro"] },
-  { numero: 3, titulo: "Peito (horizontal) + Tríceps + Ombro", musculos: ["peito", "triceps", "ombro"] },
-  { numero: 4, titulo: "Pernas + Abdômen", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha", "abdomen"] },
-  { numero: 5, titulo: "Peito (alongado) + Bíceps + Ombro", musculos: ["peito", "biceps", "ombro"] },
+  { numero: 1, titulo: "Peito (inclinado) + Costas + Deltoide posterior", musculos: ["peito", "costas", "deltoide_posterior", "triceps"] },
+  { numero: 2, titulo: "Costas + Bíceps", musculos: ["costas", "biceps", "deltoide_posterior"] },
+  { numero: 3, titulo: "Peito (horizontal) + Ombro + Tríceps + Abdômen", musculos: ["peito", "ombro", "triceps", "abdomen"] },
+  { numero: 4, titulo: "Pernas", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"] },
+  { numero: 5, titulo: "Peito (alongado) + Bíceps + Ombro + Antebraço", musculos: ["peito", "biceps", "ombro", "antebraco"] },
 ];
 
 export function obterDiaPorNumero(numero) {

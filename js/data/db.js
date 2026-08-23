@@ -1,9 +1,10 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 const STORES = {
   perfil: "versao",
   protocolo: "versao",
+  ficha: "versao",
   exercicios: "id",
   dietaBase: "versao",
   historicoSeries: { keyPath: "id", autoIncrement: true },

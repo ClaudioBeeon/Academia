@@ -17,6 +17,7 @@ const routes = {
   "data/protocolo.json": { versao: "1.0" },
   "data/exercicios.json": { versao: "1.0", exercicios: [{ id: "a", nome: "A" }] },
   "data/dieta.json": { versao: "1.0" },
+  "data/ficha.json": { versao: "1.0", dias: [{ numero: 1, exercicios: [] }] },
 };
 
 test("seedIfNeeded populates all stores on first run", async () => {
@@ -29,6 +30,9 @@ test("seedIfNeeded populates all stores on first run", async () => {
 
   const exercicios = await getAll(db, "exercicios");
   assert.equal(exercicios.length, 1);
+
+  const ficha = await get(db, "ficha", "1.0");
+  assert.equal(ficha.dias.length, 1, "a ficha prescrita também é semeada");
 
   const config = await get(db, "config", "seedVersion");
   assert.equal(config.valor, "1.0");

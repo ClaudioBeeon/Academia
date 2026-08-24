@@ -13,9 +13,33 @@ export async function getSelecoesDoDia(db, data) {
   return registro?.refeicoes ?? {};
 }
 
-export async function salvarSelecaoRefeicao(db, data, refeicaoChave, opcaoId) {
+// Cada refeição pode ter mais de uma opção marcada ao mesmo tempo (ex.:
+// "banana + morango" e "2 bananas" no mesmo café da manhã) — por isso
+// guarda uma lista de ids por refeição, e cada clique alterna (liga/desliga)
+// a opção clicada em vez de substituir a seleção inteira.
+//
+// Encadeada numa fila (em vez de rodar direto): ler-modificar-escrever sem
+// isso tem corrida real — dois cliques em opções diferentes, rápido o
+// suficiente pro segundo ler o registro antes do primeiro terminar de
+// gravar, perdem a primeira marcação. Encadear em cima da mesma Promise
+// garante que cada chamada só lê depois que a anterior já gravou.
+let filaDeEscritaSelecao = Promise.resolve();
+
+export function salvarSelecaoRefeicao(db, data, refeicaoChave, opcaoId) {
+  filaDeEscritaSelecao = filaDeEscritaSelecao
+    .catch(() => {}) // uma falha na escrita anterior não deve travar a fila pras próximas
+    .then(() => gravarSelecaoRefeicao(db, data, refeicaoChave, opcaoId));
+  return filaDeEscritaSelecao;
+}
+
+async function gravarSelecaoRefeicao(db, data, refeicaoChave, opcaoId) {
   const registro = await getCheckin(db, data);
-  const refeicoes = { ...(registro?.refeicoes ?? {}), [refeicaoChave]: opcaoId };
+  const atual = registro?.refeicoes?.[refeicaoChave];
+  const idsAtuais = Array.isArray(atual) ? atual : atual !== undefined ? [atual] : [];
+  const novaLista = idsAtuais.includes(opcaoId)
+    ? idsAtuais.filter((id) => id !== opcaoId)
+    : [...idsAtuais, opcaoId];
+  const refeicoes = { ...(registro?.refeicoes ?? {}), [refeicaoChave]: novaLista };
   await registrarCheckin(db, data, { refeicoes });
   return refeicoes;
 }
@@ -117,16 +141,28 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) 
   for (const chave of ordemCompleta) {
     const refeicao = refeicoes[chave];
     if (!refeicao || refeicao.opcoes.length === 0) continue;
-    const opcaoId = selecoes[chave];
-    const confirmada = opcaoId !== undefined;
-    const opcao = refeicao.opcoes.find((o) => o.id === opcaoId) ?? refeicao.opcoes[0];
 
-    total.kcal += opcao.totalEstimado.kcal;
-    total.proteina_g += opcao.totalEstimado.proteina_g;
-    total.carboidrato_g += opcao.totalEstimado.carboidrato_g;
-    total.gordura_g += opcao.totalEstimado.gordura_g;
+    // selecoes[chave] é uma lista de ids (uma ou mais opções marcadas).
+    // Formato antigo (id único, string) ainda é aceito pra não quebrar
+    // seleções salvas antes dessa mudança.
+    const selecaoRaw = selecoes[chave];
+    const idsSelecionados = Array.isArray(selecaoRaw) ? selecaoRaw : selecaoRaw !== undefined ? [selecaoRaw] : [];
+    const confirmada = idsSelecionados.length > 0;
+    const opcoesEscolhidas = confirmada
+      ? idsSelecionados.map((id) => refeicao.opcoes.find((o) => o.id === id)).filter(Boolean)
+      : [];
+    // Nada confirmado, ou tudo que estava marcado saiu da dieta base: usa a
+    // primeira opção como estimativa (mesmo padrão de antes).
+    const opcoesParaSomar = opcoesEscolhidas.length > 0 ? opcoesEscolhidas : [refeicao.opcoes[0]];
 
-    detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcao, confirmada });
+    for (const opcao of opcoesParaSomar) {
+      total.kcal += opcao.totalEstimado.kcal;
+      total.proteina_g += opcao.totalEstimado.proteina_g;
+      total.carboidrato_g += opcao.totalEstimado.carboidrato_g;
+      total.gordura_g += opcao.totalEstimado.gordura_g;
+    }
+
+    detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcoes: opcoesParaSomar, confirmada });
   }
 
   const alimentosPessoaisDoDia = dataDeHoje

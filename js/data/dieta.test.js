@@ -35,7 +35,7 @@ test("salvarSelecaoRefeicao grava e getSelecoesDoDia lê de volta", async () => 
   await clearStore(db, "registrosDiarios");
   await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "fruta");
   const selecoes = await getSelecoesDoDia(db, "2026-08-22");
-  assert.equal(selecoes.cafeDaTarde, "fruta");
+  assert.deepEqual(selecoes.cafeDaTarde, ["fruta"]);
   db.close();
 });
 
@@ -45,8 +45,43 @@ test("salvarSelecaoRefeicao mescla refeições diferentes no mesmo dia sem se so
   await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaManha", "unica");
   await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "whey");
   const selecoes = await getSelecoesDoDia(db, "2026-08-22");
-  assert.equal(selecoes.cafeDaManha, "unica");
-  assert.equal(selecoes.cafeDaTarde, "whey");
+  assert.deepEqual(selecoes.cafeDaManha, ["unica"]);
+  assert.deepEqual(selecoes.cafeDaTarde, ["whey"]);
+  db.close();
+});
+
+test("salvarSelecaoRefeicao permite mais de uma opção marcada na mesma refeição", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "whey");
+  await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "fruta");
+  const selecoes = await getSelecoesDoDia(db, "2026-08-22");
+  assert.deepEqual(selecoes.cafeDaTarde, ["whey", "fruta"]);
+  db.close();
+});
+
+test("salvarSelecaoRefeicao não perde marcação quando dois cliques disparam sem esperar um pelo outro", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  // Sem await entre as duas chamadas — simula dois cliques rápidos em
+  // opções diferentes da mesma refeição, que antes causava leitura-antes-da-
+  // escrita e perdia a primeira marcação.
+  const p1 = salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaManha", "banana_morango");
+  const p2 = salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaManha", "2_bananas");
+  await Promise.all([p1, p2]);
+  const selecoes = await getSelecoesDoDia(db, "2026-08-22");
+  assert.deepEqual(selecoes.cafeDaManha, ["banana_morango", "2_bananas"]);
+  db.close();
+});
+
+test("salvarSelecaoRefeicao clicar de novo na mesma opção desmarca ela", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "registrosDiarios");
+  await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "whey");
+  await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "fruta");
+  await salvarSelecaoRefeicao(db, "2026-08-22", "cafeDaTarde", "whey");
+  const selecoes = await getSelecoesDoDia(db, "2026-08-22");
+  assert.deepEqual(selecoes.cafeDaTarde, ["fruta"]);
   db.close();
 });
 
@@ -74,13 +109,28 @@ test("getSelecoesRecentes só retorna dias com ao menos uma refeição marcada",
 });
 
 test("calcularTotalDoDia soma refeições confirmadas e usa a primeira opção como estimativa nas não confirmadas", () => {
-  const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: "fruta" });
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: ["fruta"] });
   assert.equal(total.kcal, 200 + 100);
   const cafeManha = detalhePorRefeicao.find((r) => r.chave === "cafeDaManha");
   const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
   assert.equal(cafeManha.confirmada, false);
   assert.equal(cafeTarde.confirmada, true);
-  assert.equal(cafeTarde.opcao.id, "fruta");
+  assert.equal(cafeTarde.opcoes[0].id, "fruta");
+});
+
+test("calcularTotalDoDia soma todas as opções marcadas quando mais de uma está confirmada na mesma refeição", () => {
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: ["whey", "fruta"] });
+  assert.equal(total.kcal, 200 + 120 + 100);
+  const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
+  assert.equal(cafeTarde.opcoes.length, 2);
+});
+
+test("calcularTotalDoDia aceita formato antigo (id único, string) sem quebrar", () => {
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: "fruta" });
+  assert.equal(total.kcal, 200 + 100);
+  const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
+  assert.equal(cafeTarde.confirmada, true);
+  assert.equal(cafeTarde.opcoes[0].id, "fruta");
 });
 
 test("calcularTotalDoDia inclui refeições adicionadas manualmente, fora das 4 refeições base", () => {

@@ -181,6 +181,14 @@ export async function montarTelaDieta(db) {
       titulo.textContent = REFEICOES_LABELS[chave] ?? refeicao.nome;
       bloco.appendChild(titulo);
 
+      // Uma refeição pode ter mais de uma opção marcada ao mesmo tempo (ex.:
+      // banana + morango E 2 bananas no mesmo café da manhã) — por isso cada
+      // pill liga/desliga por conta própria, e mais de um pode ficar ativo.
+      const idsSelecionadosRaw = selecoes[chave];
+      const idsSelecionados = Array.isArray(idsSelecionadosRaw)
+        ? idsSelecionadosRaw
+        : idsSelecionadosRaw !== undefined ? [idsSelecionadosRaw] : [];
+
       const opcoesEl = document.createElement("div");
       opcoesEl.style.cssText = "display:flex; flex-wrap:wrap; gap:12px 8px;";
       for (const opcao of refeicao.opcoes) {
@@ -190,17 +198,12 @@ export async function montarTelaDieta(db) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "swap-pill";
+        btn.classList.toggle("selecionada", idsSelecionados.includes(opcao.id));
         btn.textContent = opcao.alimentos.map((a) => a.nome).join(" + ");
-        btn.style.opacity = selecoes[chave] === opcao.id ? "1" : "0.5";
         btn.addEventListener("click", async () => {
           selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
-          // ":scope > span > .swap-pill" pega só os pills de opção (cada um
-          // dentro do seu pillWrap) — o botão "+" de adicionar opção também
-          // tem a classe swap-pill, mas fica solto direto em opcoesEl, sem
-          // span em volta, então não entra aqui.
-          opcoesEl.querySelectorAll(":scope > span > .swap-pill").forEach((b, i) => {
-            b.style.opacity = refeicao.opcoes[i].id === opcao.id ? "1" : "0.5";
-          });
+          const idsAtualizados = selecoes[chave] ?? [];
+          btn.classList.toggle("selecionada", idsAtualizados.includes(opcao.id));
           await redesenharTotaisEAlertas();
         });
         pillWrap.appendChild(btn);

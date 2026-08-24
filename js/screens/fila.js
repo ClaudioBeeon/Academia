@@ -28,8 +28,7 @@ function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
 
 const ICONE_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
 
-async function montarChecklistAquecimento(db, hoje, aquecimento) {
-  const habito = (await getHabito(db, hoje)) ?? {};
+function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
   const total = aquecimento?.exercicios?.length ?? 0;
   const movimentosFeitos = new Set(habito.aquecimentoMovimentos ?? []);
 
@@ -102,9 +101,11 @@ async function montarChecklistAquecimento(db, hoje, aquecimento) {
         else movimentosFeitos.add(indice);
         aplicarEstado();
         atualizarProgresso();
+        habito.aquecimentoMovimentos = [...movimentosFeitos];
+        habito.aquecimentoFeito = movimentosFeitos.size === total;
         await registrarHabito(db, hoje, {
-          aquecimentoMovimentos: [...movimentosFeitos],
-          aquecimentoFeito: movimentosFeitos.size === total,
+          aquecimentoMovimentos: habito.aquecimentoMovimentos,
+          aquecimentoFeito: habito.aquecimentoFeito,
         });
       });
 
@@ -118,7 +119,30 @@ async function montarChecklistAquecimento(db, hoje, aquecimento) {
   return card;
 }
 
-function montarBlocoAlongamento(alongamento) {
+// Botão "Marcar feito" no cabeçalho do card — mesma ideia do check por
+// movimento do aquecimento, só que num item único. Sem isso não existia
+// nenhum jeito de registrar que o alongamento/cardio final aconteceu, e
+// "Finalizar sessão" fechava o dia como concluído sem checar nada disso.
+function montarBotaoFeito(habito, campo, db, hoje) {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "fila-status bloco-apoio-progresso bloco-apoio-progresso-btn";
+  const aplicar = (feito) => {
+    botao.textContent = feito ? "✓ Feito" : "Marcar feito";
+    botao.classList.toggle("feito", feito);
+    botao.setAttribute("aria-pressed", String(feito));
+  };
+  aplicar(habito[campo] === true);
+  botao.addEventListener("click", async () => {
+    const novoEstado = botao.getAttribute("aria-pressed") !== "true";
+    aplicar(novoEstado);
+    habito[campo] = novoEstado;
+    await registrarHabito(db, hoje, { [campo]: novoEstado });
+  });
+  return botao;
+}
+
+function montarBlocoAlongamento(db, hoje, alongamento, habito) {
   if (!alongamento) return null;
   const card = document.createElement("section");
   card.className = "exercise-card bloco-apoio";
@@ -128,6 +152,7 @@ function montarBlocoAlongamento(alongamento) {
   head.innerHTML = `<div><div class="bloco-apoio-titulo"></div><div class="bloco-apoio-sub"></div></div>`;
   head.querySelector(".bloco-apoio-titulo").textContent = alongamento.nome;
   head.querySelector(".bloco-apoio-sub").textContent = alongamento.quando;
+  head.appendChild(montarBotaoFeito(habito, "alongamentoFinalFeito", db, hoje));
   card.appendChild(head);
 
   const det = document.createElement("details");
@@ -177,7 +202,7 @@ function nomeDoMusculo(chave) {
   return NOME_MUSCULO[chave] ?? chave.replace(/_/g, " ");
 }
 
-function montarBlocoCardio(cardio, regras) {
+function montarBlocoCardio(db, hoje, cardio, regras, habito) {
   if (!cardio) return null;
   const card = document.createElement("section");
   card.className = "exercise-card bloco-apoio";
@@ -189,6 +214,7 @@ function montarBlocoCardio(cardio, regras) {
     `Cardio — ${NOME_MODALIDADE_CARDIO[cardio.modalidade] ?? cardio.modalidade}`;
   head.querySelector(".bloco-apoio-sub").textContent =
     `${cardio.duracaoMin} min · intensidade ${cardio.intensidade} · depois do treino`;
+  head.appendChild(montarBotaoFeito(habito, "cardioFeito", db, hoje));
   card.appendChild(head);
 
   if (regras) {
@@ -215,6 +241,7 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const seriesPorExercicio = await Promise.all(
     exerciciosHoje.map((e) => getSeriesDoExercicioNaData(db, e.id, hoje))
   );
+  const habitoHoje = (await getHabito(db, hoje)) ?? {};
 
   let totalSeriesFeitas = 0;
   let totalSeriesPrevistas = 0;
@@ -253,7 +280,8 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  main.appendChild(await montarChecklistAquecimento(db, hoje, ficha?.aquecimento));
+  const aquecimentoTemMovimentos = (ficha?.aquecimento?.exercicios?.length ?? 0) > 0;
+  main.appendChild(montarChecklistAquecimento(db, hoje, ficha?.aquecimento, habitoHoje));
 
   const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
   const legenda = document.createElement("p");
@@ -303,20 +331,43 @@ export async function montarTelaFila(db, contexto, callbacks) {
   // Cardio e alongamento vêm DEPOIS dos exercícios na tela porque é essa a
   // ordem da sessão: musculação primeiro (cardio antes rouba a qualidade das
   // séries), alongamento da frente por último, quando o peitoral está quente.
-  const blocoCardio = montarBlocoCardio(diaDaFicha?.cardio, ficha?.cardioRegras);
+  const blocoCardio = montarBlocoCardio(db, hoje, diaDaFicha?.cardio, ficha?.cardioRegras, habitoHoje);
   if (blocoCardio) main.appendChild(blocoCardio);
 
   const chaveAlongamento = diaDaFicha?.alongamentoFinal;
-  const blocoAlongamento = chaveAlongamento
-    ? montarBlocoAlongamento(ficha?.alongamentos?.[chaveAlongamento])
+  const alongamentoDoDia = chaveAlongamento ? ficha?.alongamentos?.[chaveAlongamento] : null;
+  const blocoAlongamento = alongamentoDoDia
+    ? montarBlocoAlongamento(db, hoje, alongamentoDoDia, habitoHoje)
     : null;
   if (blocoAlongamento) main.appendChild(blocoAlongamento);
+
+  // "Finalizar sessão" fechava o dia inteiro como concluído mesmo quando o
+  // cardio ou o alongamento final da ficha ainda não tinham sido marcados —
+  // aquecimento, cardio e alongamento final são partes prescritas da sessão,
+  // não um detalhe opcional que a musculação sozinha substitui.
+  function itensPendentesDaSessao() {
+    const pendentes = [];
+    if (aquecimentoTemMovimentos && habitoHoje.aquecimentoFeito !== true) pendentes.push("o aquecimento");
+    if (diaDaFicha?.cardio && habitoHoje.cardioFeito !== true) pendentes.push("o cardio");
+    if (alongamentoDoDia && habitoHoje.alongamentoFinalFeito !== true) pendentes.push("o alongamento final");
+    return pendentes;
+  }
 
   const rodape = document.createElement("div");
   rodape.className = "foot";
   rodape.style.cssText = "padding:14px 18px 24px; text-align:center;";
   rodape.innerHTML = `<button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>`;
-  rodape.querySelector(".finalizar-btn").addEventListener("click", () => { if (onFinalizarSessao) onFinalizarSessao(); });
+  rodape.querySelector(".finalizar-btn").addEventListener("click", () => {
+    const pendentes = itensPendentesDaSessao();
+    if (pendentes.length > 0) {
+      const lista = pendentes.length === 1
+        ? pendentes[0]
+        : `${pendentes.slice(0, -1).join(", ")} e ${pendentes.at(-1)}`;
+      const confirmou = confirm(`Você ainda não marcou ${lista} de hoje. Finalizar a sessão mesmo assim?`);
+      if (!confirmou) return;
+    }
+    if (onFinalizarSessao) onFinalizarSessao();
+  });
 
   if (onPular) {
     const pularBtn = document.createElement("button");

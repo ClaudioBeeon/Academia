@@ -13,7 +13,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaEvolucao(db) {
+export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
   const root = document.createElement("div");
   root.className = "tela-evolucao";
 
@@ -24,6 +24,16 @@ export async function montarTelaEvolucao(db) {
 
   const main = document.createElement("main");
   root.appendChild(main);
+
+  if (onAbrirHistoricoTreinos) {
+    const historicoBtn = document.createElement("button");
+    historicoBtn.type = "button";
+    historicoBtn.className = "swap-pill";
+    historicoBtn.style.cssText = "align-self:flex-start; margin-bottom:4px;";
+    historicoBtn.textContent = "Histórico de treinos →";
+    historicoBtn.addEventListener("click", onAbrirHistoricoTreinos);
+    main.appendChild(historicoBtn);
+  }
 
   const [exercicios, todasAsSeries, linhasMedidas] = await Promise.all([
     getAll(db, "exercicios"),

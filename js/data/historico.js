@@ -1,5 +1,5 @@
 // js/data/historico.js
-import { put, del, getAllByIndex, getAll } from "./db.js";
+import { get, put, del, getAllByIndex, getAll } from "./db.js";
 
 export function registrarSerie(db, serie) {
   return put(db, "historicoSeries", serie);
@@ -85,4 +85,31 @@ export async function getUltimasSessoesPorExercicio(db, limitePorExercicio = 10)
     });
   }
   return resultado;
+}
+
+// Sessões agrupadas por dia — usado pela tela de histórico geral (fora do
+// fluxo por exercício acima), que precisa ver "o que aconteceu em cada
+// treino", não "o histórico de um exercício só".
+export async function getSessoesAgrupadasPorDia(db, limite = 60) {
+  const todas = await getAll(db, "historicoSeries");
+  const porData = new Map();
+  for (const serie of todas) {
+    if (!porData.has(serie.data)) porData.set(serie.data, []);
+    porData.get(serie.data).push(serie);
+  }
+  const datasOrdenadas = [...porData.keys()].sort((a, b) => b.localeCompare(a)).slice(0, limite);
+  return datasOrdenadas.map((data) => ({
+    data,
+    series: porData.get(data).sort((a, b) => (a.exercicioId).localeCompare(b.exercicioId) || (a.serieNumero ?? 0) - (b.serieNumero ?? 0)),
+  }));
+}
+
+export async function atualizarSerie(db, id, patch) {
+  const existente = await get(db, "historicoSeries", id);
+  if (!existente) throw new Error(`Série ${id} não encontrada`);
+  return put(db, "historicoSeries", { ...existente, ...patch, id });
+}
+
+export function excluirSerie(db, id) {
+  return del(db, "historicoSeries", id);
 }

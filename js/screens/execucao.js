@@ -7,13 +7,12 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
-import { abrirSeletorCarga } from "./seletorCarga.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
+const INCREMENTO_CARGA_PADRAO_KG = 1;
+const CARGA_PRIMEIRA_VEZ_PADRAO_KG = 5;
 
-const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>`;
-const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
 const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
 
 // A prescrição da ficha vence o padrão por tipo de exercício: é o que permite
@@ -39,16 +38,14 @@ function obterConfigExercicio(protocolo, exercicio) {
   };
 }
 
-function arredondarMeioKg(carga) {
-  return Math.round(carga * 2) / 2;
+function formatarNumero(valor) {
+  if (valor == null) return "—";
+  return Number.isInteger(valor) ? String(valor) : valor.toFixed(1).replace(/\.0$/, "");
 }
 
-function calcularProximoPasso(sugestao, ultimaAnterior) {
-  if (sugestao.cargaSugerida == null || !ultimaAnterior) return "—";
-  const diff = arredondarMeioKg(sugestao.cargaSugerida - ultimaAnterior.carga);
-  if (diff > 0) return `+${diff}kg`;
-  if (diff < 0) return `${diff}kg`;
-  return "Manter";
+function arredondarIncremento(valor, passo) {
+  if (!(passo > 0)) return Math.round(valor * 2) / 2;
+  return Math.round(valor / passo) * passo;
 }
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
@@ -57,18 +54,38 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
+  const incrementoCarga = exercicio.incrementoMinimo_kg ?? INCREMENTO_CARGA_PADRAO_KG;
   let cronometroAtivo = null;
   let wakeLockAtivo = null;
   let numeroEmAndamento = null;
-  let cronometroTrabalho = null;
+  let inicioTrabalhoTs = null;
+  let intervalTrabalho = null;
   const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
   const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
   const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
   const sugestao = sugerirCarga(amostras, cfg.rirAlvo);
   const sessaoAnteriorCompleta = await getSeriesDaUltimaSessaoAnterior(db, exercicio.id, hoje);
 
-  const cargaPadrao = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : cfg.repsMin);
-  let cargaSelecionada = Math.min(100, Math.max(1, Math.round(cargaPadrao)));
+  const cargaPadrao = sugestao.cargaSugerida
+    ?? ultimaAnterior?.carga
+    ?? (exercicio.equipamento === "barra" ? equipamento.pesoBarra : CARGA_PRIMEIRA_VEZ_PADRAO_KG);
+  let cargaSelecionada = Math.max(incrementoCarga, arredondarIncremento(cargaPadrao, incrementoCarga));
+
+  // Reps e RIR não têm mais um valor fixo gravado sem perguntar: cada série
+  // pendente começa pré-preenchida com a mesma série da sessão anterior (é o
+  // dado mais parecido com o que vai acontecer agora), e só cai no padrão da
+  // prescrição quando não existe sessão anterior pra comparar.
+  function valoresIniciaisParaSerie(numero) {
+    const equivalente = sessaoAnteriorCompleta.find((s) => s.serieNumero === numero);
+    return {
+      reps: equivalente?.reps ?? cfg.repsMax,
+      rir: equivalente?.rir ?? cfg.rirAlvo,
+    };
+  }
+
+  let repsAtual = cfg.repsMax;
+  let rirAtual = cfg.rirAlvo;
+  let campoAtivo = "carga";
 
   const root = document.createElement("div");
   root.className = "tela-execucao";
@@ -81,11 +98,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">←</button>
       <div>
         <div class="date-label">Exercício ${indice} de ${total}</div>
-        <div class="day-title" style="font-size:1.3rem;"></div>
+        <div class="day-title exec-titulo"></div>
       </div>
     </div>
   `;
-  header.querySelector(".day-title").textContent = exercicio.nome;
+  header.querySelector(".exec-titulo").textContent = exercicio.nome;
   header.querySelector(".voltar-btn").addEventListener("click", () => { if (onFechar) onFechar(); });
   const trocarBtn = document.createElement("button");
   trocarBtn.type = "button";
@@ -96,10 +113,6 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   const main = document.createElement("main");
   root.appendChild(main);
-
-  const tilesEl = document.createElement("div");
-  tilesEl.className = "exec-tiles";
-  main.appendChild(tilesEl);
 
   if (exercicio.equipamento === "barra") {
     const ferramentasPill = document.createElement("button");
@@ -142,69 +155,52 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     });
   }
 
-  const cargaPillEl = document.createElement("button");
-  cargaPillEl.type = "button";
-  cargaPillEl.className = "exec-carga-pill";
-  main.appendChild(cargaPillEl);
+  // Linha do tempo: uma marca por série-alvo, com o resultado embaixo assim
+  // que a série é registrada — substitui a antiga lista vertical + os dois
+  // tiles do topo, que repetiam o mesmo número de carga de três jeitos.
+  const linhaTempoEl = document.createElement("div");
+  linhaTempoEl.className = "exec-linha-tempo";
+  linhaTempoEl.style.setProperty("--exec-series", totalSeriesAlvo);
+  linhaTempoEl.innerHTML = `<div class="exec-lt-barra"><i></i></div><div class="exec-lt-marcas"></div>`;
+  main.appendChild(linhaTempoEl);
 
-  const shead = document.createElement("div");
-  shead.className = "shead";
-  shead.innerHTML = `<h4>Séries</h4><s>${totalSeriesAlvo} no total</s>`;
-  main.appendChild(shead);
+  // O trio carga/reps/RIR: só um fica "aceso" por vez (o que a tela está
+  // perguntando agora), e o controle −/+ embaixo serve o campo aceso. Tocar
+  // num campo apagado (quando permitido) passa o controle pra ele.
+  const trioEl = document.createElement("div");
+  trioEl.className = "exec-trio";
+  trioEl.innerHTML = `
+    <button type="button" class="exec-campo" data-campo="carga"><div class="rot">Carga</div><span class="val"></span></button>
+    <button type="button" class="exec-campo" data-campo="reps"><div class="rot">Reps</div><span class="val"></span></button>
+    <button type="button" class="exec-campo" data-campo="rir"><div class="rot">RIR</div><span class="val"></span></button>
+  `;
+  main.appendChild(trioEl);
 
-  const seriesListEl = document.createElement("div");
-  seriesListEl.className = "exec-series";
-  main.appendChild(seriesListEl);
+  const controleEl = document.createElement("div");
+  controleEl.className = "exec-controle";
+  controleEl.innerHTML = `
+    <button type="button" class="menos" aria-label="Diminuir">−</button>
+    <span class="qual">Ajustando<b></b></span>
+    <button type="button" class="mais" aria-label="Aumentar">+</button>
+  `;
+  main.appendChild(controleEl);
 
-  if (ultimaAnterior) {
-    const hint = document.createElement("div");
-    hint.className = "prev-hint";
-    hint.style.padding = "0 0 16px";
-    const sugestaoTexto = sugestao.cargaSugerida != null
-      ? ` Sugestão de hoje: <b>${sugestao.cargaSugerida} kg</b> (confiança ${sugestao.confianca}).`
-      : "";
-    hint.innerHTML = `Última vez: <b>${ultimaAnterior.carga} kg × ${ultimaAnterior.reps}</b>, RIR ${ultimaAnterior.rir}.${sugestaoTexto}`;
-    main.appendChild(hint);
-  }
+  const notaEl = document.createElement("p");
+  notaEl.className = "exec-nota";
+  main.appendChild(notaEl);
+
+  const cronoTrabalhoEl = document.createElement("div");
+  cronoTrabalhoEl.className = "exec-crono-trabalho";
+  cronoTrabalhoEl.innerHTML = `<div class="t">00:00</div><div class="l">A tela fica acesa até você terminar</div>`;
+  cronoTrabalhoEl.style.display = "none";
+  main.appendChild(cronoTrabalhoEl);
 
   const progressaoHint = document.createElement("div");
   progressaoHint.className = "prev-hint";
-  progressaoHint.style.cssText = "padding:0 0 16px; display:none;";
+  progressaoHint.style.cssText = "padding:16px 0 0; display:none;";
   main.appendChild(progressaoHint);
 
-  const restCard = document.createElement("div");
-  restCard.className = "exec-rest rest-bar-hidden";
-  restCard.innerHTML = `
-    <div class="label">Descanso</div>
-    <div class="time">00:00</div>
-    <div class="sub">o relógio segue contando se você passar</div>
-    <div class="rest-ctl"><button type="button" data-action="menos">−30s</button><button type="button" data-action="mais">+30s</button></div>
-  `;
-  main.appendChild(restCard);
-
   const prescricao = exercicio.prescricao;
-
-  // Faixa de trabalho sempre visível — é a informação que o usuário precisa
-  // olhar durante a série, não escondida atrás de um accordion.
-  if (prescricao) {
-    const guia = document.createElement("div");
-    guia.className = "guia-prescricao";
-    const falha = prescricao.falhaNaUltimaSerie
-      ? "falha permitida na última série"
-      : "sem falha — pare com folga";
-    guia.innerHTML = `
-      <div class="guia-linha">
-        <span><b>${cfg.repsMin}–${cfg.repsMax}</b> reps</span>
-        <span><b>RIR ${cfg.rirAlvo}</b></span>
-        <span><b>${Math.round(cfg.descansoSegundos / 60 * 10) / 10}</b> min descanso</span>
-      </div>
-      <div class="guia-tempo"></div>
-      <div class="guia-falha"></div>
-    `;
-    guia.querySelector(".guia-tempo").textContent = `⏱ ${prescricao.tempo}`;
-    guia.querySelector(".guia-falha").textContent = falha;
-    main.appendChild(guia);
-  }
 
   const blocos = [];
   if (prescricao?.comoExecutar) blocos.push(["Como executar", prescricao.comoExecutar]);
@@ -232,6 +228,21 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     main.appendChild(explicacao);
   }
 
+  // Descanso: barra fixa presa acima do rodapé (não rola com o resto da
+  // tela — era o motivo de o relógio sumir de vista com 5 séries acima
+  // dele), com controle de tempo e saída explícita.
+  const descansoEl = document.createElement("div");
+  descansoEl.className = "exec-descanso exec-descanso-oculto";
+  descansoEl.innerHTML = `
+    <div class="txt">Descanso</div>
+    <div class="rel">00:00</div>
+    <div class="ctl">
+      <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
+      <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
+    </div>
+  `;
+  root.appendChild(descansoEl);
+
   const atualizarProgressao = () => {
     const avaliacao = avaliarProgressao({
       faixaMin: cfg.repsMin,
@@ -258,147 +269,191 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     return null;
   }
 
-  function renderizarTiles() {
-    const cargaSugeridaTexto = sugestao.cargaSugerida != null
-      ? `${sugestao.cargaSugerida}kg`
-      : (ultimaAnterior ? `${ultimaAnterior.carga}kg` : "—");
-    tilesEl.innerHTML = `
-      <div class="exec-tile"><div class="ic">${ICONE_HALTER}</div><b>${cargaSugeridaTexto}</b><s>Carga sugerida</s></div>
-      <div class="exec-tile"><div class="ic">${ICONE_RAIO}</div><b>${calcularProximoPasso(sugestao, ultimaAnterior)}</b><s>Próximo passo</s></div>
-    `;
-  }
-
-  function renderizarPill() {
-    cargaPillEl.innerHTML = `
-      <span class="label">Carga da série</span>
-      <span class="valor">${cargaSelecionada} kg</span>
-      <span class="editar">Ajustar</span>
-    `;
-  }
-
-  function renderizarSeries() {
+  function renderizarLinhaTempo() {
     const pendente = numeroPendenteAtual();
-    seriesListEl.innerHTML = "";
+    const feitas = seriesHoje.length;
+    const fracao = totalSeriesAlvo > 0 ? Math.min(1, feitas / totalSeriesAlvo) : 0;
+    linhaTempoEl.querySelector(".exec-lt-barra i").style.width = `${(fracao * 100).toFixed(0)}%`;
+
+    const marcasEl = linhaTempoEl.querySelector(".exec-lt-marcas");
+    marcasEl.innerHTML = "";
     for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
       const feita = seriesHoje.find((s) => s.serieNumero === numero);
-      const row = document.createElement("div");
-      row.className = "exec-serie-row" + (!feita && numero === pendente ? " pendente" : "");
+      const marca = document.createElement("div");
+      marca.className = "exec-lt-marca";
       if (feita) {
-        row.innerHTML = `
-          <div class="exec-serie-chk"><i>✓</i></div>
-          <div class="exec-serie-info"><h5>${feita.carga} kg · ${feita.reps} reps</h5><p>RIR ${feita.rir}</p></div>
-        `;
-      } else if (numero === pendente && numero === numeroEmAndamento) {
-        row.innerHTML = `
-          <div class="exec-serie-chk off">${numero}</div>
-          <div class="exec-serie-info"><h5>Em andamento… <span class="crono-trabalho">00:00</span></h5></div>
-        `;
+        marca.innerHTML = `<div class="kg">${formatarNumero(feita.carga)}×${feita.reps}</div><div class="rir">RIR ${feita.rir}</div>`;
       } else if (numero === pendente) {
-        row.innerHTML = `
-          <div class="exec-serie-chk off">${numero}</div>
-          <div class="exec-serie-info"><h5 class="aguardando">Aguardando série…</h5></div>
-        `;
+        marca.classList.add("agora");
+        marca.innerHTML = `<div class="kg">agora</div><div class="rir">série ${numero}</div>`;
       } else {
-        row.innerHTML = `
-          <div class="exec-serie-chk off">${numero}</div>
-          <div class="exec-serie-info"><h5 class="aguardando" style="opacity:.5">—</h5></div>
-        `;
+        marca.classList.add("vazia");
+        marca.innerHTML = `<div class="kg">—</div><div class="rir">&nbsp;</div>`;
       }
-      seriesListEl.appendChild(row);
+      marcasEl.appendChild(marca);
+    }
+  }
+
+  function renderizarTrioEControle() {
+    const pendente = numeroPendenteAtual();
+    const emSerie = numeroEmAndamento != null;
+
+    const btnCarga = trioEl.querySelector('[data-campo="carga"]');
+    const btnReps = trioEl.querySelector('[data-campo="reps"]');
+    const btnRir = trioEl.querySelector('[data-campo="rir"]');
+
+    btnCarga.querySelector(".val").textContent = `${formatarNumero(cargaSelecionada)} kg`;
+    btnReps.querySelector(".val").textContent = formatarNumero(repsAtual);
+    btnRir.querySelector(".val").textContent = formatarNumero(rirAtual);
+
+    // Carga trava assim que a série começa — é o único momento em que
+    // "trava" faz sentido, porque reps e RIR só existem depois de terminar.
+    btnCarga.disabled = emSerie;
+    [btnCarga, btnReps, btnRir].forEach((btn) => {
+      btn.classList.toggle("ativo", btn.dataset.campo === campoAtivo);
+    });
+
+    const rotulos = { carga: "carga · kg", reps: "repetições", rir: "RIR" };
+    controleEl.querySelector(".qual b").textContent = rotulos[campoAtivo];
+
+    if (pendente == null) {
+      trioEl.style.display = "none";
+      controleEl.style.display = "none";
+      notaEl.style.display = "none";
+      return;
+    }
+    trioEl.style.display = "";
+    controleEl.style.display = "flex";
+
+    if (!emSerie) {
+      notaEl.style.display = "";
+      notaEl.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${cfg.rirAlvo}</b> sobrando. Anda de ${formatarNumero(incrementoCarga)} em ${formatarNumero(incrementoCarga)} kg.`;
+    } else {
+      notaEl.style.display = "";
+      notaEl.textContent = "Ajuste reps e RIR enquanto respira — o botão de terminar grava o que estiver na tela.";
     }
   }
 
   function renderizarFooter() {
     const pendente = numeroPendenteAtual();
     if (numeroEmAndamento != null) {
-      primarioBtn.textContent = "Iniciar descanso";
-      cargaPillEl.disabled = true;
-      cargaPillEl.style.opacity = "0.5";
+      primarioBtn.textContent = "Terminei — registrar";
     } else if (pendente == null) {
       primarioBtn.textContent = "Concluir exercício";
-      cargaPillEl.disabled = true;
-      cargaPillEl.style.opacity = "0.5";
     } else {
-      primarioBtn.textContent = `Iniciar série ${pendente}`;
-      cargaPillEl.disabled = false;
-      cargaPillEl.style.opacity = "1";
+      primarioBtn.textContent = `Comecei a série ${pendente}`;
     }
   }
 
   function renderizarTudo() {
-    renderizarTiles();
-    renderizarPill();
-    renderizarSeries();
+    renderizarLinhaTempo();
+    renderizarTrioEControle();
     atualizarProgressao();
     renderizarFooter();
   }
 
-  cargaPillEl.addEventListener("click", async () => {
-    const escolhido = await abrirSeletorCarga(cargaSelecionada);
-    if (escolhido != null) {
-      cargaSelecionada = escolhido;
-      renderizarPill();
-    }
+  const AJUSTES = {
+    carga: (delta) => { cargaSelecionada = Math.max(incrementoCarga, cargaSelecionada + delta * incrementoCarga); },
+    reps: (delta) => { repsAtual = Math.max(0, repsAtual + delta); },
+    rir: (delta) => { rirAtual = Math.max(0, rirAtual + delta); },
+  };
+
+  controleEl.querySelector(".menos").addEventListener("click", () => { AJUSTES[campoAtivo](-1); renderizarTrioEControle(); });
+  controleEl.querySelector(".mais").addEventListener("click", () => { AJUSTES[campoAtivo](1); renderizarTrioEControle(); });
+
+  trioEl.querySelectorAll(".exec-campo").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      campoAtivo = btn.dataset.campo;
+      renderizarTrioEControle();
+    });
   });
 
-  function pararTudo() {
+  function pararTrabalho() {
+    if (intervalTrabalho) {
+      clearInterval(intervalTrabalho);
+      intervalTrabalho = null;
+    }
+    inicioTrabalhoTs = null;
+  }
+
+  function pararDescanso() {
     if (cronometroAtivo) {
       cronometroAtivo.parar();
       cronometroAtivo = null;
     }
+    descansoEl.classList.add("exec-descanso-oculto");
+  }
+
+  function pararTudo() {
+    pararDescanso();
     pararTrabalho();
     if (wakeLockAtivo) {
       wakeLockAtivo.release().catch(() => {});
       wakeLockAtivo = null;
     }
+    document.removeEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+    window.removeEventListener("focus", aoVoltarAoPrimeiroPlano);
+    window.removeEventListener("online", aoVoltarAoPrimeiroPlano);
   }
 
-  function pararTrabalho() {
-    if (cronometroTrabalho) {
-      cronometroTrabalho.parar();
-      cronometroTrabalho = null;
-    }
+  function atualizarCronoTrabalho() {
+    if (inicioTrabalhoTs == null) return;
+    const segundos = Math.max(0, Math.floor((Date.now() - inicioTrabalhoTs) / 1000));
+    const min = String(Math.floor(segundos / 60)).padStart(2, "0");
+    const seg = String(segundos % 60).padStart(2, "0");
+    cronoTrabalhoEl.querySelector(".t").textContent = `${min}:${seg}`;
   }
 
   function iniciarTrabalho(numero) {
+    // Começar uma nova série tem que encerrar o descanso de verdade — antes
+    // disso o relógio de descanso continuava contando por baixo mesmo depois
+    // de "Comecei a série" ser tocado, porque só o timer de trabalho era
+    // iniciado e o de descanso nunca era parado.
+    pararDescanso();
+
     numeroEmAndamento = numero;
-    let segundos = 0;
-    const atualizar = () => {
-      const el = seriesListEl.querySelector(".crono-trabalho");
-      if (!el) return;
-      const min = String(Math.floor(segundos / 60)).padStart(2, "0");
-      const seg = String(segundos % 60).padStart(2, "0");
-      el.textContent = `${min}:${seg}`;
-    };
-    const intervalId = setInterval(() => { segundos++; atualizar(); }, 1000);
-    cronometroTrabalho = { parar: () => clearInterval(intervalId) };
+    const iniciais = valoresIniciaisParaSerie(numero);
+    repsAtual = iniciais.reps;
+    rirAtual = iniciais.rir;
+    campoAtivo = "reps";
+
+    inicioTrabalhoTs = Date.now();
+    cronoTrabalhoEl.style.display = "";
+    atualizarCronoTrabalho();
+    intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
+
+    if ("wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then((lock) => { wakeLockAtivo = lock; }).catch(() => {});
+    }
+
     renderizarTudo();
   }
 
   async function finalizarTrabalhoERegistrar() {
     const numero = numeroEmAndamento;
     pararTrabalho();
+    cronoTrabalhoEl.style.display = "none";
     numeroEmAndamento = null;
+    campoAtivo = "carga";
     await registrarSerieAtual(numero);
   }
 
   function iniciarDescanso(descansoSegundos) {
-    if (cronometroAtivo) {
-      cronometroAtivo.parar();
-    }
-
-    restCard.classList.remove("rest-bar-hidden");
-    const timeEl = restCard.querySelector(".time");
+    pararDescanso();
+    descansoEl.classList.remove("exec-descanso-oculto");
+    const relEl = descansoEl.querySelector(".rel");
 
     const cronometro = criarCronometro({
       duracaoInicialSegundos: descansoSegundos,
       aoAtualizar: (restante) => {
         const min = String(Math.floor(restante / 60)).padStart(2, "0");
         const seg = String(restante % 60).padStart(2, "0");
-        timeEl.textContent = `${min}:${seg}`;
+        relEl.textContent = `${min}:${seg}`;
       },
       aoFinalizar: () => {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        descansoEl.classList.add("exec-descanso-oculto");
       },
     });
 
@@ -411,13 +466,27 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     cronometro.iniciar();
   }
 
-  restCard.querySelector('[data-action="menos"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(-30));
-  restCard.querySelector('[data-action="mais"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(30));
+  // Volta a sincronizar os cronômetros com o relógio de verdade quando o app
+  // volta a ficar em primeiro plano — cobre tanto o app sendo reaberto depois
+  // de minimizado quanto a conexão voltando depois de instável, os dois
+  // momentos em que o navegador atrasa ou pausa o setInterval e o relógio na
+  // tela ficava parecendo travado ou "ainda contando" por conta própria.
+  function aoVoltarAoPrimeiroPlano() {
+    if (document.visibilityState === "hidden") return;
+    if (cronometroAtivo) cronometroAtivo.resincronizar();
+    if (inicioTrabalhoTs != null) atualizarCronoTrabalho();
+  }
+  document.addEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+  window.addEventListener("focus", aoVoltarAoPrimeiroPlano);
+  window.addEventListener("online", aoVoltarAoPrimeiroPlano);
+
+  descansoEl.querySelector('[data-action="menos"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(-30));
+  descansoEl.querySelector('[data-action="mais"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(30));
 
   async function registrarSerieAtual(numero) {
     const carga = cargaSelecionada;
-    const reps = cfg.repsMax;
-    const rir = cfg.rirAlvo;
+    const reps = repsAtual;
+    const rir = rirAtual;
 
     const seriesAnteriores = await getHistoricoCompletoDoExercicio(db, exercicio.id);
     const prs = detectarPRs({ carga, reps }, seriesAnteriores.map((s) => ({ carga: s.carga, reps: s.reps })));
@@ -489,6 +558,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 function mostrarToastPR(prs) {
   const toast = document.createElement("div");
   toast.className = "rest-bar toast-flutuante";
+  toast.setAttribute("role", "status");
   toast.style.position = "fixed";
   toast.style.left = "50%";
   toast.style.bottom = `${proximoOffsetToast()}px`;

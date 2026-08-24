@@ -1,13 +1,22 @@
 // js/screens/relatorio.js
+import { get } from "../data/db.js";
 import { getSeriesDoDia } from "../data/historico.js";
+import { getCardioDoDia } from "../data/cardio.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
+import { estimarCaloriasDaSessao } from "../engine/calorias.js";
 
 export async function montarTelaRelatorio(db, contexto, callbacks) {
   const { hoje, prsDaSessao } = contexto;
   const { onConcluir } = callbacks;
 
-  const seriesDoDia = await getSeriesDoDia(db, hoje);
+  const [seriesDoDia, registrosCardioDoDia, perfil] = await Promise.all([
+    getSeriesDoDia(db, hoje),
+    getCardioDoDia(db, hoje),
+    get(db, "perfil", "1.0"),
+  ]);
   const stats = calcularEstatisticasSessao(seriesDoDia);
+  const pesoKg = perfil?.dadosBasicos?.peso_kg;
+  const calorias = estimarCaloriasDaSessao({ totalSeries: stats.totalSeries, pesoKg, registrosCardioDoDia });
 
   const root = document.createElement("div");
   root.className = "tela-relatorio";
@@ -42,6 +51,25 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
   tiles[2].textContent = stats.exerciciosTreinados;
   tiles[3].textContent = stats.musculosTreinados.length > 0 ? stats.musculosTreinados.join(", ") : "—";
   main.appendChild(statsCard);
+
+  if (pesoKg > 0) {
+    const caloriasCard = document.createElement("section");
+    caloriasCard.className = "exercise-card";
+    caloriasCard.innerHTML = `
+      <div class="exercise-head"><div class="exercise-name">Calorias — estimativa</div></div>
+      <div class="stats-grid" style="padding:0 18px 8px;">
+        <div class="stat-tile"><b></b><span>Musculação</span></div>
+        <div class="stat-tile"><b></b><span>Cardio</span></div>
+        <div class="stat-tile"><b></b><span>Total</span></div>
+      </div>
+      <div class="prev-hint" style="padding:0 18px 18px;">Estimativa por MET a partir do peso corporal — não é medição de relógio ou pulseira, é uma referência.</div>
+    `;
+    const tilesCal = caloriasCard.querySelectorAll(".stat-tile b");
+    tilesCal[0].textContent = `${calorias.musculacao} kcal`;
+    tilesCal[1].textContent = registrosCardioDoDia.length > 0 ? `${calorias.cardio} kcal` : "—";
+    tilesCal[2].textContent = `${calorias.total} kcal`;
+    main.appendChild(caloriasCard);
+  }
 
   if (prsDaSessao.length > 0) {
     const prsCard = document.createElement("section");

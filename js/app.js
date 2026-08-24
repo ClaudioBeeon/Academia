@@ -14,6 +14,7 @@ import { montarFluxoSessao } from "./screens/sessao.js";
 import { montarTelaBiblioteca } from "./screens/biblioteca.js";
 import { montarTelaConfig } from "./screens/config.js";
 import { montarTelaEvolucao } from "./screens/evolucao.js";
+import { montarTelaHistoricoSessoes } from "./screens/historicoSessoes.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
 import { montarTelaDieta } from "./screens/dieta.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
@@ -130,7 +131,11 @@ function renderShell(db) {
         return;
       }
       if (tabName === "evolucao") {
-        await trocarConteudo(content, () => montarTelaEvolucao(db), { direcao });
+        await trocarConteudo(content, () => montarTelaEvolucao(db, {
+          onAbrirHistoricoTreinos: () => trocarConteudo(content, () => montarTelaHistoricoSessoes(db, {
+            aoVoltar: () => renderTab("evolucao", "voltar"),
+          }), { direcao: "avancar" }),
+        }), { direcao });
         return;
       }
       if (tabName === "divisao") {

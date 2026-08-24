@@ -1,6 +1,16 @@
+// Cronômetro regressivo (usado no descanso entre séries). Guarda um alvo em
+// relógio de parede (Date.now() + restante), não só um contador que desce de
+// 1 em 1 a cada tick — assim, quando o navegador atrasa ou pausa o
+// setInterval (app em segundo plano, tela apagada, trocando de rede), o
+// próximo tick real e a resincronização em foco/online recalculam o tempo
+// que realmente passou em vez de continuar contando como se nada tivesse
+// acontecido. tick() continua decrementando 1 por chamada — é o que os
+// testes unitários exercitam — e é o próprio código de produção que passa a
+// chamar resincronizar() a cada disparo real do setInterval.
 export function criarCronometro({ duracaoInicialSegundos, aoAtualizar, aoFinalizar }) {
   let restante = duracaoInicialSegundos;
   let intervalId = null;
+  let alvoTimestamp = null;
 
   function tick() {
     restante -= 1;
@@ -11,9 +21,22 @@ export function criarCronometro({ duracaoInicialSegundos, aoAtualizar, aoFinaliz
     }
   }
 
+  function resincronizar(agora = Date.now()) {
+    if (alvoTimestamp == null) return;
+    const novoRestante = Math.max(0, Math.ceil((alvoTimestamp - agora) / 1000));
+    if (novoRestante === restante) return;
+    restante = novoRestante;
+    aoAtualizar(restante);
+    if (restante <= 0) {
+      parar();
+      aoFinalizar();
+    }
+  }
+
   function iniciar(setIntervalImpl = globalThis.setInterval) {
     if (intervalId) return;
-    intervalId = setIntervalImpl(tick, 1000);
+    alvoTimestamp = Date.now() + restante * 1000;
+    intervalId = setIntervalImpl(() => resincronizar(), 1000);
   }
 
   function parar(clearIntervalImpl = globalThis.clearInterval) {
@@ -21,12 +44,14 @@ export function criarCronometro({ duracaoInicialSegundos, aoAtualizar, aoFinaliz
       clearIntervalImpl(intervalId);
       intervalId = null;
     }
+    alvoTimestamp = null;
   }
 
   function ajustar(deltaSegundos) {
     restante = Math.max(0, restante + deltaSegundos);
+    if (alvoTimestamp != null) alvoTimestamp = Date.now() + restante * 1000;
     aoAtualizar(restante);
   }
 
-  return { iniciar, parar, ajustar, tick, obterRestante: () => restante };
+  return { iniciar, parar, ajustar, tick, resincronizar, obterRestante: () => restante };
 }

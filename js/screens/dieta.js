@@ -1,6 +1,6 @@
 // js/screens/dieta.js
 import { get, put } from "../data/db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao } from "../data/dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
 import { interpretarComida } from "../ai/gemini.js";
@@ -164,32 +164,18 @@ export async function montarTelaDieta(db) {
     for (const [chave, refeicao] of Object.entries(dietaBase.dietaBase)) {
       const bloco = document.createElement("div");
 
-      const cabecalho = document.createElement("div");
-      cabecalho.style.cssText = "display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;";
       const titulo = document.createElement("div");
       titulo.className = "exercise-name";
-      titulo.style.cssText = "font-size:0.85rem;";
+      titulo.style.cssText = "font-size:0.85rem; margin-bottom:6px;";
       titulo.textContent = REFEICOES_LABELS[chave] ?? refeicao.nome;
-      cabecalho.appendChild(titulo);
-
-      const removerBtn = document.createElement("button");
-      removerBtn.type = "button";
-      removerBtn.title = "Remover refeição";
-      removerBtn.setAttribute("aria-label", "Remover refeição");
-      removerBtn.style.cssText = "background:none; border:none; color:var(--muted); font-size:1.1em; cursor:pointer; line-height:1;";
-      removerBtn.textContent = "✕";
-      removerBtn.addEventListener("click", async () => {
-        if (!confirm(`Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" da dieta?`)) return;
-        dietaBase = await removerRefeicao(db, chave);
-        renderizarRefeicoes();
-        await redesenharTotaisEAlertas();
-      });
-      cabecalho.appendChild(removerBtn);
-      bloco.appendChild(cabecalho);
+      bloco.appendChild(titulo);
 
       const opcoesEl = document.createElement("div");
-      opcoesEl.style.cssText = "display:flex; flex-wrap:wrap; gap:8px;";
+      opcoesEl.style.cssText = "display:flex; flex-wrap:wrap; gap:12px 8px;";
       for (const opcao of refeicao.opcoes) {
+        const pillWrap = document.createElement("span");
+        pillWrap.style.cssText = "position:relative; display:inline-block;";
+
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "swap-pill";
@@ -197,31 +183,98 @@ export async function montarTelaDieta(db) {
         btn.style.opacity = selecoes[chave] === opcao.id ? "1" : "0.5";
         btn.addEventListener("click", async () => {
           selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
-          opcoesEl.querySelectorAll("button").forEach((b, i) => {
+          opcoesEl.querySelectorAll(".swap-pill").forEach((b, i) => {
             b.style.opacity = refeicao.opcoes[i].id === opcao.id ? "1" : "0.5";
           });
           await redesenharTotaisEAlertas();
         });
-        opcoesEl.appendChild(btn);
+        pillWrap.appendChild(btn);
+
+        const removerOpcaoBtn = document.createElement("button");
+        removerOpcaoBtn.type = "button";
+        removerOpcaoBtn.title = "Remover esta opção";
+        removerOpcaoBtn.setAttribute("aria-label", "Remover esta opção");
+        removerOpcaoBtn.textContent = "✕";
+        removerOpcaoBtn.style.cssText = "position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); color:var(--muted); font-size:0.62rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;";
+        removerOpcaoBtn.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          if (!confirm(`Remover "${btn.textContent}"?`)) return;
+          dietaBase = await removerOpcaoRefeicao(db, chave, opcao.id);
+          renderizarRefeicoes();
+          await redesenharTotaisEAlertas();
+        });
+        pillWrap.appendChild(removerOpcaoBtn);
+
+        opcoesEl.appendChild(pillWrap);
       }
+
+      const adicionarOpcaoBtn = document.createElement("button");
+      adicionarOpcaoBtn.type = "button";
+      adicionarOpcaoBtn.className = "swap-pill";
+      adicionarOpcaoBtn.textContent = "+";
+      adicionarOpcaoBtn.title = "Adicionar opção nesta refeição";
+      adicionarOpcaoBtn.style.cssText = "opacity:0.6; border:1px dashed var(--line); background:transparent;";
+      opcoesEl.appendChild(adicionarOpcaoBtn);
       bloco.appendChild(opcoesEl);
+
+      const formOpcao = criarFormularioOpcao({
+        aoSalvar: async (alimento) => {
+          dietaBase = await adicionarOpcaoRefeicao(db, chave, {
+            alimentos: [alimento],
+            totalEstimado: { kcal: alimento.kcal, proteina_g: alimento.proteina_g, carboidrato_g: alimento.carboidrato_g, gordura_g: alimento.gordura_g },
+          });
+          renderizarRefeicoes();
+          await redesenharTotaisEAlertas();
+        },
+      });
+      formOpcao.style.display = "none";
+      adicionarOpcaoBtn.addEventListener("click", () => {
+        formOpcao.style.display = formOpcao.style.display === "none" ? "flex" : "none";
+      });
+      bloco.appendChild(formOpcao);
+
+      const removerRefeicaoLink = document.createElement("button");
+      removerRefeicaoLink.type = "button";
+      removerRefeicaoLink.textContent = `Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" inteira`;
+      removerRefeicaoLink.style.cssText = "background:none; border:none; color:var(--muted); font-size:0.72rem; text-decoration:underline; cursor:pointer; padding:6px 0 0; display:block;";
+      removerRefeicaoLink.addEventListener("click", async () => {
+        if (!confirm(`Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" da dieta, com todas as suas opções?`)) return;
+        dietaBase = await removerRefeicao(db, chave);
+        renderizarRefeicoes();
+        await redesenharTotaisEAlertas();
+      });
+      bloco.appendChild(removerRefeicaoLink);
+
       refeicoesBody.appendChild(bloco);
     }
+
+    const novaRefeicaoBtn = document.createElement("button");
+    novaRefeicaoBtn.type = "button";
+    novaRefeicaoBtn.className = "swap-pill";
+    novaRefeicaoBtn.textContent = "+ Nova refeição (novo horário)";
+    novaRefeicaoBtn.style.cssText = "opacity:0.7; border:1px dashed var(--line); background:transparent; align-self:flex-start;";
+    refeicoesBody.appendChild(novaRefeicaoBtn);
+
+    const formNovaRefeicao = criarFormularioNovaRefeicao({
+      aoSalvar: async (nome, alimento) => {
+        dietaBase = await adicionarRefeicao(db, {
+          nome,
+          opcoes: [{ id: "unica", alimentos: [alimento], totalEstimado: { kcal: alimento.kcal, proteina_g: alimento.proteina_g, carboidrato_g: alimento.carboidrato_g, gordura_g: alimento.gordura_g } }],
+        });
+        renderizarRefeicoes();
+        await redesenharTotaisEAlertas();
+      },
+    });
+    formNovaRefeicao.style.display = "none";
+    novaRefeicaoBtn.addEventListener("click", () => {
+      formNovaRefeicao.style.display = formNovaRefeicao.style.display === "none" ? "flex" : "none";
+    });
+    refeicoesBody.appendChild(formNovaRefeicao);
   }
   renderizarRefeicoes();
 
   await redesenharTotaisEAlertas();
 
-  main.appendChild(
-    criarCardAdicionarRefeicao(async (nome, alimento) => {
-      dietaBase = await adicionarRefeicao(db, {
-        nome,
-        opcoes: [{ id: "unica", alimentos: [alimento], totalEstimado: { kcal: alimento.kcal, proteina_g: alimento.proteina_g, carboidrato_g: alimento.carboidrato_g, gordura_g: alimento.gordura_g } }],
-      });
-      renderizarRefeicoes();
-      await redesenharTotaisEAlertas();
-    })
-  );
   main.appendChild(criarCardComidaLivre(db));
 
   if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
@@ -237,64 +290,131 @@ export async function montarTelaDieta(db) {
   return root;
 }
 
-function criarCardAdicionarRefeicao(aoAdicionar) {
-  const card = document.createElement("section");
-  card.className = "exercise-card";
-  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Adicionar refeição</div></div>`;
+function criarCamposMacros() {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex; gap:8px; flex-wrap:wrap; width:100%;";
+  wrap.innerHTML = `
+    <div class="set-field" style="flex:1; min-width:70px;">
+      <label>Kcal</label>
+      <input type="number" name="kcal" min="0" step="1" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+    <div class="set-field" style="flex:1; min-width:70px;">
+      <label>Proteína (g)</label>
+      <input type="number" name="proteina" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+    <div class="set-field" style="flex:1; min-width:70px;">
+      <label>Carbo (g)</label>
+      <input type="number" name="carboidrato" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+    <div class="set-field" style="flex:1; min-width:70px;">
+      <label>Gordura (g)</label>
+      <input type="number" name="gordura" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+    </div>
+  `;
+  return wrap;
+}
 
+function lerAlimentoDoFormulario(form, descricao) {
+  return {
+    nome: descricao,
+    quantidade: "porção cadastrada manualmente",
+    kcal: Number(form.kcal.value) || 0,
+    proteina_g: Number(form.proteina.value) || 0,
+    carboidrato_g: Number(form.carboidrato.value) || 0,
+    gordura_g: Number(form.gordura.value) || 0,
+    estimativa: true,
+  };
+}
+
+function criarBotoesSalvarCancelar(textoSalvar) {
+  const botoes = document.createElement("div");
+  botoes.style.cssText = "display:flex; gap:8px; width:100%;";
+  botoes.innerHTML = `
+    <button type="submit" class="swap-pill" style="flex:1;">${textoSalvar}</button>
+    <button type="button" class="swap-pill cancelar-btn" style="flex:1; opacity:0.6;">Cancelar</button>
+  `;
+  return botoes;
+}
+
+// Adiciona uma opção a uma refeição (horário) que já existe — ex.: uma
+// alternativa nova pro almoço, ao lado das que já existiam.
+function criarFormularioOpcao({ aoSalvar }) {
   const form = document.createElement("form");
   form.className = "sets";
-  form.style.cssText = "padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;";
-  form.innerHTML = `
-    <div class="set-field">
-      <label>Nome da refeição</label>
-      <input type="text" name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
-    </div>
-    <div class="set-field">
-      <label>O que você come nessa refeição?</label>
-      <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo" />
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <div class="set-field" style="flex:1; min-width:80px;">
-        <label>Kcal</label>
-        <input type="number" name="kcal" min="0" step="1" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-      </div>
-      <div class="set-field" style="flex:1; min-width:80px;">
-        <label>Proteína (g)</label>
-        <input type="number" name="proteina" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-      </div>
-      <div class="set-field" style="flex:1; min-width:80px;">
-        <label>Carbo (g)</label>
-        <input type="number" name="carboidrato" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-      </div>
-      <div class="set-field" style="flex:1; min-width:80px;">
-        <label>Gordura (g)</label>
-        <input type="number" name="gordura" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-      </div>
-    </div>
-    <button type="submit" class="swap-pill">Adicionar refeição</button>
+  form.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
+  const campoDescricao = document.createElement("div");
+  campoDescricao.className = "set-field";
+  campoDescricao.style.width = "100%";
+  campoDescricao.innerHTML = `
+    <label>O que é essa opção?</label>
+    <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo" />
   `;
-  card.appendChild(form);
+  form.appendChild(campoDescricao);
+  form.appendChild(criarCamposMacros());
+  const botoes = criarBotoesSalvarCancelar("Salvar opção");
+  form.appendChild(botoes);
+
+  botoes.querySelector(".cancelar-btn").addEventListener("click", () => {
+    form.reset();
+    form.style.display = "none";
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const descricao = form.descricao.value.trim();
+    if (!descricao) return;
+    await aoSalvar(lerAlimentoDoFormulario(form, descricao));
+    form.reset();
+    form.style.display = "none";
+  });
+
+  return form;
+}
+
+// Cria uma refeição inteira nova (um horário que ainda não existe na dieta,
+// ex.: "Ceia") — diferente do formulário de opção, que só adiciona uma
+// alternativa a um horário que já existe.
+function criarFormularioNovaRefeicao({ aoSalvar }) {
+  const form = document.createElement("form");
+  form.className = "sets";
+  form.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
+  const campoNome = document.createElement("div");
+  campoNome.className = "set-field";
+  campoNome.style.width = "100%";
+  campoNome.innerHTML = `
+    <label>Nome da refeição</label>
+    <input type="text" name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
+  `;
+  form.appendChild(campoNome);
+
+  const campoDescricao = document.createElement("div");
+  campoDescricao.className = "set-field";
+  campoDescricao.style.width = "100%";
+  campoDescricao.innerHTML = `
+    <label>O que você come nessa refeição?</label>
+    <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo" />
+  `;
+  form.appendChild(campoDescricao);
+  form.appendChild(criarCamposMacros());
+  const botoes = criarBotoesSalvarCancelar("Salvar refeição");
+  form.appendChild(botoes);
+
+  botoes.querySelector(".cancelar-btn").addEventListener("click", () => {
+    form.reset();
+    form.style.display = "none";
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const nome = form.nome.value.trim();
     const descricao = form.descricao.value.trim();
     if (!nome || !descricao) return;
-    const alimento = {
-      nome: descricao,
-      quantidade: "porção cadastrada manualmente",
-      kcal: Number(form.kcal.value) || 0,
-      proteina_g: Number(form.proteina.value) || 0,
-      carboidrato_g: Number(form.carboidrato.value) || 0,
-      gordura_g: Number(form.gordura.value) || 0,
-      estimativa: true,
-    };
-    await aoAdicionar(nome, alimento);
+    await aoSalvar(nome, lerAlimentoDoFormulario(form, descricao));
     form.reset();
+    form.style.display = "none";
   });
 
-  return card;
+  return form;
 }
 
 function criarCardComidaLivre(db) {

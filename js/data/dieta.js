@@ -39,17 +39,17 @@ export async function adicionarAlimentoPessoal(db, alimento) {
   return atualizado;
 }
 
-function gerarChaveRefeicao(nome, refeicoesExistentes) {
+function gerarSlug(texto, chavesExistentes, fallback) {
   const base =
-    nome
+    texto
       .normalize("NFD")
       .replace(new RegExp("[̀-ͯ]", "g"), "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "") || "refeicao";
+      .replace(/^_+|_+$/g, "") || fallback;
   let chave = base;
   let contador = 2;
-  while (refeicoesExistentes[chave]) {
+  while (chavesExistentes.has(chave)) {
     chave = `${base}_${contador}`;
     contador++;
   }
@@ -58,7 +58,7 @@ function gerarChaveRefeicao(nome, refeicoesExistentes) {
 
 export async function adicionarRefeicao(db, { nome, opcoes }) {
   const dieta = await getDietaBase(db);
-  const chave = gerarChaveRefeicao(nome, dieta.dietaBase);
+  const chave = gerarSlug(nome, new Set(Object.keys(dieta.dietaBase)), "refeicao");
   const atualizado = { ...dieta, dietaBase: { ...dieta.dietaBase, [chave]: { nome, opcoes } } };
   await put(db, "dietaBase", atualizado);
   return atualizado;
@@ -69,6 +69,32 @@ export async function removerRefeicao(db, chave) {
   const dietaBase = { ...dieta.dietaBase };
   delete dietaBase[chave];
   const atualizado = { ...dieta, dietaBase };
+  await put(db, "dietaBase", atualizado);
+  return atualizado;
+}
+
+// Opção dentro de uma refeição já existente (ex.: uma alternativa nova pro
+// almoço) — diferente de adicionarRefeicao, que cria um novo horário/categoria.
+export async function adicionarOpcaoRefeicao(db, chave, opcaoSemId) {
+  const dieta = await getDietaBase(db);
+  const refeicao = dieta.dietaBase[chave];
+  const opcoesAtuais = refeicao?.opcoes ?? [];
+  const id = gerarSlug(opcaoSemId.alimentos[0].nome, new Set(opcoesAtuais.map((o) => o.id)), "opcao");
+  const opcao = { ...opcaoSemId, id };
+  const atualizado = {
+    ...dieta,
+    dietaBase: { ...dieta.dietaBase, [chave]: { ...refeicao, opcoes: [...opcoesAtuais, opcao] } },
+  };
+  await put(db, "dietaBase", atualizado);
+  return atualizado;
+}
+
+export async function removerOpcaoRefeicao(db, chave, opcaoId) {
+  const dieta = await getDietaBase(db);
+  const refeicao = dieta.dietaBase[chave];
+  if (!refeicao) return dieta;
+  const opcoes = refeicao.opcoes.filter((o) => o.id !== opcaoId);
+  const atualizado = { ...dieta, dietaBase: { ...dieta.dietaBase, [chave]: { ...refeicao, opcoes } } };
   await put(db, "dietaBase", atualizado);
   return atualizado;
 }
@@ -87,7 +113,7 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}) {
 
   for (const chave of ordemCompleta) {
     const refeicao = refeicoes[chave];
-    if (!refeicao) continue;
+    if (!refeicao || refeicao.opcoes.length === 0) continue;
     const opcaoId = selecoes[chave];
     const confirmada = opcaoId !== undefined;
     const opcao = refeicao.opcoes.find((o) => o.id === opcaoId) ?? refeicao.opcoes[0];

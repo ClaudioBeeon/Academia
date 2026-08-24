@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, clearStore } from "./db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes, adicionarRefeicao, removerRefeicao } from "./dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "./dieta.js";
 
 const DIETA_EXEMPLO = {
   versao: "1.0",
@@ -122,4 +122,50 @@ test("removerRefeicao remove apenas a refeição indicada", async () => {
   assert.equal(atualizado.dietaBase.cafeDaTarde, undefined);
   assert.ok(atualizado.dietaBase.cafeDaManha);
   db.close();
+});
+
+test("adicionarOpcaoRefeicao acrescenta uma opção a uma refeição existente, sem apagar as outras", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "dietaBase");
+  const { put } = await import("./db.js");
+  await put(db, "dietaBase", DIETA_EXEMPLO);
+  const novaOpcao = { alimentos: [{ nome: "iogurte" }], totalEstimado: { kcal: 150, proteina_g: 10, carboidrato_g: 15, gordura_g: 4 } };
+  const atualizado = await adicionarOpcaoRefeicao(db, "cafeDaManha", novaOpcao);
+  assert.equal(atualizado.dietaBase.cafeDaManha.opcoes.length, 2);
+  assert.equal(atualizado.dietaBase.cafeDaManha.opcoes[1].id, "iogurte");
+  assert.equal(atualizado.dietaBase.cafeDaManha.opcoes[0].id, "unica", "opção original continua intacta");
+  db.close();
+});
+
+test("adicionarOpcaoRefeicao gera id único quando o nome do alimento colide", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "dietaBase");
+  const { put } = await import("./db.js");
+  await put(db, "dietaBase", DIETA_EXEMPLO);
+  const opcao = { alimentos: [{ nome: "whey" }], totalEstimado: { kcal: 100, proteina_g: 20, carboidrato_g: 2, gordura_g: 1 } };
+  const atualizado = await adicionarOpcaoRefeicao(db, "cafeDaTarde", opcao);
+  assert.equal(atualizado.dietaBase.cafeDaTarde.opcoes.length, 3);
+  assert.notEqual(atualizado.dietaBase.cafeDaTarde.opcoes[2].id, "whey", "já existia uma opção com id whey");
+  db.close();
+});
+
+test("removerOpcaoRefeicao remove apenas a opção indicada, mantendo as outras da mesma refeição", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "dietaBase");
+  const { put } = await import("./db.js");
+  await put(db, "dietaBase", DIETA_EXEMPLO);
+  const atualizado = await removerOpcaoRefeicao(db, "cafeDaTarde", "whey");
+  assert.equal(atualizado.dietaBase.cafeDaTarde.opcoes.length, 1);
+  assert.equal(atualizado.dietaBase.cafeDaTarde.opcoes[0].id, "fruta");
+  db.close();
+});
+
+test("calcularTotalDoDia ignora refeição sem nenhuma opção restante em vez de quebrar", () => {
+  const dietaComRefeicaoVazia = {
+    ...DIETA_EXEMPLO,
+    dietaBase: { ...DIETA_EXEMPLO.dietaBase, almoco: { nome: "Almoço", opcoes: [] } },
+  };
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComRefeicaoVazia, {});
+  assert.equal(total.kcal, 200 + 120);
+  assert.ok(!detalhePorRefeicao.some((r) => r.chave === "almoco"));
 });

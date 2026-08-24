@@ -2,7 +2,7 @@
 import { exportarTudo, importarTudo, historicoParaCsv } from "../data/exportImport.js";
 import { getAll, get, put } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
-import { getApiKey, salvarApiKey } from "../ai/gemini.js";
+import { getApiKey, salvarApiKey, getModelo, salvarModelo } from "../ai/gemini.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
   cadastrar, entrar, sair, getUsuario,
@@ -265,17 +265,23 @@ function criarSecaoGemini() {
         <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar</label>
         <input name="chave" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
       </div>
-      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar chave</button>
+      <div class="set-field" style="grid-column:1/-1;">
+        <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)</label>
+        <input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
       <div class="prev-hint gemini-status" style="grid-column:1/-1;"></div>
     </form>
   `;
   const form = card.querySelector(".gemini-form");
   form.chave.value = getApiKey();
+  form.modelo.value = getModelo();
   const status = card.querySelector(".gemini-status");
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     salvarApiKey(form.chave.value.trim());
-    status.textContent = form.chave.value.trim() ? "Chave salva." : "Chave removida.";
+    salvarModelo(form.modelo.value.trim());
+    status.textContent = "Salvo.";
   });
   return card;
 }

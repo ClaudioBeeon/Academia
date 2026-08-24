@@ -6,7 +6,12 @@
 // derruba a tela, sempre devolve { ok: false, motivo }.
 
 const CHAVE_LOCALSTORAGE = "gemini_api_key";
-const MODELO = "gemini-3.6-flash";
+const CHAVE_MODELO_LOCALSTORAGE = "gemini_model";
+// flash-lite é a variante de menor custo/latência da família — cota grátis
+// bem mais generosa que o "flash" cheio, e o app só pede texto curto (JSON de
+// estimativa nutricional, parágrafo de resumo), nada que precise do modelo
+// mais caro. Ajustável em Configurações se a Google mudar as cotas de novo.
+const MODELO_PADRAO = "gemini-3.5-flash-lite";
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 export function getApiKey() {
@@ -27,13 +32,30 @@ export function salvarApiKey(chave) {
   }
 }
 
-export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKey = getApiKey() } = {}) {
+export function getModelo() {
+  try {
+    return localStorage.getItem(CHAVE_MODELO_LOCALSTORAGE) || MODELO_PADRAO;
+  } catch {
+    return MODELO_PADRAO;
+  }
+}
+
+export function salvarModelo(modelo) {
+  try {
+    if (modelo && modelo !== MODELO_PADRAO) localStorage.setItem(CHAVE_MODELO_LOCALSTORAGE, modelo);
+    else localStorage.removeItem(CHAVE_MODELO_LOCALSTORAGE);
+  } catch {
+    // idem salvarApiKey — sem localStorage, cai sempre no padrão.
+  }
+}
+
+export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKey = getApiKey(), modelo = getModelo() } = {}) {
   if (!apiKey) {
     return { ok: false, motivo: "sem_chave" };
   }
   try {
     const resposta = await fetchImpl(
-      `${ENDPOINT_BASE}/${MODELO}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      `${ENDPOINT_BASE}/${modelo}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -64,6 +64,12 @@ export function animarSpring(elemento, de, para, config = {}) {
     aplicarEstilo();
 
     if (todosParados) {
+      // Zera x/y/scale de verdade (não só chegar em 0) — um transform
+      // residual, mesmo identidade, cria um novo "containing block" e
+      // quebra qualquer position:fixed dentro do elemento (ex.: o rodapé
+      // fixo de js/screens/execucao.js passa a ficar preso ao fim do
+      // conteúdo da tela em vez de fixo na janela).
+      if ("x" in para || "y" in para || "scale" in para) elemento.style.transform = "";
       resolverFinalizado();
       return;
     }

@@ -82,7 +82,7 @@ export async function montarTelaDieta(db) {
   const perfil = perfis;
 
   async function redesenharTotaisEAlertas() {
-    const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaBase, selecoes);
+    const { total, detalhePorRefeicao, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaBase, selecoes, dataDeHoje);
 
     totaisCard.innerHTML = `
       <div class="exercise-head"><div class="exercise-name">Total estimado do dia</div></div>
@@ -94,6 +94,9 @@ export async function montarTelaDieta(db) {
       </div>
       ${detalhePorRefeicao.some((r) => !r.confirmada)
         ? `<div class="prev-hint" style="padding:0 18px 14px;">Refeições sem marcação usam a primeira opção como estimativa — confirme o que você realmente comeu acima.</div>`
+        : ""}
+      ${alimentosPessoaisDoDia.length
+        ? `<div class="prev-hint" style="padding:0 18px 14px;">Também contando hoje, fora da dieta base: ${alimentosPessoaisDoDia.map((a) => a.nome).join(", ")}.</div>`
         : ""}
     `;
 
@@ -275,7 +278,7 @@ export async function montarTelaDieta(db) {
 
   await redesenharTotaisEAlertas();
 
-  main.appendChild(criarCardComidaLivre(db));
+  main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, redesenharTotaisEAlertas));
 
   if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
   intervaloChecagemDeVirada = setInterval(async () => {
@@ -417,7 +420,7 @@ function criarFormularioNovaRefeicao({ aoSalvar }) {
   return form;
 }
 
-function criarCardComidaLivre(db) {
+function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
@@ -459,10 +462,11 @@ function criarCardComidaLivre(db) {
       <button type="button" class="swap-pill confirmar-comida-btn" style="margin-top:6px;">Confirmar e salvar</button>
     `;
     resultado.querySelector(".confirmar-comida-btn").addEventListener("click", async () => {
-      await adicionarAlimentoPessoal(db, { ...alimento, adicionadoEm: obterDataLocal(), origem: "gemini" });
-      status.textContent = "Salvo na sua lista de alimentos pessoais.";
+      await adicionarAlimentoPessoal(db, { ...alimento, adicionadoEm: obterDataDeHoje(), origem: "gemini" });
+      status.textContent = "Salvo — já somado no total estimado do dia acima.";
       resultado.innerHTML = "";
       input.value = "";
+      await aoSalvar();
     });
   });
 

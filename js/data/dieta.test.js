@@ -99,6 +99,30 @@ test("calcularTotalDoDia inclui refeições adicionadas manualmente, fora das 4 
   assert.ok(detalhePorRefeicao.some((r) => r.chave === "ceia_de_teste"));
 });
 
+test("calcularTotalDoDia soma o que foi registrado em listaAlimentosPessoal no dia informado", () => {
+  const dietaComAlimentoPessoal = {
+    ...DIETA_EXEMPLO,
+    listaAlimentosPessoal: [
+      { nome: "pizza", kcal: 300, proteina_g: 12, carboidrato_g: 35, gordura_g: 10, adicionadoEm: "2026-08-24" },
+      { nome: "sorvete", kcal: 200, proteina_g: 3, carboidrato_g: 25, gordura_g: 9, adicionadoEm: "2026-08-20" },
+    ],
+  };
+  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, {}, "2026-08-24");
+  assert.equal(total.kcal, 200 + 120 + 300);
+  assert.equal(alimentosPessoaisDoDia.length, 1);
+  assert.equal(alimentosPessoaisDoDia[0].nome, "pizza");
+});
+
+test("calcularTotalDoDia sem data informada não soma listaAlimentosPessoal (compatibilidade)", () => {
+  const dietaComAlimentoPessoal = {
+    ...DIETA_EXEMPLO,
+    listaAlimentosPessoal: [{ nome: "pizza", kcal: 300, proteina_g: 12, carboidrato_g: 35, gordura_g: 10, adicionadoEm: "2026-08-24" }],
+  };
+  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, {});
+  assert.equal(total.kcal, 200 + 120);
+  assert.deepEqual(alimentosPessoaisDoDia, []);
+});
+
 test("adicionarRefeicao cria uma refeição com chave derivada do nome, sem acentos/espaços", async () => {
   const db = await openDatabase();
   await clearStore(db, "dietaBase");

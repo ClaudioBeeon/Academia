@@ -102,7 +102,10 @@ export async function removerOpcaoRefeicao(db, chave, opcaoId) {
 // Soma as opções escolhidas para cada refeição. Refeição ainda não marcada
 // pelo usuário entra com a primeira opção, mas sinalizada como "estimado"
 // (não confirmado) — nunca presumir silenciosamente qual opção foi usada.
-export function calcularTotalDoDia(dietaBase, selecoes = {}) {
+// `dataDeHoje` (opcional) também soma o que foi registrado em "comeu algo
+// diferente" (listaAlimentosPessoal) NAQUELE dia — sem isso o item fica
+// salvo só como histórico, sem contar no total exibido.
+export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) {
   const refeicoes = dietaBase?.dietaBase ?? {};
   // Refeições fora das 4 base (ex.: adicionadas manualmente pelo usuário)
   // entram depois, na ordem em que foram cadastradas — sem isso, uma
@@ -126,5 +129,15 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}) {
     detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcao, confirmada });
   }
 
-  return { total, detalhePorRefeicao };
+  const alimentosPessoaisDoDia = dataDeHoje
+    ? (dietaBase?.listaAlimentosPessoal ?? []).filter((a) => a.adicionadoEm === dataDeHoje)
+    : [];
+  for (const alimento of alimentosPessoaisDoDia) {
+    total.kcal += alimento.kcal ?? 0;
+    total.proteina_g += alimento.proteina_g ?? 0;
+    total.carboidrato_g += alimento.carboidrato_g ?? 0;
+    total.gordura_g += alimento.gordura_g ?? 0;
+  }
+
+  return { total, detalhePorRefeicao, alimentosPessoaisDoDia };
 }

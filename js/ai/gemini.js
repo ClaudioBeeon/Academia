@@ -6,7 +6,7 @@
 // derruba a tela, sempre devolve { ok: false, motivo }.
 
 const CHAVE_LOCALSTORAGE = "gemini_api_key";
-const MODELO = "gemini-2.5-flash";
+const MODELO = "gemini-3.6-flash";
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 export function getApiKey() {

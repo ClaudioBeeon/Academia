@@ -198,7 +198,7 @@ export async function montarTelaDieta(db) {
         removerOpcaoBtn.title = "Remover esta opção";
         removerOpcaoBtn.setAttribute("aria-label", "Remover esta opção");
         removerOpcaoBtn.textContent = "✕";
-        removerOpcaoBtn.style.cssText = "position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); color:var(--muted); font-size:0.62rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;";
+        removerOpcaoBtn.style.cssText = "position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); color:var(--ink-faint); font-size:0.62rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;";
         removerOpcaoBtn.addEventListener("click", async (event) => {
           event.stopPropagation();
           if (!confirm(`Remover "${btn.textContent}"?`)) return;
@@ -239,7 +239,7 @@ export async function montarTelaDieta(db) {
       const removerRefeicaoLink = document.createElement("button");
       removerRefeicaoLink.type = "button";
       removerRefeicaoLink.textContent = `Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" inteira`;
-      removerRefeicaoLink.style.cssText = "background:none; border:none; color:var(--muted); font-size:0.72rem; text-decoration:underline; cursor:pointer; padding:6px 0 0; display:block;";
+      removerRefeicaoLink.style.cssText = "background:none; border:none; color:var(--ink-faint); font-size:0.72rem; font-weight:700; cursor:pointer; padding:6px 0 0; display:block; font-family:inherit;";
       removerRefeicaoLink.addEventListener("click", async () => {
         if (!confirm(`Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" da dieta, com todas as suas opções?`)) return;
         dietaBase = await removerRefeicao(db, chave);
@@ -293,131 +293,146 @@ export async function montarTelaDieta(db) {
   return root;
 }
 
-function criarCamposMacros() {
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "display:flex; gap:8px; flex-wrap:wrap; width:100%;";
-  wrap.innerHTML = `
-    <div class="set-field" style="flex:1; min-width:70px;">
-      <label>Kcal</label>
-      <input type="number" name="kcal" min="0" step="1" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-    </div>
-    <div class="set-field" style="flex:1; min-width:70px;">
-      <label>Proteína (g)</label>
-      <input type="number" name="proteina" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-    </div>
-    <div class="set-field" style="flex:1; min-width:70px;">
-      <label>Carbo (g)</label>
-      <input type="number" name="carboidrato" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-    </div>
-    <div class="set-field" style="flex:1; min-width:70px;">
-      <label>Gordura (g)</label>
-      <input type="number" name="gordura" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-    </div>
-  `;
-  return wrap;
+function montarResultadoEstimativa(alimento) {
+  return `<div class="prev-hint">${alimento.nome} — ~${alimento.kcal} kcal, ${alimento.proteina_g}g proteína, ${alimento.carboidrato_g}g carb, ${alimento.gordura_g}g gordura (confiança: ${alimento.confianca})</div>`;
 }
 
-function lerAlimentoDoFormulario(form, descricao) {
+function alimentoDaEstimativa(alimentoIA, descricaoDigitada) {
   return {
-    nome: descricao,
-    quantidade: "porção cadastrada manualmente",
-    kcal: Number(form.kcal.value) || 0,
-    proteina_g: Number(form.proteina.value) || 0,
-    carboidrato_g: Number(form.carboidrato.value) || 0,
-    gordura_g: Number(form.gordura.value) || 0,
+    nome: alimentoIA.nome,
+    quantidade: descricaoDigitada,
+    kcal: alimentoIA.kcal,
+    proteina_g: alimentoIA.proteina_g,
+    carboidrato_g: alimentoIA.carboidrato_g,
+    gordura_g: alimentoIA.gordura_g,
     estimativa: true,
   };
 }
 
-function criarBotoesSalvarCancelar(textoSalvar) {
-  const botoes = document.createElement("div");
-  botoes.style.cssText = "display:flex; gap:8px; width:100%;";
-  botoes.innerHTML = `
-    <button type="submit" class="swap-pill" style="flex:1;">${textoSalvar}</button>
-    <button type="button" class="swap-pill cancelar-btn" style="flex:1; opacity:0.6;">Cancelar</button>
-  `;
-  return botoes;
-}
-
 // Adiciona uma opção a uma refeição (horário) que já existe — ex.: uma
-// alternativa nova pro almoço, ao lado das que já existiam.
+// alternativa nova pro almoço, ao lado das que já existiam. A IA estima as
+// calorias/macros a partir da descrição, igual ao card "comeu algo diferente"
+// — usuário nunca precisa digitar kcal/proteína/carbo/gordura na mão.
 function criarFormularioOpcao({ aoSalvar }) {
-  const form = document.createElement("form");
-  form.className = "sets";
-  form.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
-  const campoDescricao = document.createElement("div");
-  campoDescricao.className = "set-field";
-  campoDescricao.style.width = "100%";
-  campoDescricao.innerHTML = `
-    <label>O que é essa opção?</label>
-    <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo" />
+  const wrap = document.createElement("div");
+  wrap.className = "sets";
+  wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
+  wrap.innerHTML = `
+    <div class="set-field" style="width:100%;">
+      <label>O que é essa opção?</label>
+      <textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo"></textarea>
+    </div>
+    <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
+    <div class="prev-hint status-ia"></div>
+    <div class="resultado-ia"></div>
+    <button type="button" class="swap-pill cancelar-btn" style="width:100%; opacity:0.6;">Cancelar</button>
   `;
-  form.appendChild(campoDescricao);
-  form.appendChild(criarCamposMacros());
-  const botoes = criarBotoesSalvarCancelar("Salvar opção");
-  form.appendChild(botoes);
 
-  botoes.querySelector(".cancelar-btn").addEventListener("click", () => {
-    form.reset();
-    form.style.display = "none";
-  });
+  const textarea = wrap.querySelector('textarea[name="descricao"]');
+  const estimarBtn = wrap.querySelector(".estimar-btn");
+  const status = wrap.querySelector(".status-ia");
+  const resultado = wrap.querySelector(".resultado-ia");
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const descricao = form.descricao.value.trim();
+  function limparEFechar() {
+    textarea.value = "";
+    status.textContent = "";
+    resultado.innerHTML = "";
+    wrap.style.display = "none";
+  }
+
+  estimarBtn.addEventListener("click", async () => {
+    const descricao = textarea.value.trim();
     if (!descricao) return;
-    await aoSalvar(lerAlimentoDoFormulario(form, descricao));
-    form.reset();
-    form.style.display = "none";
+    status.textContent = "Perguntando à IA...";
+    resultado.innerHTML = "";
+    estimarBtn.disabled = true;
+    const resposta = await interpretarComida(descricao);
+    estimarBtn.disabled = false;
+
+    if (!resposta.ok) {
+      status.textContent = resposta.motivo === "sem_chave"
+        ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
+        : "IA indisponível agora — tente de novo mais tarde.";
+      return;
+    }
+
+    status.textContent = "Confirme antes de salvar:";
+    resultado.innerHTML = `${montarResultadoEstimativa(resposta.alimento)}<button type="button" class="swap-pill confirmar-btn" style="width:100%; margin-top:6px;">Confirmar e salvar</button>`;
+    resultado.querySelector(".confirmar-btn").addEventListener("click", async () => {
+      await aoSalvar(alimentoDaEstimativa(resposta.alimento, descricao));
+      limparEFechar();
+    });
   });
 
-  return form;
+  wrap.querySelector(".cancelar-btn").addEventListener("click", limparEFechar);
+
+  return wrap;
 }
 
 // Cria uma refeição inteira nova (um horário que ainda não existe na dieta,
 // ex.: "Ceia") — diferente do formulário de opção, que só adiciona uma
-// alternativa a um horário que já existe.
+// alternativa a um horário que já existe. Mesma estimativa por IA.
 function criarFormularioNovaRefeicao({ aoSalvar }) {
-  const form = document.createElement("form");
-  form.className = "sets";
-  form.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
-  const campoNome = document.createElement("div");
-  campoNome.className = "set-field";
-  campoNome.style.width = "100%";
-  campoNome.innerHTML = `
-    <label>Nome da refeição</label>
-    <input type="text" name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
+  const wrap = document.createElement("div");
+  wrap.className = "sets";
+  wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
+  wrap.innerHTML = `
+    <div class="set-field" style="width:100%;">
+      <label>Nome da refeição</label>
+      <input type="text" name="nome" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
+    </div>
+    <div class="set-field" style="width:100%;">
+      <label>O que você come nessa refeição?</label>
+      <textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo"></textarea>
+    </div>
+    <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
+    <div class="prev-hint status-ia"></div>
+    <div class="resultado-ia"></div>
+    <button type="button" class="swap-pill cancelar-btn" style="width:100%; opacity:0.6;">Cancelar</button>
   `;
-  form.appendChild(campoNome);
 
-  const campoDescricao = document.createElement("div");
-  campoDescricao.className = "set-field";
-  campoDescricao.style.width = "100%";
-  campoDescricao.innerHTML = `
-    <label>O que você come nessa refeição?</label>
-    <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo" />
-  `;
-  form.appendChild(campoDescricao);
-  form.appendChild(criarCamposMacros());
-  const botoes = criarBotoesSalvarCancelar("Salvar refeição");
-  form.appendChild(botoes);
+  const nomeInput = wrap.querySelector('input[name="nome"]');
+  const textarea = wrap.querySelector('textarea[name="descricao"]');
+  const estimarBtn = wrap.querySelector(".estimar-btn");
+  const status = wrap.querySelector(".status-ia");
+  const resultado = wrap.querySelector(".resultado-ia");
 
-  botoes.querySelector(".cancelar-btn").addEventListener("click", () => {
-    form.reset();
-    form.style.display = "none";
-  });
+  function limparEFechar() {
+    nomeInput.value = "";
+    textarea.value = "";
+    status.textContent = "";
+    resultado.innerHTML = "";
+    wrap.style.display = "none";
+  }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const nome = form.nome.value.trim();
-    const descricao = form.descricao.value.trim();
+  estimarBtn.addEventListener("click", async () => {
+    const nome = nomeInput.value.trim();
+    const descricao = textarea.value.trim();
     if (!nome || !descricao) return;
-    await aoSalvar(nome, lerAlimentoDoFormulario(form, descricao));
-    form.reset();
-    form.style.display = "none";
+    status.textContent = "Perguntando à IA...";
+    resultado.innerHTML = "";
+    estimarBtn.disabled = true;
+    const resposta = await interpretarComida(descricao);
+    estimarBtn.disabled = false;
+
+    if (!resposta.ok) {
+      status.textContent = resposta.motivo === "sem_chave"
+        ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
+        : "IA indisponível agora — tente de novo mais tarde.";
+      return;
+    }
+
+    status.textContent = "Confirme antes de salvar:";
+    resultado.innerHTML = `${montarResultadoEstimativa(resposta.alimento)}<button type="button" class="swap-pill confirmar-btn" style="width:100%; margin-top:6px;">Confirmar e salvar</button>`;
+    resultado.querySelector(".confirmar-btn").addEventListener("click", async () => {
+      await aoSalvar(nome, alimentoDaEstimativa(resposta.alimento, descricao));
+      limparEFechar();
+    });
   });
 
-  return form;
+  wrap.querySelector(".cancelar-btn").addEventListener("click", limparEFechar);
+
+  return wrap;
 }
 
 function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {

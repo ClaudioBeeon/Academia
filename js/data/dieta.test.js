@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, clearStore } from "./db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "./dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao, ordenarChavesRefeicoes } from "./dieta.js";
 
 const DIETA_EXEMPLO = {
   versao: "1.0",
@@ -108,26 +108,27 @@ test("getSelecoesRecentes só retorna dias com ao menos uma refeição marcada",
   db.close();
 });
 
-test("calcularTotalDoDia soma refeições confirmadas e usa a primeira opção como estimativa nas não confirmadas", () => {
+test("calcularTotalDoDia só soma refeições confirmadas — a sem marcação nenhuma entra zerada, não estimada", () => {
   const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: ["fruta"] });
-  assert.equal(total.kcal, 200 + 100);
+  assert.equal(total.kcal, 100);
   const cafeManha = detalhePorRefeicao.find((r) => r.chave === "cafeDaManha");
   const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
   assert.equal(cafeManha.confirmada, false);
+  assert.deepEqual(cafeManha.opcoes, []);
   assert.equal(cafeTarde.confirmada, true);
   assert.equal(cafeTarde.opcoes[0].id, "fruta");
 });
 
 test("calcularTotalDoDia soma todas as opções marcadas quando mais de uma está confirmada na mesma refeição", () => {
   const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: ["whey", "fruta"] });
-  assert.equal(total.kcal, 200 + 120 + 100);
+  assert.equal(total.kcal, 120 + 100);
   const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
   assert.equal(cafeTarde.opcoes.length, 2);
 });
 
 test("calcularTotalDoDia aceita formato antigo (id único, string) sem quebrar", () => {
   const { total, detalhePorRefeicao } = calcularTotalDoDia(DIETA_EXEMPLO, { cafeDaTarde: "fruta" });
-  assert.equal(total.kcal, 200 + 100);
+  assert.equal(total.kcal, 100);
   const cafeTarde = detalhePorRefeicao.find((r) => r.chave === "cafeDaTarde");
   assert.equal(cafeTarde.confirmada, true);
   assert.equal(cafeTarde.opcoes[0].id, "fruta");
@@ -144,8 +145,8 @@ test("calcularTotalDoDia inclui refeições adicionadas manualmente, fora das 4 
       },
     },
   };
-  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComExtra, {});
-  assert.equal(total.kcal, 200 + 120 + 150);
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComExtra, { cafeDaManha: ["unica"], ceia_de_teste: ["unica"] });
+  assert.equal(total.kcal, 200 + 150);
   assert.ok(detalhePorRefeicao.some((r) => r.chave === "ceia_de_teste"));
 });
 
@@ -157,8 +158,8 @@ test("calcularTotalDoDia soma o que foi registrado em listaAlimentosPessoal no d
       { nome: "sorvete", kcal: 200, proteina_g: 3, carboidrato_g: 25, gordura_g: 9, adicionadoEm: "2026-08-20" },
     ],
   };
-  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, {}, "2026-08-24");
-  assert.equal(total.kcal, 200 + 120 + 300);
+  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, { cafeDaManha: ["unica"] }, "2026-08-24");
+  assert.equal(total.kcal, 200 + 300);
   assert.equal(alimentosPessoaisDoDia.length, 1);
   assert.equal(alimentosPessoaisDoDia[0].nome, "pizza");
 });
@@ -168,8 +169,8 @@ test("calcularTotalDoDia sem data informada não soma listaAlimentosPessoal (com
     ...DIETA_EXEMPLO,
     listaAlimentosPessoal: [{ nome: "pizza", kcal: 300, proteina_g: 12, carboidrato_g: 35, gordura_g: 10, adicionadoEm: "2026-08-24" }],
   };
-  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, {});
-  assert.equal(total.kcal, 200 + 120);
+  const { total, alimentosPessoaisDoDia } = calcularTotalDoDia(dietaComAlimentoPessoal, { cafeDaManha: ["unica"] });
+  assert.equal(total.kcal, 200);
   assert.deepEqual(alimentosPessoaisDoDia, []);
 });
 
@@ -234,12 +235,26 @@ test("removerOpcaoRefeicao remove apenas a opção indicada, mantendo as outras 
   db.close();
 });
 
+test("ordenarChavesRefeicoes devolve sempre café da manhã, almoço, café da tarde, janta nessa ordem, não importa a ordem das chaves no objeto", () => {
+  const dietaForaDeOrdem = {
+    dietaBase: { janta: {}, cafeDaManha: {}, cafeDaTarde: {}, almoco: {} },
+  };
+  assert.deepEqual(ordenarChavesRefeicoes(dietaForaDeOrdem), ["cafeDaManha", "almoco", "cafeDaTarde", "janta"]);
+});
+
+test("ordenarChavesRefeicoes coloca refeições extras (fora das 4 base) depois, e ignora refeição base ausente", () => {
+  const dieta = {
+    dietaBase: { janta: {}, ceia_de_teste: {}, cafeDaManha: {} },
+  };
+  assert.deepEqual(ordenarChavesRefeicoes(dieta), ["cafeDaManha", "janta", "ceia_de_teste"]);
+});
+
 test("calcularTotalDoDia ignora refeição sem nenhuma opção restante em vez de quebrar", () => {
   const dietaComRefeicaoVazia = {
     ...DIETA_EXEMPLO,
     dietaBase: { ...DIETA_EXEMPLO.dietaBase, almoco: { nome: "Almoço", opcoes: [] } },
   };
-  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComRefeicaoVazia, {});
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComRefeicaoVazia, { cafeDaManha: ["unica"], cafeDaTarde: ["whey"] });
   assert.equal(total.kcal, 200 + 120);
   assert.ok(!detalhePorRefeicao.some((r) => r.chave === "almoco"));
 });

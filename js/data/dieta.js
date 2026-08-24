@@ -2,7 +2,19 @@
 import { get, put, getAll } from "./db.js";
 import { getCheckin, registrarCheckin } from "./checkin.js";
 
-const REFEICOES_ORDEM = ["cafeDaManha", "almoco", "cafeDaTarde", "janta"];
+export const REFEICOES_ORDEM = ["cafeDaManha", "almoco", "cafeDaTarde", "janta"];
+
+// Ordem estável das refeições: as 4 base sempre nessa sequência, depois
+// qualquer refeição extra cadastrada manualmente. Object.keys() por si só
+// não garante essa ordem — IndexedDB não preserva a ordem de inserção das
+// chaves de um objeto aninhado ao gravar/ler (structured clone), então usar
+// Object.entries() direto pode devolver as refeições fora de ordem depois
+// de um reload. Única fonte de verdade, usada tanto pra somar o total
+// quanto pra renderizar a lista (js/screens/dieta.js).
+export function ordenarChavesRefeicoes(dietaBase) {
+  const chaves = Object.keys(dietaBase?.dietaBase ?? {});
+  return [...REFEICOES_ORDEM, ...chaves.filter((chave) => !REFEICOES_ORDEM.includes(chave))].filter((chave) => chaves.includes(chave));
+}
 
 export async function getDietaBase(db) {
   return get(db, "dietaBase", "1.0");
@@ -123,18 +135,15 @@ export async function removerOpcaoRefeicao(db, chave, opcaoId) {
   return atualizado;
 }
 
-// Soma as opções escolhidas para cada refeição. Refeição ainda não marcada
-// pelo usuário entra com a primeira opção, mas sinalizada como "estimado"
-// (não confirmado) — nunca presumir silenciosamente qual opção foi usada.
-// `dataDeHoje` (opcional) também soma o que foi registrado em "comeu algo
-// diferente" (listaAlimentosPessoal) NAQUELE dia — sem isso o item fica
-// salvo só como histórico, sem contar no total exibido.
+// Soma só as opções que o usuário de fato marcou em cada refeição — refeição
+// sem nenhuma marcação não entra no total (nada de estimar com a primeira
+// opção por baixo dos panos; menos preciso, mas sem confundir sobre o que
+// realmente foi contado). `dataDeHoje` (opcional) também soma o que foi
+// registrado em "comeu algo diferente" (listaAlimentosPessoal) NAQUELE dia —
+// sem isso o item fica salvo só como histórico, sem contar no total exibido.
 export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) {
   const refeicoes = dietaBase?.dietaBase ?? {};
-  // Refeições fora das 4 base (ex.: adicionadas manualmente pelo usuário)
-  // entram depois, na ordem em que foram cadastradas — sem isso, uma
-  // refeição nova ficaria de fora da soma do dia.
-  const ordemCompleta = [...REFEICOES_ORDEM, ...Object.keys(refeicoes).filter((chave) => !REFEICOES_ORDEM.includes(chave))];
+  const ordemCompleta = ordenarChavesRefeicoes(dietaBase);
   const detalhePorRefeicao = [];
   const total = { kcal: 0, proteina_g: 0, carboidrato_g: 0, gordura_g: 0 };
 
@@ -151,18 +160,15 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) 
     const opcoesEscolhidas = confirmada
       ? idsSelecionados.map((id) => refeicao.opcoes.find((o) => o.id === id)).filter(Boolean)
       : [];
-    // Nada confirmado, ou tudo que estava marcado saiu da dieta base: usa a
-    // primeira opção como estimativa (mesmo padrão de antes).
-    const opcoesParaSomar = opcoesEscolhidas.length > 0 ? opcoesEscolhidas : [refeicao.opcoes[0]];
 
-    for (const opcao of opcoesParaSomar) {
+    for (const opcao of opcoesEscolhidas) {
       total.kcal += opcao.totalEstimado.kcal;
       total.proteina_g += opcao.totalEstimado.proteina_g;
       total.carboidrato_g += opcao.totalEstimado.carboidrato_g;
       total.gordura_g += opcao.totalEstimado.gordura_g;
     }
 
-    detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcoes: opcoesParaSomar, confirmada });
+    detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcoes: opcoesEscolhidas, confirmada });
   }
 
   const alimentosPessoaisDoDia = dataDeHoje

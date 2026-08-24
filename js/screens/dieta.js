@@ -1,6 +1,6 @@
 // js/screens/dieta.js
 import { get, put } from "../data/db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "../data/dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao, ordenarChavesRefeicoes } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
@@ -99,7 +99,7 @@ export async function montarTelaDieta(db) {
         <div class="stat-tile"><b>${total.gordura_g.toFixed(1)}g</b><span>Gordura</span></div>
       </div>
       ${detalhePorRefeicao.some((r) => !r.confirmada)
-        ? `<div class="prev-hint" style="padding:0 18px 14px;">Refeições sem marcação usam a primeira opção como estimativa — confirme o que você realmente comeu acima.</div>`
+        ? `<div class="prev-hint" style="padding:0 18px 14px;">Refeições sem marcação ainda não entram nesse total — marque o que você comeu acima.</div>`
         : ""}
       ${alimentosPessoaisDoDia.length
         ? `<div class="prev-hint" style="padding:0 18px 14px;">Também contando hoje, fora da dieta base: ${alimentosPessoaisDoDia.map((a) => a.nome).join(", ")}.</div>`
@@ -173,7 +173,12 @@ export async function montarTelaDieta(db) {
 
   function renderizarRefeicoes() {
     refeicoesBody.innerHTML = "";
-    for (const [chave, refeicao] of Object.entries(dietaBase.dietaBase)) {
+    // Object.entries() sozinho não garante a ordem café da manhã → almoço →
+    // café da tarde → janta: o IndexedDB não preserva a ordem de inserção
+    // das chaves de um objeto aninhado ao gravar/ler, então a lista podia
+    // sair embaralhada depois de um reload.
+    for (const chave of ordenarChavesRefeicoes(dietaBase)) {
+      const refeicao = dietaBase.dietaBase[chave];
       const bloco = document.createElement("div");
 
       const titulo = document.createElement("div");

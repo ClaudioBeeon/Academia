@@ -39,15 +39,53 @@ export async function adicionarAlimentoPessoal(db, alimento) {
   return atualizado;
 }
 
+function gerarChaveRefeicao(nome, refeicoesExistentes) {
+  const base =
+    nome
+      .normalize("NFD")
+      .replace(new RegExp("[̀-ͯ]", "g"), "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "") || "refeicao";
+  let chave = base;
+  let contador = 2;
+  while (refeicoesExistentes[chave]) {
+    chave = `${base}_${contador}`;
+    contador++;
+  }
+  return chave;
+}
+
+export async function adicionarRefeicao(db, { nome, opcoes }) {
+  const dieta = await getDietaBase(db);
+  const chave = gerarChaveRefeicao(nome, dieta.dietaBase);
+  const atualizado = { ...dieta, dietaBase: { ...dieta.dietaBase, [chave]: { nome, opcoes } } };
+  await put(db, "dietaBase", atualizado);
+  return atualizado;
+}
+
+export async function removerRefeicao(db, chave) {
+  const dieta = await getDietaBase(db);
+  const dietaBase = { ...dieta.dietaBase };
+  delete dietaBase[chave];
+  const atualizado = { ...dieta, dietaBase };
+  await put(db, "dietaBase", atualizado);
+  return atualizado;
+}
+
 // Soma as opções escolhidas para cada refeição. Refeição ainda não marcada
 // pelo usuário entra com a primeira opção, mas sinalizada como "estimado"
 // (não confirmado) — nunca presumir silenciosamente qual opção foi usada.
 export function calcularTotalDoDia(dietaBase, selecoes = {}) {
   const refeicoes = dietaBase?.dietaBase ?? {};
+  // Refeições fora das 4 base (ex.: adicionadas manualmente pelo usuário)
+  // entram depois, na ordem em que foram cadastradas — sem isso, uma
+  // refeição nova ficaria de fora da soma do dia.
+  const ordemCompleta = [...REFEICOES_ORDEM, ...Object.keys(refeicoes).filter((chave) => !REFEICOES_ORDEM.includes(chave))];
   const detalhePorRefeicao = [];
   const total = { kcal: 0, proteina_g: 0, carboidrato_g: 0, gordura_g: 0 };
 
-  for (const chave of REFEICOES_ORDEM) {
+  for (const chave of ordemCompleta) {
     const refeicao = refeicoes[chave];
     if (!refeicao) continue;
     const opcaoId = selecoes[chave];

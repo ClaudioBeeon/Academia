@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, clearStore } from "./db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes } from "./dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, getSelecoesRecentes, adicionarRefeicao, removerRefeicao } from "./dieta.js";
 
 const DIETA_EXEMPLO = {
   versao: "1.0",
@@ -81,4 +81,45 @@ test("calcularTotalDoDia soma refeições confirmadas e usa a primeira opção c
   assert.equal(cafeManha.confirmada, false);
   assert.equal(cafeTarde.confirmada, true);
   assert.equal(cafeTarde.opcao.id, "fruta");
+});
+
+test("calcularTotalDoDia inclui refeições adicionadas manualmente, fora das 4 refeições base", () => {
+  const dietaComExtra = {
+    ...DIETA_EXEMPLO,
+    dietaBase: {
+      ...DIETA_EXEMPLO.dietaBase,
+      ceia_de_teste: {
+        nome: "Ceia de teste",
+        opcoes: [{ id: "unica", alimentos: [{ nome: "iogurte" }], totalEstimado: { kcal: 150, proteina_g: 10, carboidrato_g: 15, gordura_g: 4 } }],
+      },
+    },
+  };
+  const { total, detalhePorRefeicao } = calcularTotalDoDia(dietaComExtra, {});
+  assert.equal(total.kcal, 200 + 120 + 150);
+  assert.ok(detalhePorRefeicao.some((r) => r.chave === "ceia_de_teste"));
+});
+
+test("adicionarRefeicao cria uma refeição com chave derivada do nome, sem acentos/espaços", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "dietaBase");
+  const { put } = await import("./db.js");
+  await put(db, "dietaBase", DIETA_EXEMPLO);
+  const opcoes = [{ id: "unica", alimentos: [{ nome: "iogurte" }], totalEstimado: { kcal: 150, proteina_g: 10, carboidrato_g: 15, gordura_g: 4 } }];
+  const atualizado = await adicionarRefeicao(db, { nome: "Ceia da Noite", opcoes });
+  assert.ok(atualizado.dietaBase.ceia_da_noite);
+  assert.equal(atualizado.dietaBase.ceia_da_noite.nome, "Ceia da Noite");
+  assert.deepEqual(atualizado.dietaBase.ceia_da_noite.opcoes, opcoes);
+  assert.ok(atualizado.dietaBase.cafeDaManha, "refeições existentes continuam intactas");
+  db.close();
+});
+
+test("removerRefeicao remove apenas a refeição indicada", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "dietaBase");
+  const { put } = await import("./db.js");
+  await put(db, "dietaBase", DIETA_EXEMPLO);
+  const atualizado = await removerRefeicao(db, "cafeDaTarde");
+  assert.equal(atualizado.dietaBase.cafeDaTarde, undefined);
+  assert.ok(atualizado.dietaBase.cafeDaManha);
+  db.close();
 });

@@ -1,6 +1,6 @@
 // js/screens/dieta.js
 import { get, put } from "../data/db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia } from "../data/dieta.js";
+import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
 import { interpretarComida } from "../ai/gemini.js";
@@ -34,6 +34,11 @@ function montarBarraProteina(proteinaG, metaProteina) {
     </div>`;
 }
 
+// Único intervalo vivo por vez: se a aba Dieta for remontada (troca de aba
+// e volta), o intervalo anterior é limpo antes de criar outro, pra não
+// acumular checagens em segundo plano.
+let intervaloChecagemDeVirada = null;
+
 export async function montarTelaDieta(db) {
   const root = document.createElement("div");
   root.className = "tela-dieta";
@@ -46,8 +51,8 @@ export async function montarTelaDieta(db) {
   const main = document.createElement("main");
   root.appendChild(main);
 
-  const dataDeHoje = obterDataLocal();
-  const dietaBase = await getDietaBase(db);
+  let dataDeHoje = obterDataLocal();
+  let dietaBase = await getDietaBase(db);
 
   if (!dietaBase) {
     main.innerHTML = `<p class="vazio">Sem dieta base cadastrada ainda.</p>`;
@@ -153,40 +158,143 @@ export async function montarTelaDieta(db) {
   }
 
   const REFEICOES_LABELS = { cafeDaManha: "Café da manhã", almoco: "Almoço", cafeDaTarde: "Café da tarde", janta: "Janta" };
-  for (const [chave, refeicao] of Object.entries(dietaBase.dietaBase)) {
-    const bloco = document.createElement("div");
-    const titulo = document.createElement("div");
-    titulo.className = "exercise-name";
-    titulo.style.cssText = "font-size:0.85rem; margin-bottom:6px;";
-    titulo.textContent = REFEICOES_LABELS[chave] ?? refeicao.nome;
-    bloco.appendChild(titulo);
 
-    const opcoesEl = document.createElement("div");
-    opcoesEl.style.cssText = "display:flex; flex-wrap:wrap; gap:8px;";
-    for (const opcao of refeicao.opcoes) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "swap-pill";
-      btn.textContent = opcao.alimentos.map((a) => a.nome).join(" + ");
-      btn.style.opacity = selecoes[chave] === opcao.id ? "1" : "0.5";
-      btn.addEventListener("click", async () => {
-        selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
-        opcoesEl.querySelectorAll("button").forEach((b, i) => {
-          b.style.opacity = refeicao.opcoes[i].id === opcao.id ? "1" : "0.5";
-        });
+  function renderizarRefeicoes() {
+    refeicoesBody.innerHTML = "";
+    for (const [chave, refeicao] of Object.entries(dietaBase.dietaBase)) {
+      const bloco = document.createElement("div");
+
+      const cabecalho = document.createElement("div");
+      cabecalho.style.cssText = "display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;";
+      const titulo = document.createElement("div");
+      titulo.className = "exercise-name";
+      titulo.style.cssText = "font-size:0.85rem;";
+      titulo.textContent = REFEICOES_LABELS[chave] ?? refeicao.nome;
+      cabecalho.appendChild(titulo);
+
+      const removerBtn = document.createElement("button");
+      removerBtn.type = "button";
+      removerBtn.title = "Remover refeição";
+      removerBtn.setAttribute("aria-label", "Remover refeição");
+      removerBtn.style.cssText = "background:none; border:none; color:var(--muted); font-size:1.1em; cursor:pointer; line-height:1;";
+      removerBtn.textContent = "✕";
+      removerBtn.addEventListener("click", async () => {
+        if (!confirm(`Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" da dieta?`)) return;
+        dietaBase = await removerRefeicao(db, chave);
+        renderizarRefeicoes();
         await redesenharTotaisEAlertas();
       });
-      opcoesEl.appendChild(btn);
+      cabecalho.appendChild(removerBtn);
+      bloco.appendChild(cabecalho);
+
+      const opcoesEl = document.createElement("div");
+      opcoesEl.style.cssText = "display:flex; flex-wrap:wrap; gap:8px;";
+      for (const opcao of refeicao.opcoes) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "swap-pill";
+        btn.textContent = opcao.alimentos.map((a) => a.nome).join(" + ");
+        btn.style.opacity = selecoes[chave] === opcao.id ? "1" : "0.5";
+        btn.addEventListener("click", async () => {
+          selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
+          opcoesEl.querySelectorAll("button").forEach((b, i) => {
+            b.style.opacity = refeicao.opcoes[i].id === opcao.id ? "1" : "0.5";
+          });
+          await redesenharTotaisEAlertas();
+        });
+        opcoesEl.appendChild(btn);
+      }
+      bloco.appendChild(opcoesEl);
+      refeicoesBody.appendChild(bloco);
     }
-    bloco.appendChild(opcoesEl);
-    refeicoesBody.appendChild(bloco);
   }
+  renderizarRefeicoes();
 
   await redesenharTotaisEAlertas();
 
+  main.appendChild(
+    criarCardAdicionarRefeicao(async (nome, alimento) => {
+      dietaBase = await adicionarRefeicao(db, {
+        nome,
+        opcoes: [{ id: "unica", alimentos: [alimento], totalEstimado: { kcal: alimento.kcal, proteina_g: alimento.proteina_g, carboidrato_g: alimento.carboidrato_g, gordura_g: alimento.gordura_g } }],
+      });
+      renderizarRefeicoes();
+      await redesenharTotaisEAlertas();
+    })
+  );
   main.appendChild(criarCardComidaLivre(db));
 
+  if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
+  intervaloChecagemDeVirada = setInterval(async () => {
+    const dataAtual = obterDataLocal();
+    if (dataAtual === dataDeHoje) return;
+    dataDeHoje = dataAtual;
+    selecoes = await getSelecoesDoDia(db, dataDeHoje);
+    renderizarRefeicoes();
+    await redesenharTotaisEAlertas();
+  }, 60000);
+
   return root;
+}
+
+function criarCardAdicionarRefeicao(aoAdicionar) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Adicionar refeição</div></div>`;
+
+  const form = document.createElement("form");
+  form.className = "sets";
+  form.style.cssText = "padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;";
+  form.innerHTML = `
+    <div class="set-field">
+      <label>Nome da refeição</label>
+      <input type="text" name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
+    </div>
+    <div class="set-field">
+      <label>O que você come nessa refeição?</label>
+      <input type="text" name="descricao" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo" />
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div class="set-field" style="flex:1; min-width:80px;">
+        <label>Kcal</label>
+        <input type="number" name="kcal" min="0" step="1" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field" style="flex:1; min-width:80px;">
+        <label>Proteína (g)</label>
+        <input type="number" name="proteina" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field" style="flex:1; min-width:80px;">
+        <label>Carbo (g)</label>
+        <input type="number" name="carboidrato" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+      <div class="set-field" style="flex:1; min-width:80px;">
+        <label>Gordura (g)</label>
+        <input type="number" name="gordura" min="0" step="0.1" value="0" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      </div>
+    </div>
+    <button type="submit" class="swap-pill">Adicionar refeição</button>
+  `;
+  card.appendChild(form);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const nome = form.nome.value.trim();
+    const descricao = form.descricao.value.trim();
+    if (!nome || !descricao) return;
+    const alimento = {
+      nome: descricao,
+      quantidade: "porção cadastrada manualmente",
+      kcal: Number(form.kcal.value) || 0,
+      proteina_g: Number(form.proteina.value) || 0,
+      carboidrato_g: Number(form.carboidrato.value) || 0,
+      gordura_g: Number(form.gordura.value) || 0,
+      estimativa: true,
+    };
+    await aoAdicionar(nome, alimento);
+    form.reset();
+  });
+
+  return card;
 }
 
 function criarCardComidaLivre(db) {

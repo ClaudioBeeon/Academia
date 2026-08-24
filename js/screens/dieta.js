@@ -3,7 +3,7 @@ import { get, put } from "../data/db.js";
 import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
-import { interpretarComida } from "../ai/gemini.js";
+import { interpretarComida, gerarResumoNutricionalDoDia } from "../ai/gemini.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -53,6 +53,7 @@ export async function montarTelaDieta(db) {
 
   let dataDeHoje = obterDataLocal();
   let dietaBase = await getDietaBase(db);
+  let contextoNutricionalAtual = null;
 
   if (!dietaBase) {
     main.innerHTML = `<p class="vazio">Sem dieta base cadastrada ainda.</p>`;
@@ -158,6 +159,8 @@ export async function montarTelaDieta(db) {
         ${alertas.filter((a) => a.eixo !== "proteina").map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
       </div>
     `;
+
+    contextoNutricionalAtual = { fase: perfil.fase?.atual, total, metaCalorica, metaProteina, alertas };
   }
 
   const REFEICOES_LABELS = { cafeDaManha: "Café da manhã", almoco: "Almoço", cafeDaTarde: "Café da tarde", janta: "Janta" };
@@ -279,6 +282,7 @@ export async function montarTelaDieta(db) {
   await redesenharTotaisEAlertas();
 
   main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, redesenharTotaisEAlertas));
+  main.appendChild(criarCardResumoIA(() => contextoNutricionalAtual));
 
   if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
   intervaloChecagemDeVirada = setInterval(async () => {
@@ -295,6 +299,52 @@ export async function montarTelaDieta(db) {
 
 function montarResultadoEstimativa(alimento) {
   return `<div class="prev-hint">${alimento.nome} — ~${alimento.kcal} kcal, ${alimento.proteina_g}g proteína, ${alimento.carboidrato_g}g carb, ${alimento.gordura_g}g gordura (confiança: ${alimento.confianca})</div>`;
+}
+
+// Card no fim da aba Dieta: pede pra IA transformar os totais do dia (já
+// calculados pelo motor determinístico acima) num parágrafo explicativo,
+// em vez de mais uma lista de números — pensado pra ler de relance no fim
+// do dia e entender o que fazer com a próxima refeição.
+function criarCardResumoIA(obterContexto) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Resumo do dia</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:10px;">
+      <button type="button" class="swap-pill gerar-resumo-btn" style="width:100%;">Gerar resumo com IA</button>
+      <div class="resumo-ia-status prev-hint"></div>
+      <p class="resumo-ia-texto" style="margin:0; font-size:0.85rem; line-height:1.6; color:var(--ink);"></p>
+    </div>
+  `;
+
+  const botao = card.querySelector(".gerar-resumo-btn");
+  const status = card.querySelector(".resumo-ia-status");
+  const textoEl = card.querySelector(".resumo-ia-texto");
+
+  botao.addEventListener("click", async () => {
+    const contexto = obterContexto();
+    if (!contexto) {
+      status.textContent = "Preencha sua idade acima primeiro — a meta calórica depende dela.";
+      return;
+    }
+    status.textContent = "Perguntando à IA...";
+    textoEl.textContent = "";
+    botao.disabled = true;
+    const resposta = await gerarResumoNutricionalDoDia(contexto);
+    botao.disabled = false;
+
+    if (!resposta.ok) {
+      status.textContent = resposta.motivo === "sem_chave"
+        ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
+        : "IA indisponível agora — tente de novo mais tarde.";
+      return;
+    }
+
+    status.textContent = "";
+    textoEl.textContent = resposta.texto.trim();
+  });
+
+  return card;
 }
 
 function alimentoDaEstimativa(alimentoIA, descricaoDigitada) {

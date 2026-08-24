@@ -86,3 +86,24 @@ Responda APENAS com um JSON válido, sem texto ao redor, no formato:
     return { ok: false, motivo: "resposta_invalida" };
   }
 }
+
+// Transforma os totais do dia + os alertas já decididos pelo motor
+// determinístico (js/engine/nutricao.js) num parágrafo explicativo. A IA
+// nunca julga os números por conta própria — só recebe o que o motor já
+// calculou e narra, pra não contradizer nem inventar alerta novo.
+export async function gerarResumoNutricionalDoDia({ fase, total, metaCalorica, metaProteina, alertas }, opcoes = {}) {
+  const listaAlertas = alertas?.length
+    ? alertas.map((a) => `- ${a.mensagem}`).join("\n")
+    : "- Nenhum — os números batem com as metas.";
+
+  const prompt = `Você resume, em texto corrido e acolhedor, como está a alimentação de hoje de alguém em relação à meta nutricional dela. Nunca invente números, nem alertas além dos listados — use só o que está abaixo. Escreva em português, um único parágrafo de 3 a 5 frases, direto, sem jargão técnico, sem título, sem lista, sem markdown.
+
+Fase/objetivo atual: ${fase ?? "não informado"}
+Consumido hoje: ${Math.round(total.kcal)} kcal, ${total.proteina_g.toFixed(0)}g de proteína, ${total.carboidrato_g.toFixed(0)}g de carboidrato, ${total.gordura_g.toFixed(1)}g de gordura.
+Meta calórica: ${metaCalorica.meta_kcal} kcal.
+Meta de proteína: ${metaProteina ? `${metaProteina.min_g}–${metaProteina.max_g}g` : "não calculada"}.
+Alertas já identificados pelas regras do app (narre estes, não invente outros):
+${listaAlertas}`;
+
+  return chamarGemini(prompt, opcoes);
+}

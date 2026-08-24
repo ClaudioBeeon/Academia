@@ -4,6 +4,7 @@ import { seedIfNeeded } from "./data/seed.js";
 import { initAutoSync } from "./data/sync.js";
 import { isConfigured as supabaseConfigurado } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
+import { getCheckin } from "./data/checkin.js";
 import { montarPopupPerguntasDiarias } from "./screens/perguntasDiarias.js";
 import { getMedidas } from "./data/medidas.js";
 import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida } from "./engine/lembretes.js";
@@ -53,8 +54,8 @@ async function bootstrap() {
   // sobrar pergunta, e recomeça sozinho quando o registro do dia muda à
   // meia-noite — não precisa de nenhum agendamento, só de ler a data local.
   const hoje = obterDataLocal();
-  const habitoHoje = await getHabito(db, hoje);
-  montarPopupPerguntasDiarias(db, hoje, habitoHoje).catch((err) =>
+  const [habitoHoje, checkinHoje] = await Promise.all([getHabito(db, hoje), getCheckin(db, hoje)]);
+  montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje).catch((err) =>
     console.error("Falha ao montar o popup de perguntas diárias:", err)
   );
 }

@@ -26,16 +26,19 @@ function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
   return wrap;
 }
 
+const ICONE_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+
 async function montarChecklistAquecimento(db, hoje, aquecimento) {
   const habito = (await getHabito(db, hoje)) ?? {};
+  const total = aquecimento?.exercicios?.length ?? 0;
+  const movimentosFeitos = new Set(habito.aquecimentoMovimentos ?? []);
 
   const card = document.createElement("section");
   card.className = "exercise-card bloco-apoio";
 
-  const head = document.createElement("label");
-  head.className = "bloco-apoio-head";
+  const head = document.createElement("div");
+  head.className = "bloco-apoio-head sem-check";
   head.innerHTML = `
-    <input type="checkbox" ${habito.aquecimentoFeito ? "checked" : ""} />
     <div>
       <div class="bloco-apoio-titulo"></div>
       <div class="bloco-apoio-sub"></div>
@@ -45,16 +48,22 @@ async function montarChecklistAquecimento(db, hoje, aquecimento) {
   head.querySelector(".bloco-apoio-sub").textContent = aquecimento
     ? `${aquecimento.duracaoMin} min · antes de tudo`
     : "1-2 séries leves antes do primeiro composto";
-  head.querySelector("input").addEventListener("change", async (event) => {
-    await registrarHabito(db, hoje, { aquecimentoFeito: event.target.checked });
-  });
-  card.appendChild(head);
 
-  if (aquecimento?.exercicios?.length) {
+  if (total > 0) {
+    const progresso = document.createElement("div");
+    progresso.className = "fila-status bloco-apoio-progresso";
+    head.appendChild(progresso);
+    const atualizarProgresso = () => {
+      progresso.textContent = `${movimentosFeitos.size}/${total}`;
+      progresso.classList.toggle("feito", movimentosFeitos.size === total);
+    };
+    atualizarProgresso();
+    card.appendChild(head);
+
     const det = document.createElement("details");
     det.className = "bloco-apoio-lista";
     const sum = document.createElement("summary");
-    sum.textContent = `Ver os ${aquecimento.exercicios.length} movimentos`;
+    sum.textContent = `Ver os ${total} movimentos`;
     det.appendChild(sum);
 
     if (aquecimento.porque) {
@@ -64,20 +73,46 @@ async function montarChecklistAquecimento(db, hoje, aquecimento) {
       det.appendChild(porque);
     }
 
-    for (const item of aquecimento.exercicios) {
+    aquecimento.exercicios.forEach((item, indice) => {
       const li = document.createElement("div");
-      li.className = "bloco-apoio-item";
-      const nome = document.createElement("h5");
-      nome.textContent = item.nome;
-      const presc = document.createElement("span");
-      presc.className = "bloco-apoio-presc";
-      presc.textContent = item.prescricao;
-      const como = document.createElement("p");
-      como.textContent = item.como;
-      li.append(nome, presc, como);
+      li.className = "bloco-apoio-item bloco-apoio-item-check";
+      li.innerHTML = `
+        <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
+        <div class="bloco-apoio-item-corpo">
+          <h5></h5>
+          <span class="bloco-apoio-presc"></span>
+          <p></p>
+        </div>
+      `;
+      li.querySelector("h5").textContent = item.nome;
+      li.querySelector(".bloco-apoio-presc").textContent = item.prescricao;
+      li.querySelector("p").textContent = item.como;
+
+      const botaoCheck = li.querySelector(".bloco-apoio-check");
+      const aplicarEstado = () => {
+        const feito = movimentosFeitos.has(indice);
+        botaoCheck.innerHTML = feito ? ICONE_CHECK : "";
+        botaoCheck.classList.toggle("feito", feito);
+        li.classList.toggle("feito", feito);
+      };
+      aplicarEstado();
+
+      botaoCheck.addEventListener("click", async () => {
+        if (movimentosFeitos.has(indice)) movimentosFeitos.delete(indice);
+        else movimentosFeitos.add(indice);
+        aplicarEstado();
+        atualizarProgresso();
+        await registrarHabito(db, hoje, {
+          aquecimentoMovimentos: [...movimentosFeitos],
+          aquecimentoFeito: movimentosFeitos.size === total,
+        });
+      });
+
       det.appendChild(li);
-    }
+    });
     card.appendChild(det);
+  } else {
+    card.appendChild(head);
   }
 
   return card;
@@ -242,13 +277,6 @@ export async function montarTelaFila(db, contexto, callbacks) {
     }
   }
 
-  if (diaDaFicha?.notaDoDia) {
-    const nota = document.createElement("p");
-    nota.className = "nota-do-dia";
-    nota.textContent = diaDaFicha.notaDoDia;
-    main.appendChild(nota);
-  }
-
   exerciciosHoje.forEach((exercicio, indice) => {
     const item = document.createElement("section");
     item.className = "exercise-card fila-item fila-item-" + estados[indice];
@@ -263,7 +291,7 @@ export async function montarTelaFila(db, contexto, callbacks) {
         <div class="fila-status"></div>
       </div>
     `;
-    item.querySelector(".fila-item-info").prepend(criarIconeExercicio(exercicio.id, 52));
+    item.querySelector(".fila-item-info").prepend(criarIconeExercicio(exercicio.id, 52, exercicio.imagemUrl));
     item.querySelector(".exercise-name").textContent = exercicio.nome;
     item.querySelector(".exercise-meta").textContent = nomeDoMusculo(exercicio.musculoPrimario);
     const statusEl = item.querySelector(".fila-status");

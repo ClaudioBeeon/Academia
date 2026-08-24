@@ -56,3 +56,52 @@ export const QUESTOES_DIARIAS = [
 export function obterPerguntasPendentes(habitoHoje, questoes = QUESTOES_DIARIAS) {
   return questoes.filter((q) => (habitoHoje?.[q.campo] ?? null) === null);
 }
+
+// Perguntas do check-in de sessão (antes em card próprio na tela inicial,
+// js/screens/treino.js) — agora fazem parte do mesmo popup de abertura,
+// junto das perguntas de hábito. Vivem em outro registro (registrosDiarios,
+// via js/data/checkin.js), por isso um array separado em vez de entrar em
+// QUESTOES_DIARIAS.
+export const QUESTOES_CHECKIN = [
+  {
+    id: "qualidade",
+    campo: "qualidadePercebida",
+    pergunta: "Como foi a sessão de treino de hoje, no geral?",
+    opcoes: [1, 2, 3, 4, 5].map((n) => ({ valor: n, rotulo: String(n) })),
+  },
+  {
+    id: "bemEstar",
+    campo: "bemEstarBaixo",
+    pergunta: "Sono ruim, motivação baixa ou irritação sustentada hoje?",
+    opcoes: [
+      { valor: true, rotulo: "Sim" },
+      { valor: false, rotulo: "Não" },
+    ],
+  },
+  {
+    id: "dorArticular",
+    campo: "dorArticularOuTendinea",
+    pergunta: "Alguma dor articular ou de tendão persistente?",
+    opcoes: [
+      { valor: true, rotulo: "Sim" },
+      { valor: false, rotulo: "Não" },
+    ],
+  },
+  {
+    id: "doms",
+    campo: "domsPersistente",
+    pergunta: "Ainda com dor muscular do treino anterior?",
+    opcoes: [
+      { valor: true, rotulo: "Sim" },
+      { valor: false, rotulo: "Não" },
+    ],
+  },
+];
+
+// O check-in é preenchido de uma vez só (as 4 perguntas em sequência), então
+// a pendência é tudo-ou-nada: se a nota geral (qualidadePercebida) ainda não
+// foi respondida hoje, as 4 entram na fila; se já foi, nenhuma entra —
+// mesmo critério que o card antigo usava pra decidir "já respondido".
+export function obterPerguntasCheckinPendentes(checkinHoje) {
+  return checkinHoje?.qualidadePercebida !== undefined ? [] : QUESTOES_CHECKIN;
+}

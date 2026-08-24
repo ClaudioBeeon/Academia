@@ -189,6 +189,22 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .bloco-apoio-item p { margin: 6px 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); }
 .bloco-apoio-lista > p { margin: 8px 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); }
 
+.bloco-apoio-progresso { margin-left: auto; flex: 0 0 auto; }
+.bloco-apoio-progresso.feito { background: var(--accent); color: var(--accent-ink); }
+
+.bloco-apoio-item-check { display: flex; align-items: flex-start; gap: 12px; margin-top: 16px; }
+.bloco-apoio-item-check:first-child { margin-top: 0; }
+.bloco-apoio-item-corpo { flex: 1; min-width: 0; }
+.bloco-apoio-item-check.feito .bloco-apoio-item-corpo { opacity: 0.55; }
+.bloco-apoio-item-check.feito h5 { text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+.bloco-apoio-check {
+  flex: 0 0 auto; width: 28px; height: 28px; margin-top: 1px; border-radius: 50%;
+  border: none; background: var(--card-2); color: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.bloco-apoio-check svg { width: 16px; height: 16px; }
+.bloco-apoio-check.feito { background: var(--accent); color: var(--accent-ink); }
+
 .faixa-semana {
   display: flex; flex-direction: column; gap: 3px; padding: 12px 16px;
   background: var(--card-2); border-radius: 14px; margin-bottom: 2px;

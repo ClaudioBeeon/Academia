@@ -1,6 +1,7 @@
 // js/screens/biblioteca.js
 import { getAll, put } from "../data/db.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
+import { subirImagemExercicio } from "../data/supabaseClient.js";
 
 export async function montarTelaBiblioteca(db, { aoVoltar } = {}) {
   const root = document.createElement("div");
@@ -50,7 +51,8 @@ function criarLinhaExercicio(db, exercicio) {
     </div>
     <button class="swap-pill editar-pill" type="button">Editar</button>
   `;
-  head.querySelector("div").prepend(criarIconeExercicio(exercicio.id, 48));
+  let icone = criarIconeExercicio(exercicio.id, 48, exercicio.imagemUrl);
+  head.querySelector("div").prepend(icone);
   head.querySelector(".exercise-name").textContent = exercicio.nome;
   head.querySelector(".exercise-meta").textContent = `${exercicio.musculoPrimario} · ${exercicio.tipo}`;
   card.appendChild(head);
@@ -59,6 +61,11 @@ function criarLinhaExercicio(db, exercicio) {
   obsForm.className = "sets";
   obsForm.style.display = "none";
   obsForm.innerHTML = `
+    <div class="set-field" style="grid-column:1/-1;">
+      <label>Imagem do exercício</label>
+      <input name="imagem" type="file" accept="image/*" style="width:100%;" />
+      <div class="prev-hint imagem-status" style="margin-top:4px;"></div>
+    </div>
     <div class="set-field" style="grid-column:1/-1;">
       <label>Observações de execução</label>
       <textarea name="obs" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
@@ -72,11 +79,31 @@ function criarLinhaExercicio(db, exercicio) {
     obsForm.style.display = obsForm.style.display === "none" ? "flex" : "none";
   });
 
+  const imagemStatus = obsForm.querySelector(".imagem-status");
+
   obsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const arquivo = obsForm.imagem.files?.[0];
+    if (arquivo) {
+      const botao = obsForm.querySelector("button[type=submit]");
+      botao.disabled = true;
+      imagemStatus.textContent = "Subindo imagem...";
+      try {
+        exercicio.imagemUrl = await subirImagemExercicio(exercicio.id, arquivo);
+        icone.replaceWith(criarIconeExercicio(exercicio.id, 48, exercicio.imagemUrl));
+        icone = head.querySelector(".icone-exercicio");
+        imagemStatus.textContent = "Imagem salva.";
+      } catch (err) {
+        imagemStatus.textContent = err.message || "Falha ao subir a imagem.";
+        botao.disabled = false;
+        return;
+      }
+      botao.disabled = false;
+    }
     exercicio.observacoesExecucao = obsForm.querySelector("textarea").value;
     await put(db, "exercicios", exercicio);
     obsForm.style.display = "none";
+    obsForm.imagem.value = "";
   });
 
   return card;

@@ -1,8 +1,9 @@
 // js/screens/perguntasDiarias.js
 //
 // Popup que aparece ao abrir o app quando há pergunta diária pendente (sono,
-// creatina, hidratação, álcool) — pede uma por vez, salva a cada resposta, e
-// fecha sozinho quando acaba. "Responder mais tarde" fecha tudo de uma vez;
+// creatina, hidratação, álcool, e o check-in de sessão: nota geral, dor
+// articular, DOMS) — pede uma por vez, salva a cada resposta, e fecha
+// sozinho quando acaba. "Responder mais tarde" fecha tudo de uma vez;
 // como a checagem roda de novo a cada abertura do app (js/app.js), o que
 // ficou sem resposta volta a aparecer na próxima vez que o app for aberto,
 // até a virada do dia trazer um registro novo (e perguntas novas).
@@ -12,10 +13,14 @@
 // app, não uma tela emprestada.
 
 import { registrarHabito } from "../data/habitos.js";
-import { obterPerguntasPendentes } from "../engine/perguntasDiarias.js";
+import { registrarCheckin } from "../data/checkin.js";
+import { obterPerguntasPendentes, obterPerguntasCheckinPendentes } from "../engine/perguntasDiarias.js";
 
-export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, { aoFechar } = {}) {
-  const pendentes = obterPerguntasPendentes(habitoHoje);
+export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje, { aoFechar } = {}) {
+  const pendentes = [
+    ...obterPerguntasPendentes(habitoHoje).map((q) => ({ ...q, store: "habitos" })),
+    ...obterPerguntasCheckinPendentes(checkinHoje).map((q) => ({ ...q, store: "checkin" })),
+  ];
   if (pendentes.length === 0) return null;
 
   let indice = 0;
@@ -56,7 +61,11 @@ export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, { aoFech
       botao.className = "perguntas-opcao-btn";
       botao.textContent = opcao.rotulo;
       botao.addEventListener("click", async () => {
-        await registrarHabito(db, hoje, { [questao.campo]: opcao.valor });
+        if (questao.store === "checkin") {
+          await registrarCheckin(db, hoje, { [questao.campo]: opcao.valor });
+        } else {
+          await registrarHabito(db, hoje, { [questao.campo]: opcao.valor });
+        }
         indice++;
         if (indice < pendentes.length) {
           renderizarPergunta();

@@ -94,3 +94,26 @@ export async function getUsuario() {
   const { data } = await client.auth.getUser();
   return data?.user ?? null;
 }
+
+const BUCKET_IMAGENS_EXERCICIO = "exercicio-imagens";
+
+// Sobe um arquivo de imagem pro bucket público de exercícios e devolve a URL
+// pública já pronta pra usar num <img src>. Lança erro se não houver sessão
+// configurada — quem chama decide como mostrar isso ao usuário.
+export async function subirImagemExercicio(exercicioId, arquivo) {
+  const client = await getClient();
+  if (!client) throw new Error("Configure a sincronização com o Supabase em Configurações antes.");
+  const usuario = await getUsuario();
+  if (!usuario) throw new Error("Faça login em Configurações antes de subir imagens.");
+
+  const extensao = (arquivo.name.split(".").pop() || "jpg").toLowerCase();
+  const caminho = `${exercicioId}-${Date.now()}.${extensao}`;
+  const { error } = await client.storage.from(BUCKET_IMAGENS_EXERCICIO).upload(caminho, arquivo, {
+    upsert: true,
+    contentType: arquivo.type || "image/jpeg",
+  });
+  if (error) throw error;
+
+  const { data } = client.storage.from(BUCKET_IMAGENS_EXERCICIO).getPublicUrl(caminho);
+  return data.publicUrl;
+}

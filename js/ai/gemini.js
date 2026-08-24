@@ -37,15 +37,28 @@ export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKe
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          // Desliga "thinking" — sem isso o modelo às vezes gasta todo o
+          // orçamento de tokens pensando e devolve texto final vazio.
+          generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+        }),
       },
     );
     if (!resposta.ok) {
+      const corpoErro = typeof resposta.text === "function" ? await resposta.text().catch(() => "") : "";
+      console.error(`Gemini respondeu ${resposta.status}:`, corpoErro);
       return { ok: false, motivo: `erro_api_${resposta.status}` };
     }
     const dados = await resposta.json();
-    const texto = dados?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!texto) return { ok: false, motivo: "resposta_vazia" };
+    const texto = dados?.candidates?.[0]?.content?.parts
+      ?.map((parte) => parte.text)
+      .filter(Boolean)
+      .join("");
+    if (!texto) {
+      console.error("Gemini devolveu resposta sem texto:", JSON.stringify(dados));
+      return { ok: false, motivo: "resposta_vazia" };
+    }
     return { ok: true, texto };
   } catch (err) {
     console.error("Falha ao chamar Gemini:", err);

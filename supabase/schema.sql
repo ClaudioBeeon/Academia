@@ -66,3 +66,22 @@ create policy "delete own photos" on storage.objects
     bucket_id = 'fotos-postura'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- Bucket público pras imagens de exercício (fotos/diagramas ilustrativos,
+-- não dado pessoal) — público pra renderizar direto num <img src>, sem
+-- precisar de signed URL. Só usuários autenticados podem escrever.
+insert into storage.buckets (id, name, public)
+values ('exercicio-imagens', 'exercicio-imagens', true)
+on conflict (id) do nothing;
+
+create policy "read exercise images" on storage.objects
+  for select using (bucket_id = 'exercicio-imagens');
+
+create policy "write own exercise images" on storage.objects
+  for insert with check (bucket_id = 'exercicio-imagens' and auth.uid() is not null);
+
+create policy "update own exercise images" on storage.objects
+  for update using (bucket_id = 'exercicio-imagens' and auth.uid() is not null);
+
+create policy "delete own exercise images" on storage.objects
+  for delete using (bucket_id = 'exercicio-imagens' and auth.uid() is not null);

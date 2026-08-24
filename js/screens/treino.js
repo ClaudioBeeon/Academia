@@ -1,9 +1,8 @@
 // js/screens/treino.js
 import { getAll } from "../data/db.js";
 import { getSeriesDoDia } from "../data/historico.js";
-import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
-import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
+import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
@@ -102,26 +101,10 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
     if (onComecarTreino) onComecarTreino();
   });
 
-  if (seriesDeHoje.length === 0) {
-    const seletorDia = document.createElement("select");
-    seletorDia.className = "trocar-dia-select";
-    seletorDia.style.cssText = "width:100%; max-width:100%; background:var(--accent-ink); color:var(--accent); border:none; border-radius:8px; font-size:0.85rem; padding:6px 8px; margin-top:8px; cursor:pointer; font-family:inherit;";
-    seletorDia.innerHTML = DIAS_SEQUENCIA.map((d) =>
-      `<option value="${d.numero}">Dia ${d.numero}: ${d.titulo}</option>`
-    ).join("");
-    seletorDia.value = String(diaDaSessao);
-    seletorDia.addEventListener("click", (event) => event.stopPropagation());
-    seletorDia.addEventListener("change", async () => {
-      await registrarDiaDaSessao(db, Number(seletorDia.value), hoje);
-      window.location.reload();
-    });
-    planoCard.insertBefore(seletorDia, planoCard.querySelector("button"));
-  }
-
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
-  carrossel.appendChild(montarCardCardio(ultimoCardio, onIrParaCardio));
+  carrossel.appendChild(montarCardCardio(ultimoCardio, diaDaFichaHoje?.cardio, onIrParaCardio));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
@@ -136,7 +119,6 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
 
   main.appendChild(montarCardAtividade(atividade));
 
-  main.appendChild(await montarCardCheckin(db, hoje));
   const cardPausa = await montarCardPausaPostural(db, hoje, ficha?.pausaPostural);
   if (cardPausa) main.appendChild(cardPausa);
 
@@ -321,107 +303,6 @@ async function montarCardHabitos(db, hoje) {
   return card;
 }
 
-async function montarCardCheckin(db, hoje) {
-  const card = document.createElement("section");
-  card.className = "exercise-card";
-  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Check-in de hoje</div></div>`;
-
-  const corpo = document.createElement("div");
-  card.appendChild(corpo);
-
-  const checkinExistente = await getCheckin(db, hoje);
-  if (checkinExistente?.qualidadePercebida !== undefined) {
-    renderizarResumoCheckin(corpo, db, hoje, checkinExistente);
-  } else {
-    renderizarFormularioCheckin(corpo, db, hoje, checkinExistente);
-  }
-
-  return card;
-}
-
-function renderizarResumoCheckin(corpo, db, hoje, checkin) {
-  corpo.innerHTML = "";
-
-  const resumo = document.createElement("div");
-  resumo.className = "prev-hint";
-  resumo.style.padding = "0 18px 18px";
-  const partes = [`Qualidade: ${checkin.qualidadePercebida}/5`];
-  if (checkin.bemEstarBaixo) partes.push("sono/motivação baixos");
-  if (checkin.dorArticularOuTendinea) partes.push("dor articular/tendínea");
-  if (checkin.domsPersistente) partes.push("dor muscular residual");
-  resumo.textContent = partes.join(" · ");
-  corpo.appendChild(resumo);
-
-  const editarBtn = document.createElement("button");
-  editarBtn.type = "button";
-  editarBtn.className = "swap-pill";
-  editarBtn.textContent = "Editar";
-  editarBtn.style.margin = "0 18px 18px";
-  editarBtn.addEventListener("click", () => renderizarFormularioCheckin(corpo, db, hoje, checkin));
-  corpo.appendChild(editarBtn);
-}
-
-function renderizarFormularioCheckin(corpo, db, hoje, checkinExistente) {
-  corpo.innerHTML = "";
-
-  const form = document.createElement("form");
-  form.className = "sets";
-  form.style.padding = "0 18px 18px";
-  form.innerHTML = `
-    <div class="set-field" style="grid-column:1/-1;">
-      <label>Como foi a sessão hoje, no geral? (1-5)</label>
-      <input type="hidden" name="qualidadePercebida" value="3" />
-      <div class="checkin-qual" role="radiogroup" aria-label="Qualidade percebida">
-        <button type="button" data-valor="1">1</button>
-        <button type="button" data-valor="2">2</button>
-        <button type="button" data-valor="3" class="on">3</button>
-        <button type="button" data-valor="4">4</button>
-        <button type="button" data-valor="5">5</button>
-      </div>
-    </div>
-    <div class="set-field" style="grid-column:1/-1;">
-      <label><input type="checkbox" name="bemEstarBaixo" /> Sono ruim, motivação baixa ou irritação sustentada hoje?</label>
-    </div>
-    <div class="set-field" style="grid-column:1/-1;">
-      <label><input type="checkbox" name="dorArticularOuTendinea" /> Alguma dor articular ou de tendão persistente?</label>
-    </div>
-    <div class="set-field" style="grid-column:1/-1;">
-      <label><input type="checkbox" name="domsPersistente" /> Ainda com dor muscular do treino anterior?</label>
-    </div>
-    <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
-  `;
-
-  const qualidadeInput = form.qualidadePercebida;
-  form.querySelectorAll(".checkin-qual button").forEach((botao) => {
-    botao.addEventListener("click", () => {
-      qualidadeInput.value = botao.dataset.valor;
-      form.querySelectorAll(".checkin-qual button").forEach((b) => b.classList.toggle("on", b === botao));
-    });
-  });
-
-  if (checkinExistente) {
-    qualidadeInput.value = String(checkinExistente.qualidadePercebida ?? 3);
-    form.querySelectorAll(".checkin-qual button").forEach((b) => b.classList.toggle("on", b.dataset.valor === qualidadeInput.value));
-    form.bemEstarBaixo.checked = !!checkinExistente.bemEstarBaixo;
-    form.dorArticularOuTendinea.checked = !!checkinExistente.dorArticularOuTendinea;
-    form.domsPersistente.checked = !!checkinExistente.domsPersistente;
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const campos = {
-      qualidadePercebida: Number(form.qualidadePercebida.value),
-      bemEstarBaixo: form.bemEstarBaixo.checked,
-      dorArticularOuTendinea: form.dorArticularOuTendinea.checked,
-      domsPersistente: form.domsPersistente.checked,
-    };
-    const salvo = await registrarCheckin(db, hoje, campos);
-    renderizarResumoCheckin(corpo, db, hoje, salvo);
-  });
-
-  corpo.appendChild(form);
-}
-
 const NOME_MODALIDADE_CARDIO = {
   bicicleta: "Bicicleta",
   eliptico: "Elíptico",
@@ -430,7 +311,7 @@ const NOME_MODALIDADE_CARDIO = {
   corrida: "Corrida",
 };
 
-function montarCardCardio(ultimoCardio, onIrParaCardio) {
+function montarCardCardio(ultimoCardio, cardioDeHoje, onIrParaCardio) {
   const card = document.createElement("section");
   card.className = "plano-hero";
 
@@ -442,6 +323,8 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
   const titulo = document.createElement("h2");
   if (ultimoCardio) {
     titulo.textContent = NOME_MODALIDADE_CARDIO[ultimoCardio.modalidade] ?? ultimoCardio.modalidade;
+  } else if (cardioDeHoje) {
+    titulo.textContent = NOME_MODALIDADE_CARDIO[cardioDeHoje.modalidade] ?? cardioDeHoje.modalidade;
   } else {
     titulo.textContent = "Nenhum registro ainda";
   }
@@ -457,6 +340,12 @@ function montarCardCardio(ultimoCardio, onIrParaCardio) {
     const semDuracao = document.createElement("span");
     semDuracao.textContent = "Duração não registrada";
     meta.appendChild(semDuracao);
+  } else if (cardioDeHoje) {
+    const previsto = document.createElement("span");
+    previsto.innerHTML = cardioDeHoje.duracaoMin
+      ? `Previsto pra hoje · <b>${cardioDeHoje.duracaoMin}</b> min`
+      : "Previsto pra hoje";
+    meta.appendChild(previsto);
   } else {
     const vazio = document.createElement("span");
     vazio.textContent = "Registre sua primeira sessão";

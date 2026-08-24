@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { chamarGemini, interpretarComida } from "./gemini.js";
+import { chamarGemini, interpretarComida, interpretarComidaPorFoto } from "./gemini.js";
 
 test("chamarGemini retorna fallback gracioso quando não há chave", async () => {
   const resultado = await chamarGemini("prompt qualquer", { apiKey: "" });
@@ -61,4 +61,28 @@ test("interpretarComida devolve fallback gracioso quando a resposta não é JSON
   const resultado = await interpretarComida("algo estranho", { apiKey: "abc", fetchImpl: fetchFalso });
   assert.equal(resultado.ok, false);
   assert.equal(resultado.motivo, "resposta_invalida");
+});
+
+test("interpretarComidaPorFoto manda a imagem como inlineData e faz parse do JSON devolvido", async () => {
+  const alimentoEsperado = { nome: "barrinha de proteína", kcal: 200, proteina_g: 20, carboidrato_g: 18, gordura_g: 7, confianca: "media" };
+  let corpoRecebido;
+  const fetchFalso = async (_url, init) => {
+    corpoRecebido = JSON.parse(init.body);
+    return {
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(alimentoEsperado) }] } }] }),
+    };
+  };
+  const resultado = await interpretarComidaPorFoto("ZmFrZWJhc2U2NA==", "image/jpeg", "", { apiKey: "abc", fetchImpl: fetchFalso });
+  assert.equal(resultado.ok, true);
+  assert.deepEqual(resultado.alimento, alimentoEsperado);
+  const partes = corpoRecebido.contents[0].parts;
+  assert.equal(partes[1].inlineData.mimeType, "image/jpeg");
+  assert.equal(partes[1].inlineData.data, "ZmFrZWJhc2U2NA==");
+});
+
+test("interpretarComidaPorFoto devolve fallback gracioso sem chave", async () => {
+  const resultado = await interpretarComidaPorFoto("ZmFrZQ==", "image/jpeg", "", { apiKey: "" });
+  assert.equal(resultado.ok, false);
+  assert.equal(resultado.motivo, "sem_chave");
 });

@@ -49,7 +49,13 @@ export function salvarModelo(modelo) {
   }
 }
 
-export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKey = getApiKey(), modelo = getModelo() } = {}) {
+export async function chamarGemini(prompt, opcoes = {}) {
+  return chamarGeminiComPartes([{ text: prompt }], opcoes);
+}
+
+// Igual a chamarGemini, mas aceita partes multimodais (texto + imagem inline
+// em base64) — usado pelo reconhecimento de comida por foto.
+export async function chamarGeminiComPartes(partes, { fetchImpl = globalThis.fetch, apiKey = getApiKey(), modelo = getModelo() } = {}) {
   if (!apiKey) {
     return { ok: false, motivo: "sem_chave" };
   }
@@ -60,7 +66,7 @@ export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKe
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: partes }],
         }),
       },
     );
@@ -105,6 +111,30 @@ Responda APENAS com um JSON válido, sem texto ao redor, no formato:
     return { ok: true, alimento };
   } catch (err) {
     console.error("Falha ao interpretar resposta da IA como JSON:", err, resultado.texto);
+    return { ok: false, motivo: "resposta_invalida" };
+  }
+}
+
+// Mesma ideia de interpretarComida, mas a partir de uma foto do prato em vez
+// de texto — a IA identifica o alimento e estima os valores direto da imagem.
+// `descricaoOpcional` deixa o usuário complementar o que a foto não mostra
+// (ex.: "sem o refrigerante, só o prato").
+export async function interpretarComidaPorFoto(base64Imagem, mimeType, descricaoOpcional = "", opcoes = {}) {
+  const prompt = `Você ajuda a estimar valores nutricionais aproximados de uma refeição a partir de uma foto, para um app pessoal de acompanhamento. Identifique o(s) alimento(s) principais na imagem e nunca invente precisão que não existe — são sempre estimativas.
+${descricaoOpcional ? `\nInformação extra dada pelo usuário: "${descricaoOpcional}"\n` : ""}
+Responda APENAS com um JSON válido, sem texto ao redor, no formato:
+{"nome": "string curta descrevendo o alimento identificado", "kcal": number, "proteina_g": number, "carboidrato_g": number, "gordura_g": number, "confianca": "baixa"|"media"|"alta"}`;
+
+  const partes = [{ text: prompt }, { inlineData: { mimeType, data: base64Imagem } }];
+  const resultado = await chamarGeminiComPartes(partes, opcoes);
+  if (!resultado.ok) return resultado;
+
+  try {
+    const jsonLimpo = resultado.texto.trim().replace(/^```json\s*|```$/g, "");
+    const alimento = JSON.parse(jsonLimpo);
+    return { ok: true, alimento };
+  } catch (err) {
+    console.error("Falha ao interpretar resposta da IA (foto) como JSON:", err, resultado.texto);
     return { ok: false, motivo: "resposta_invalida" };
   }
 }

@@ -4,7 +4,7 @@ import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAliment
 import { getMedidas } from "../data/medidas.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
-import { interpretarComida, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
+import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -92,6 +92,11 @@ export async function montarTelaDieta(db) {
 
     totaisCard.innerHTML = `
       <div class="exercise-head"><div class="exercise-name">Total estimado do dia</div></div>
+      ${alimentosPessoaisDoDia.length
+        ? `<div class="prev-hint" style="padding:0 18px 10px;">Fora da dieta base hoje:<ul style="margin:4px 0 0; padding-left:18px;">${alimentosPessoaisDoDia
+            .map((a) => `<li>${a.nome} — ~${Math.round(a.kcal ?? 0)} kcal</li>`)
+            .join("")}</ul></div>`
+        : ""}
       <div class="stats-grid" style="padding:0 18px 18px;">
         <div class="stat-tile"><b>${Math.round(total.kcal)}</b><span>kcal</span></div>
         <div class="stat-tile"><b>${total.proteina_g.toFixed(0)}g</b><span>Proteína</span></div>
@@ -100,9 +105,6 @@ export async function montarTelaDieta(db) {
       </div>
       ${detalhePorRefeicao.some((r) => !r.confirmada)
         ? `<div class="prev-hint" style="padding:0 18px 14px;">Refeições sem marcação ainda não entram nesse total — marque o que você comeu acima.</div>`
-        : ""}
-      ${alimentosPessoaisDoDia.length
-        ? `<div class="prev-hint" style="padding:0 18px 14px;">Também contando hoje, fora da dieta base: ${alimentosPessoaisDoDia.map((a) => a.nome).join(", ")}.</div>`
         : ""}
     `;
 
@@ -299,7 +301,10 @@ export async function montarTelaDieta(db) {
 
   await redesenharTotaisEAlertas();
 
-  main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, redesenharTotaisEAlertas));
+  main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, async (alimento) => {
+    dietaBase = await adicionarAlimentoPessoal(db, alimento);
+    await redesenharTotaisEAlertas();
+  }));
 
   const cardResumo = criarCardResumoIA(db, () => dataDeHoje, () => contextoNutricionalAtual);
   main.appendChild(cardResumo.elemento);
@@ -554,14 +559,28 @@ function criarFormularioNovaRefeicao({ aoSalvar }) {
   return wrap;
 }
 
+// Lê um arquivo de imagem (do input file/câmera) como base64 puro, sem o
+// prefixo "data:image/...;base64," que o Gemini não espera no campo `data`.
+function arquivoParaBase64(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(String(leitor.result).split(",")[1] ?? "");
+    leitor.onerror = () => reject(leitor.error);
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
 function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Comeu algo fora da dieta base?</div></div>
     <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
-      <textarea class="comida-livre-input" rows="2" placeholder="Descreva o que comeu (ex.: 1 fatia de pizza de calabresa)" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
-      <button type="button" class="swap-pill comida-livre-btn">Estimar com IA</button>
+      <textarea class="comida-livre-input" rows="2" placeholder="Descreva o que comeu (ex.: 1 fatia de pizza de calabresa) ou tire uma foto abaixo" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
+      <button type="button" class="swap-pill comida-livre-btn">Estimar com IA (texto)</button>
+      <button type="button" class="swap-pill comida-livre-foto-btn" style="background:var(--card-2); color:var(--ink); border:1px solid var(--line);">Tirar foto do prato</button>
+      <input type="file" class="comida-livre-foto-input" accept="image/*" capture="environment" style="display:none;">
+      <img class="comida-livre-preview" style="display:none; width:100%; max-height:180px; object-fit:cover; border-radius:10px;">
       <div class="prev-hint comida-livre-status"></div>
       <div class="comida-livre-resultado"></div>
     </div>
@@ -569,8 +588,34 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
 
   const input = card.querySelector(".comida-livre-input");
   const btn = card.querySelector(".comida-livre-btn");
+  const fotoBtn = card.querySelector(".comida-livre-foto-btn");
+  const fotoInput = card.querySelector(".comida-livre-foto-input");
+  const preview = card.querySelector(".comida-livre-preview");
   const status = card.querySelector(".comida-livre-status");
   const resultado = card.querySelector(".comida-livre-resultado");
+
+  function mostrarResultado(alimento) {
+    status.textContent = "Confirme antes de salvar:";
+    resultado.innerHTML = `
+      <div class="prev-hint">${alimento.nome} — ~${alimento.kcal} kcal, ${alimento.proteina_g}g proteína, ${alimento.carboidrato_g}g carb, ${alimento.gordura_g}g gordura (confiança: ${alimento.confianca})</div>
+      <button type="button" class="swap-pill confirmar-comida-btn" style="margin-top:6px;">Confirmar e salvar</button>
+    `;
+    resultado.querySelector(".confirmar-comida-btn").addEventListener("click", async () => {
+      await aoSalvar({ ...alimento, adicionadoEm: obterDataDeHoje(), origem: "gemini" });
+      status.textContent = "Salvo — já somado no total estimado do dia acima.";
+      resultado.innerHTML = "";
+      input.value = "";
+      preview.style.display = "none";
+      preview.src = "";
+      fotoInput.value = "";
+    });
+  }
+
+  function mostrarErro(resposta) {
+    status.textContent = resposta.motivo === "sem_chave"
+      ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
+      : "IA indisponível agora — tente de novo mais tarde.";
+  }
 
   btn.addEventListener("click", async () => {
     const texto = input.value.trim();
@@ -582,26 +627,28 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
     const resposta = await interpretarComida(texto);
     btn.disabled = false;
 
-    if (!resposta.ok) {
-      status.textContent = resposta.motivo === "sem_chave"
-        ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
-        : "IA indisponível agora — tente de novo mais tarde.";
-      return;
-    }
+    if (!resposta.ok) return mostrarErro(resposta);
+    mostrarResultado(resposta.alimento);
+  });
 
-    status.textContent = "Confirme antes de salvar:";
-    const { alimento } = resposta;
-    resultado.innerHTML = `
-      <div class="prev-hint">${alimento.nome} — ~${alimento.kcal} kcal, ${alimento.proteina_g}g proteína, ${alimento.carboidrato_g}g carb, ${alimento.gordura_g}g gordura (confiança: ${alimento.confianca})</div>
-      <button type="button" class="swap-pill confirmar-comida-btn" style="margin-top:6px;">Confirmar e salvar</button>
-    `;
-    resultado.querySelector(".confirmar-comida-btn").addEventListener("click", async () => {
-      await adicionarAlimentoPessoal(db, { ...alimento, adicionadoEm: obterDataDeHoje(), origem: "gemini" });
-      status.textContent = "Salvo — já somado no total estimado do dia acima.";
-      resultado.innerHTML = "";
-      input.value = "";
-      await aoSalvar();
-    });
+  fotoBtn.addEventListener("click", () => fotoInput.click());
+
+  fotoInput.addEventListener("change", async () => {
+    const arquivo = fotoInput.files?.[0];
+    if (!arquivo) return;
+
+    preview.src = URL.createObjectURL(arquivo);
+    preview.style.display = "block";
+    status.textContent = "Analisando a foto...";
+    resultado.innerHTML = "";
+    fotoBtn.disabled = true;
+
+    const base64 = await arquivoParaBase64(arquivo);
+    const resposta = await interpretarComidaPorFoto(base64, arquivo.type || "image/jpeg", input.value.trim());
+    fotoBtn.disabled = false;
+
+    if (!resposta.ok) return mostrarErro(resposta);
+    mostrarResultado(resposta.alimento);
   });
 
   return card;

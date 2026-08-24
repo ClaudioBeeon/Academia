@@ -3,7 +3,7 @@ import { get, put } from "../data/db.js";
 import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao, ordenarChavesRefeicoes } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
+import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia, pisoGorduraDiaria } from "../engine/nutricao.js";
 import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
 
 function obterDataLocal() {
@@ -11,28 +11,68 @@ function obterDataLocal() {
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
 }
 
-// Proteína ganha barra própria em vez de virar mais um alerta: em déficit é o
-// número que mais protege massa magra e precisa estar visível todo dia, não só
-// nos dias em que falha.
+// Calorias, proteína e gordura aparecem como barra em vez de virar texto de
+// alerta: em déficit os três são números que precisam estar visíveis todo dia,
+// não só nos dias em que falham — e barra mostra "quanto falta", texto não.
+function montarBarraMeta({ rotulo, valor, meta, percentual, ok, nota }) {
+  return `
+    <div class="meta-barra" style="grid-column:1/-1;">
+      <div class="meta-barra-topo">
+        <span>${rotulo}</span>
+        <b>${valor} <s>/ ${meta}</s></b>
+      </div>
+      <div class="meta-barra-trilho">
+        <div class="meta-barra-preenchida ${ok ? "ok" : "abaixo"}" style="width:${Math.min(100, Math.max(0, percentual)).toFixed(0)}%"></div>
+      </div>
+      <div class="meta-barra-nota">${nota}</div>
+    </div>`;
+}
+
 function montarBarraProteina(proteinaG, metaProteina) {
   if (!metaProteina) return "";
   const avaliacao = avaliarProteinaDoDia({ proteinaG, metaProteina });
   const ok = avaliacao?.status === "ok";
-  const percentual = Math.min(100, (proteinaG / metaProteina.min_g) * 100).toFixed(0);
-  const nota = ok
-    ? "Meta batida — é isso que protege sua massa magra no déficit."
-    : `Faltam ${avaliacao?.faltam_g ?? metaProteina.min_g}g. Em déficit, proteína abaixo da meta é o que mais custa massa magra.`;
-  return `
-    <div class="meta-proteina" style="grid-column:1/-1;">
-      <div class="meta-proteina-topo">
-        <span>Proteína</span>
-        <b>${proteinaG.toFixed(0)}g <s>/ ${metaProteina.min_g}–${metaProteina.max_g}g</s></b>
-      </div>
-      <div class="meta-proteina-trilho">
-        <div class="meta-proteina-barra ${ok ? "ok" : "abaixo"}" style="width:${percentual}%"></div>
-      </div>
-      <div class="meta-proteina-nota">${nota}</div>
-    </div>`;
+  return montarBarraMeta({
+    rotulo: "Proteína",
+    valor: `${proteinaG.toFixed(0)}g`,
+    meta: `${metaProteina.min_g}–${metaProteina.max_g}g`,
+    percentual: (proteinaG / metaProteina.min_g) * 100,
+    ok,
+    nota: ok
+      ? "Meta batida — é isso que protege sua massa magra no déficit."
+      : `Faltam ${avaliacao?.faltam_g ?? metaProteina.min_g}g. Em déficit, proteína abaixo da meta é o que mais custa massa magra.`,
+  });
+}
+
+// O status das barras de kcal e gordura vem do mesmo motor que gera os
+// alertas (checarAdequacaoNutricional), pra barra e texto nunca discordarem.
+function montarBarraCalorias(kcal, metaCalorica, alertaCalorias) {
+  if (!metaCalorica) return "";
+  return montarBarraMeta({
+    rotulo: "Calorias",
+    valor: `${Math.round(kcal)} kcal`,
+    meta: `${metaCalorica.meta_kcal} kcal`,
+    percentual: (kcal / metaCalorica.meta_kcal) * 100,
+    ok: !alertaCalorias,
+    nota: alertaCalorias
+      ? alertaCalorias.mensagem
+      : `Dentro da meta do dia (piso de segurança: ${metaCalorica.piso_kcal} kcal).`,
+  });
+}
+
+function montarBarraGordura(gorduraG, pesoKg, alertaGordura) {
+  const piso = pisoGorduraDiaria(pesoKg);
+  if (!piso) return "";
+  return montarBarraMeta({
+    rotulo: "Gordura",
+    valor: `${gorduraG.toFixed(1)}g`,
+    meta: `mín ${piso}g`,
+    percentual: (gorduraG / piso) * 100,
+    ok: !alertaGordura,
+    nota: alertaGordura
+      ? alertaGordura.mensagem
+      : `Acima do piso de 0,5g/kg — gordura muito baixa por muito tempo afeta hormônios.`,
+  });
 }
 
 // Único intervalo vivo por vez: se a aba Dieta for remontada (troca de aba
@@ -158,17 +198,19 @@ export async function montarTelaDieta(db) {
       metaProteina,
     });
 
-    // Urgentes primeiro (déficit calórico, gordura baixa); a nota de
-    // calibração e a lacuna de vegetais/fibra não pedem ação imediata, então
-    // ficam por último, juntas.
-    const alertasUrgentes = alertas.filter((a) => a.eixo !== "proteina" && a.eixo !== "fibraEVariedade");
+    // Calorias, proteína e gordura viram barra; o texto de alerta desses três
+    // eixos sai da lista pra não repetir o que a barra já diz. Sobram a nota
+    // de calibração e a lacuna de vegetais/fibra, que não têm barra própria.
+    const alertaCalorias = alertas.find((a) => a.eixo === "calorias");
+    const alertaGordura = alertas.find((a) => a.eixo === "gordura");
     const alertasInformativos = alertas.filter((a) => a.eixo === "fibraEVariedade");
 
     alertasCard.innerHTML = `
       <div class="exercise-head"><div class="exercise-name">Meta calórica: ${metaCalorica.meta_kcal} kcal</div></div>
       <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+        ${montarBarraCalorias(total.kcal, metaCalorica, alertaCalorias)}
         ${barraProteina}
-        ${alertasUrgentes.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
+        ${montarBarraGordura(total.gordura_g, perfil.dadosBasicos.peso_kg, alertaGordura)}
         <div class="prev-hint">${metaCalorica.obs}</div>
         ${alertasInformativos.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
       </div>

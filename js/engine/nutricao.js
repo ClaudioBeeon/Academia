@@ -15,6 +15,13 @@ export function calcularTMB({ sexo, pesoKg, alturaCm, idade }) {
   return Math.round(sexo === "feminino" ? base - 161 : base + 5);
 }
 
+// Piso de gordura: mesma constante que o alerta usa, exportada pra barra da
+// tela poder desenhar "quanto falta" em vez de só avisar quando falha.
+export function pisoGorduraDiaria(pesoKg) {
+  if (!(pesoKg > 0)) return null;
+  return Math.round(pesoKg * GORDURA_PISO_G_POR_KG * 10) / 10;
+}
+
 export function pisoCaloricoSeguranca(tmb) {
   return Math.max(PISO_CALORICO_ABSOLUTO, tmb ?? 0);
 }

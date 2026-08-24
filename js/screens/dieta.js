@@ -158,12 +158,19 @@ export async function montarTelaDieta(db) {
       metaProteina,
     });
 
+    // Urgentes primeiro (déficit calórico, gordura baixa); a nota de
+    // calibração e a lacuna de vegetais/fibra não pedem ação imediata, então
+    // ficam por último, juntas.
+    const alertasUrgentes = alertas.filter((a) => a.eixo !== "proteina" && a.eixo !== "fibraEVariedade");
+    const alertasInformativos = alertas.filter((a) => a.eixo === "fibraEVariedade");
+
     alertasCard.innerHTML = `
       <div class="exercise-head"><div class="exercise-name">Meta calórica: ${metaCalorica.meta_kcal} kcal</div></div>
       <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
         ${barraProteina}
+        ${alertasUrgentes.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
         <div class="prev-hint">${metaCalorica.obs}</div>
-        ${alertas.filter((a) => a.eixo !== "proteina").map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
+        ${alertasInformativos.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
       </div>
     `;
 

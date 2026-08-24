@@ -39,9 +39,6 @@ export async function chamarGemini(prompt, { fetchImpl = globalThis.fetch, apiKe
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          // Desliga "thinking" — sem isso o modelo às vezes gasta todo o
-          // orçamento de tokens pensando e devolve texto final vazio.
-          generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
         }),
       },
     );

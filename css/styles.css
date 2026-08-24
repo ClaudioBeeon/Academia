@@ -147,6 +147,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 .explicacao-execucao { margin: 16px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 14px; }
 .explicacao-execucao summary { font-weight: 700; cursor: pointer; color: var(--ink); }
+.creds-avancado summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--ink-faint); }
 .explicacao-execucao p { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-dim); line-height: 1.5; }
 .explicacao-execucao h5 {
   margin: 14px 0 0; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;

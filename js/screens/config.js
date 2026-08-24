@@ -5,7 +5,7 @@ import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 import { getApiKey, salvarApiKey, getModelo, salvarModelo } from "../ai/gemini.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
-  cadastrar, entrar, sair, getUsuario,
+  cadastrar, entrar, entrarComGoogle, sair, getUsuario,
 } from "../data/supabaseClient.js";
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
 import { getMedidas } from "../data/medidas.js";
@@ -111,17 +111,20 @@ async function criarSecaoSupabase(db) {
         isto aqui só replica.
       </div>
 
-      <form class="creds-form" style="display:grid; gap:10px;">
-        <div class="set-field">
-          <label>URL do projeto Supabase</label>
-          <input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-        </div>
-        <div class="set-field">
-          <label>Chave anon (pública) do projeto</label>
-          <input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
-        </div>
-        <button type="submit" class="swap-pill">Salvar credenciais</button>
-      </form>
+      <details class="creds-avancado">
+        <summary>Usar outro projeto Supabase (avançado)</summary>
+        <form class="creds-form" style="display:grid; gap:10px; margin-top:10px;">
+          <div class="set-field">
+            <label>URL do projeto Supabase</label>
+            <input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+          </div>
+          <div class="set-field">
+            <label>Chave anon (pública) do projeto</label>
+            <input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+          </div>
+          <button type="submit" class="swap-pill">Salvar credenciais</button>
+        </form>
+      </details>
 
       <div class="auth-secao"></div>
 
@@ -158,6 +161,8 @@ async function criarSecaoSupabase(db) {
 
   function montarFormAuth() {
     authSecao.innerHTML = `
+      <button type="button" class="swap-pill google-btn" style="width:100%;">Entrar com Google</button>
+      <div class="prev-hint" style="text-align:center; margin:8px 0;">ou com e-mail e senha</div>
       <form class="auth-form" style="display:grid; gap:10px;">
         <div class="set-field">
           <label>E-mail</label>
@@ -176,6 +181,19 @@ async function criarSecaoSupabase(db) {
     `;
     const formAuth = authSecao.querySelector(".auth-form");
     const erro = authSecao.querySelector(".auth-erro");
+
+    // signInWithOAuth redireciona a página inteira pro Google e volta —
+    // não há nada pra atualizar aqui depois do clique, só tratar se o
+    // Supabase recusar antes mesmo de redirecionar (provider Google
+    // desativado, por exemplo).
+    authSecao.querySelector(".google-btn").addEventListener("click", async () => {
+      erro.textContent = "";
+      try {
+        await entrarComGoogle();
+      } catch (err) {
+        erro.textContent = err.message ?? "Não foi possível entrar com Google.";
+      }
+    });
 
     formAuth.addEventListener("submit", async (event) => {
       event.preventDefault();

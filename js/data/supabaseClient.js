@@ -10,21 +10,30 @@ const CHAVE_URL = "supabaseUrl";
 const CHAVE_ANON_KEY = "supabaseAnonKey";
 const SDK_URL = "https://esm.sh/@supabase/supabase-js@2";
 
+// Fixos no código: é sempre o mesmo projeto pessoal, e a chave anon não é
+// segredo — ela é feita pra ficar exposta no cliente (é o RLS do
+// supabase/schema.sql que protege os dados, não esconder essa chave).
+// Sem isso, reinstalar o PWA (comum no iOS pra pegar atualização) apaga o
+// localStorage e obriga a digitar tudo nas Configurações de novo. Ainda dá
+// pra sobrescrever por ali, mas não é mais obrigatório.
+const URL_PADRAO = "https://ydlzdxqtjxbocwuzurzv.supabase.co";
+const ANON_KEY_PADRAO = "sb_publishable_fE28T99MB-_mqqRRtMp87A_FoFTPpeT";
+
 let clientePromise = null;
 
 export function getUrl() {
   try {
-    return localStorage.getItem(CHAVE_URL) ?? "";
+    return localStorage.getItem(CHAVE_URL) || URL_PADRAO;
   } catch {
-    return "";
+    return URL_PADRAO;
   }
 }
 
 export function getAnonKey() {
   try {
-    return localStorage.getItem(CHAVE_ANON_KEY) ?? "";
+    return localStorage.getItem(CHAVE_ANON_KEY) || ANON_KEY_PADRAO;
   } catch {
-    return "";
+    return ANON_KEY_PADRAO;
   }
 }
 
@@ -80,6 +89,19 @@ export async function entrar(email, senha) {
   const { data, error } = await client.auth.signInWithPassword({ email, password: senha });
   if (error) throw error;
   return data;
+}
+
+// Redireciona pro Google e volta pro app depois — precisa do provider
+// Google ativado em Authentication > Providers no painel do Supabase
+// (com Client ID/Secret do Google Cloud) antes de funcionar.
+export async function entrarComGoogle() {
+  const client = await getClient();
+  if (!client) throw new Error("Configure a sincronização com o Supabase antes.");
+  const { error } = await client.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.href },
+  });
+  if (error) throw error;
 }
 
 export async function sair() {

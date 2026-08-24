@@ -3,7 +3,7 @@ import { get, put } from "../data/db.js";
 import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
-import { interpretarComida, gerarResumoNutricionalDoDia } from "../ai/gemini.js";
+import { interpretarComida, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -54,6 +54,10 @@ export async function montarTelaDieta(db) {
   let dataDeHoje = obterDataLocal();
   let dietaBase = await getDietaBase(db);
   let contextoNutricionalAtual = null;
+  // Reatribuída depois que o card de resumo é montado (mais abaixo) — até lá
+  // é no-op, porque redesenharTotaisEAlertas() já roda antes disso na carga
+  // inicial da tela.
+  let agendarResumoAutomatico = () => {};
 
   if (!dietaBase) {
     main.innerHTML = `<p class="vazio">Sem dieta base cadastrada ainda.</p>`;
@@ -161,6 +165,7 @@ export async function montarTelaDieta(db) {
     `;
 
     contextoNutricionalAtual = { fase: perfil.fase?.atual, total, metaCalorica, metaProteina, alertas };
+    agendarResumoAutomatico();
   }
 
   const REFEICOES_LABELS = { cafeDaManha: "Café da manhã", almoco: "Almoço", cafeDaTarde: "Café da tarde", janta: "Janta" };
@@ -189,7 +194,11 @@ export async function montarTelaDieta(db) {
         btn.style.opacity = selecoes[chave] === opcao.id ? "1" : "0.5";
         btn.addEventListener("click", async () => {
           selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
-          opcoesEl.querySelectorAll(".swap-pill").forEach((b, i) => {
+          // ":scope > span > .swap-pill" pega só os pills de opção (cada um
+          // dentro do seu pillWrap) — o botão "+" de adicionar opção também
+          // tem a classe swap-pill, mas fica solto direto em opcoesEl, sem
+          // span em volta, então não entra aqui.
+          opcoesEl.querySelectorAll(":scope > span > .swap-pill").forEach((b, i) => {
             b.style.opacity = refeicao.opcoes[i].id === opcao.id ? "1" : "0.5";
           });
           await redesenharTotaisEAlertas();
@@ -282,7 +291,11 @@ export async function montarTelaDieta(db) {
   await redesenharTotaisEAlertas();
 
   main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, redesenharTotaisEAlertas));
-  main.appendChild(criarCardResumoIA(() => contextoNutricionalAtual));
+
+  const cardResumo = criarCardResumoIA(() => contextoNutricionalAtual);
+  main.appendChild(cardResumo.elemento);
+  agendarResumoAutomatico = cardResumo.agendar;
+  agendarResumoAutomatico(); // cobre "abrir o app" — a carga inicial já rodou antes deste ponto
 
   if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
   intervaloChecagemDeVirada = setInterval(async () => {
@@ -305,6 +318,14 @@ function montarResultadoEstimativa(alimento) {
 // calculados pelo motor determinístico acima) num parágrafo explicativo,
 // em vez de mais uma lista de números — pensado pra ler de relance no fim
 // do dia e entender o que fazer com a próxima refeição.
+//
+// Gera sozinho (debounced) toda vez que os totais do dia mudam — abrir a
+// aba, marcar uma opção como comida, adicionar algo fora da dieta base —
+// além do botão manual pra forçar de novo quando quiser. O debounce evita
+// disparar uma chamada de API a cada clique quando várias marcações
+// acontecem em sequência rápida.
+const DEBOUNCE_RESUMO_MS = 1200;
+
 function criarCardResumoIA(obterContexto) {
   const card = document.createElement("section");
   card.className = "exercise-card";
@@ -321,12 +342,16 @@ function criarCardResumoIA(obterContexto) {
   const status = card.querySelector(".resumo-ia-status");
   const textoEl = card.querySelector(".resumo-ia-texto");
 
-  botao.addEventListener("click", async () => {
+  async function gerar({ silencioso = false } = {}) {
     const contexto = obterContexto();
     if (!contexto) {
-      status.textContent = "Preencha sua idade acima primeiro — a meta calórica depende dela.";
+      if (!silencioso) status.textContent = "Preencha sua idade acima primeiro — a meta calórica depende dela.";
       return;
     }
+    // Sem chave configurada, gerar automaticamente ficaria só avisando toda
+    // hora que falta chave — deixa o botão manual pra isso, silencioso aqui.
+    if (silencioso && !getApiKey()) return;
+
     status.textContent = "Perguntando à IA...";
     textoEl.textContent = "";
     botao.disabled = true;
@@ -342,9 +367,17 @@ function criarCardResumoIA(obterContexto) {
 
     status.textContent = "";
     textoEl.textContent = resposta.texto.trim();
-  });
+  }
 
-  return card;
+  botao.addEventListener("click", () => gerar());
+
+  let temporizador = null;
+  function agendar() {
+    if (temporizador) clearTimeout(temporizador);
+    temporizador = setTimeout(() => gerar({ silencioso: true }), DEBOUNCE_RESUMO_MS);
+  }
+
+  return { elemento: card, agendar };
 }
 
 function alimentoDaEstimativa(alimentoIA, descricaoDigitada) {

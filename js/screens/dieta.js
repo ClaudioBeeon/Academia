@@ -2,6 +2,7 @@
 import { get, put } from "../data/db.js";
 import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
+import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
 import { interpretarComida, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
 
@@ -295,7 +296,7 @@ export async function montarTelaDieta(db) {
 
   main.appendChild(criarCardComidaLivre(db, () => dataDeHoje, redesenharTotaisEAlertas));
 
-  const cardResumo = criarCardResumoIA(() => contextoNutricionalAtual);
+  const cardResumo = criarCardResumoIA(db, () => dataDeHoje, () => contextoNutricionalAtual);
   main.appendChild(cardResumo.elemento);
   agendarResumoAutomatico = cardResumo.agendar;
   agendarResumoAutomatico(); // cobre "abrir o app" — a carga inicial já rodou antes deste ponto
@@ -327,9 +328,21 @@ function montarResultadoEstimativa(alimento) {
 // além do botão manual pra forçar de novo quando quiser. O debounce evita
 // disparar uma chamada de API a cada clique quando várias marcações
 // acontecem em sequência rápida.
+//
+// A conta gratuita do Gemini tem cota bem curta (20 chamadas/dia no total,
+// somando com a estimativa de comida) — por isso o resultado fica em cache
+// no registro do dia (registrosDiarios), junto com uma "assinatura" dos
+// totais que geraram ele. Só chama a API de novo (automático) quando os
+// totais realmente mudaram desde a última vez; abrir o app sem mudar nada
+// só relê o cache. O botão manual sempre força uma chamada nova.
 const DEBOUNCE_RESUMO_MS = 1200;
 
-function criarCardResumoIA(obterContexto) {
+function assinaturaContexto(contexto) {
+  const { fase, total } = contexto;
+  return [fase, total.kcal.toFixed(0), total.proteina_g.toFixed(0), total.carboidrato_g.toFixed(0), total.gordura_g.toFixed(1)].join("|");
+}
+
+function criarCardResumoIA(db, obterDataDeHoje, obterContexto) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
@@ -345,12 +358,24 @@ function criarCardResumoIA(obterContexto) {
   const status = card.querySelector(".resumo-ia-status");
   const textoEl = card.querySelector(".resumo-ia-texto");
 
-  async function gerar({ silencioso = false } = {}) {
+  async function gerar({ silencioso = false, forcar = false } = {}) {
     const contexto = obterContexto();
     if (!contexto) {
       if (!silencioso) status.textContent = "Preencha sua idade acima primeiro — a meta calórica depende dela.";
       return;
     }
+
+    const dataDeHoje = obterDataDeHoje();
+    const assinatura = assinaturaContexto(contexto);
+    const registro = await getCheckin(db, dataDeHoje);
+    const cache = registro?.resumoNutricionalIA;
+
+    if (!forcar && cache?.assinatura === assinatura) {
+      status.textContent = "";
+      textoEl.textContent = cache.texto;
+      return;
+    }
+
     // Sem chave configurada, gerar automaticamente ficaria só avisando toda
     // hora que falta chave — deixa o botão manual pra isso, silencioso aqui.
     if (silencioso && !getApiKey()) return;
@@ -364,15 +389,18 @@ function criarCardResumoIA(obterContexto) {
     if (!resposta.ok) {
       status.textContent = resposta.motivo === "sem_chave"
         ? "IA indisponível: cadastre sua chave do Gemini em Configurações."
-        : "IA indisponível agora — tente de novo mais tarde.";
+        : resposta.motivo === "erro_api_429"
+          ? "Cota diária da IA esgotada — tenta de novo amanhã, ou ajusta o plano no Google AI Studio."
+          : "IA indisponível agora — tente de novo mais tarde.";
       return;
     }
 
     status.textContent = "";
     textoEl.textContent = resposta.texto.trim();
+    await registrarCheckin(db, dataDeHoje, { resumoNutricionalIA: { texto: resposta.texto.trim(), assinatura } });
   }
 
-  botao.addEventListener("click", () => gerar());
+  botao.addEventListener("click", () => gerar({ forcar: true }));
 
   let temporizador = null;
   function agendar() {

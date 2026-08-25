@@ -126,7 +126,7 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .stat-tile-largo b { font-size: 1.15rem; }
 .stat-tile-largo span { margin-top: 0; }
 
-.carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
+.carrossel-plano { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
 .carrossel-plano::-webkit-scrollbar { display: none; }
 .carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
 .carrossel-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 22px; }

@@ -185,11 +185,6 @@ function montarBlocoAlongamento(db, hoje, alongamento, habito) {
   return card;
 }
 
-const NOME_MODALIDADE_CARDIO = {
-  bicicleta: "Bicicleta", eliptico: "Elíptico", escada: "Escada",
-  caminhada: "Caminhada", corrida: "Corrida",
-};
-
 const NOME_MUSCULO = {
   peito: "Peito", costas: "Costas", biceps: "Bíceps", triceps: "Tríceps",
   ombro: "Ombro (lateral)", deltoide_posterior: "Deltoide posterior",
@@ -200,38 +195,6 @@ const NOME_MUSCULO = {
 
 function nomeDoMusculo(chave) {
   return NOME_MUSCULO[chave] ?? chave.replace(/_/g, " ");
-}
-
-function montarBlocoCardio(db, hoje, cardio, regras, habito) {
-  if (!cardio) return null;
-  const card = document.createElement("section");
-  card.className = "exercise-card bloco-apoio";
-
-  const head = document.createElement("div");
-  head.className = "bloco-apoio-head sem-check";
-  head.innerHTML = `<div><div class="bloco-apoio-titulo"></div><div class="bloco-apoio-sub"></div></div>`;
-  head.querySelector(".bloco-apoio-titulo").textContent =
-    `Cardio — ${NOME_MODALIDADE_CARDIO[cardio.modalidade] ?? cardio.modalidade}`;
-  head.querySelector(".bloco-apoio-sub").textContent =
-    `${cardio.duracaoMin} min · intensidade ${cardio.intensidade} · depois do treino`;
-  head.appendChild(montarBotaoFeito(habito, "cardioFeito", db, hoje));
-  card.appendChild(head);
-
-  if (regras) {
-    const det = document.createElement("details");
-    det.className = "bloco-apoio-lista";
-    const sum = document.createElement("summary");
-    sum.textContent = "Como fazer";
-    det.appendChild(sum);
-    for (const chave of ["ordem", "intensidade", "modalidade", "caminhada"]) {
-      if (!regras[chave]) continue;
-      const p = document.createElement("p");
-      p.textContent = regras[chave];
-      det.appendChild(p);
-    }
-    card.appendChild(det);
-  }
-  return card;
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
@@ -328,12 +291,9 @@ export async function montarTelaFila(db, contexto, callbacks) {
     main.appendChild(item);
   });
 
-  // Cardio e alongamento vêm DEPOIS dos exercícios na tela porque é essa a
-  // ordem da sessão: musculação primeiro (cardio antes rouba a qualidade das
-  // séries), alongamento da frente por último, quando o peitoral está quente.
-  const blocoCardio = montarBlocoCardio(db, hoje, diaDaFicha?.cardio, ficha?.cardioRegras, habitoHoje);
-  if (blocoCardio) main.appendChild(blocoCardio);
-
+  // Alongamento vem DEPOIS dos exercícios — frente do corpo por último,
+  // quando o peitoral já está quente. Cardio não entra mais na fila: é a
+  // tela Início que mostra e registra o cardio prescrito do dia.
   const chaveAlongamento = diaDaFicha?.alongamentoFinal;
   const alongamentoDoDia = chaveAlongamento ? ficha?.alongamentos?.[chaveAlongamento] : null;
   const blocoAlongamento = alongamentoDoDia
@@ -342,13 +302,12 @@ export async function montarTelaFila(db, contexto, callbacks) {
   if (blocoAlongamento) main.appendChild(blocoAlongamento);
 
   // "Finalizar sessão" fechava o dia inteiro como concluído mesmo quando o
-  // cardio ou o alongamento final da ficha ainda não tinham sido marcados —
-  // aquecimento, cardio e alongamento final são partes prescritas da sessão,
-  // não um detalhe opcional que a musculação sozinha substitui.
+  // aquecimento ou o alongamento final da ficha ainda não tinham sido
+  // marcados — são partes prescritas da sessão, não um detalhe opcional que
+  // a musculação sozinha substitui.
   function itensPendentesDaSessao() {
     const pendentes = [];
     if (aquecimentoTemMovimentos && habitoHoje.aquecimentoFeito !== true) pendentes.push("o aquecimento");
-    if (diaDaFicha?.cardio && habitoHoje.cardioFeito !== true) pendentes.push("o cardio");
     if (alongamentoDoDia && habitoHoje.alongamentoFinalFeito !== true) pendentes.push("o alongamento final");
     return pendentes;
   }

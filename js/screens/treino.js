@@ -63,7 +63,11 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
-  const ultimoCardio = cardioRecente[0] ?? null;
+  // "Último cardio" só conta pra hoje se foi de fato lançado hoje — antes o
+  // card mostrava o último registro de qualquer dia (ex.: bicicleta de
+  // ontem) por cima do cardio prescrito de hoje (ex.: escada).
+  const ultimoCardioGeral = cardioRecente[0] ?? null;
+  const cardioDeHojeLogado = ultimoCardioGeral?.data === hoje ? ultimoCardioGeral : null;
   const semanaDoBloco = calcularSemanaDoBloco(inicioDoBloco, hoje);
   const { exerciciosHoje } = prepararSessaoDoDia({
     todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
@@ -133,7 +137,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
-  carrossel.appendChild(montarCardCardio(ultimoCardio, diaDaFichaHoje?.cardio, onIrParaCardio));
+  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
@@ -430,7 +434,7 @@ const NOME_MODALIDADE_CARDIO = {
   beach_tenis: "Beach tênis",
 };
 
-function montarCardCardio(ultimoCardio, cardioDeHoje, onIrParaCardio) {
+function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio) {
   const card = document.createElement("section");
   card.className = "plano-hero";
 
@@ -440,22 +444,22 @@ function montarCardCardio(ultimoCardio, cardioDeHoje, onIrParaCardio) {
   card.appendChild(rotulo);
 
   const titulo = document.createElement("h2");
-  if (ultimoCardio) {
-    titulo.textContent = NOME_MODALIDADE_CARDIO[ultimoCardio.modalidade] ?? ultimoCardio.modalidade;
+  if (cardioLogadoHoje) {
+    titulo.textContent = NOME_MODALIDADE_CARDIO[cardioLogadoHoje.modalidade] ?? cardioLogadoHoje.modalidade;
   } else if (cardioDeHoje) {
     titulo.textContent = NOME_MODALIDADE_CARDIO[cardioDeHoje.modalidade] ?? cardioDeHoje.modalidade;
   } else {
-    titulo.textContent = "Nenhum registro ainda";
+    titulo.textContent = "Nenhum cardio hoje";
   }
   card.appendChild(titulo);
 
   const meta = document.createElement("div");
   meta.className = "meta";
-  if (ultimoCardio && ultimoCardio.duracaoMinutos) {
+  if (cardioLogadoHoje && cardioLogadoHoje.duracaoMinutos) {
     const duracao = document.createElement("span");
-    duracao.innerHTML = `<b>${ultimoCardio.duracaoMinutos}</b> min`;
+    duracao.innerHTML = `<b>${cardioLogadoHoje.duracaoMinutos}</b> min`;
     meta.appendChild(duracao);
-  } else if (ultimoCardio) {
+  } else if (cardioLogadoHoje) {
     const semDuracao = document.createElement("span");
     semDuracao.textContent = "Duração não registrada";
     meta.appendChild(semDuracao);
@@ -467,14 +471,14 @@ function montarCardCardio(ultimoCardio, cardioDeHoje, onIrParaCardio) {
     meta.appendChild(previsto);
   } else {
     const vazio = document.createElement("span");
-    vazio.textContent = "Registre sua primeira sessão";
+    vazio.textContent = "Nenhum cardio prescrito hoje";
     meta.appendChild(vazio);
   }
   card.appendChild(meta);
 
   const botao = document.createElement("button");
   botao.type = "button";
-  botao.textContent = ultimoCardio ? "Ver mais" : "Registrar";
+  botao.textContent = cardioLogadoHoje ? "Ver mais" : "Registrar";
   botao.addEventListener("click", () => {
     if (onIrParaCardio) onIrParaCardio();
   });

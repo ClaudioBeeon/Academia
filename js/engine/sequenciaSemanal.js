@@ -38,9 +38,11 @@ export function proximoDia(numeroAtual) {
 
 export function determinarDiaDaSessao(ultimoRegistro, hoje) {
   if (!ultimoRegistro) return 1;
-  if (ultimoRegistro.data === hoje) {
-    return ultimoRegistro.concluido ? proximoDia(ultimoRegistro.dia) : ultimoRegistro.dia;
-  }
+  // "concluido" não avança o dia sozinho — o hero card e o card de cardio
+  // da Home usam esse dia pra decidir o que mostrar como "hoje", e ambos
+  // têm que continuar corretos (cardio ainda pendente incluído) até a
+  // virada real de data, mesmo depois do usuário terminar os exercícios.
+  if (ultimoRegistro.data === hoje) return ultimoRegistro.dia;
   return proximoDia(ultimoRegistro.dia);
 }
 

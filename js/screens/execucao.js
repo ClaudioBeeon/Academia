@@ -394,6 +394,16 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     descansoEl.classList.add("exec-descanso-oculto");
   }
 
+  // O navegador solta o Wake Lock sozinho assim que a aba sai de foco e não
+  // devolve na volta — por isso isto é chamado tanto ao iniciar série/descanso
+  // quanto ao reabrir o app, senão a tela só ficava acesa até o primeiro
+  // minimizar.
+  function pedirWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    if (wakeLockAtivo && !wakeLockAtivo.released) return;
+    navigator.wakeLock.request("screen").then((lock) => { wakeLockAtivo = lock; }).catch(() => {});
+  }
+
   function pararTudo() {
     pararDescanso();
     pararTrabalho();
@@ -432,9 +442,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     atualizarCronoTrabalho();
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
 
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock.request("screen").then((lock) => { wakeLockAtivo = lock; }).catch(() => {});
-    }
+    pedirWakeLock();
 
     renderizarTudo();
   }
@@ -468,9 +476,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
     cronometroAtivo = cronometro;
 
-    if ("wakeLock" in navigator) {
-      navigator.wakeLock.request("screen").then((lock) => { wakeLockAtivo = lock; }).catch(() => {});
-    }
+    pedirWakeLock();
 
     cronometro.iniciar();
   }
@@ -484,6 +490,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     if (document.visibilityState === "hidden") return;
     if (cronometroAtivo) cronometroAtivo.resincronizar();
     if (inicioTrabalhoTs != null) atualizarCronoTrabalho();
+    if (cronometroAtivo || inicioTrabalhoTs != null) pedirWakeLock();
   }
   document.addEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
   window.addEventListener("focus", aoVoltarAoPrimeiroPlano);

@@ -146,6 +146,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
 
   async function pedirWakeLock() {
     if (!("wakeLock" in navigator)) return;
+    if (wakeLock && !wakeLock.released) return;
     try { wakeLock = await navigator.wakeLock.request("screen"); } catch { /* negado: segue sem */ }
   }
   function liberarWakeLock() {

@@ -331,9 +331,25 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-nota { font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); margin-bottom: 4px; }
 .exec-nota b { color: var(--ink); font-family: var(--font-mono); font-weight: 800; }
 
-.exec-crono-trabalho { text-align: center; padding: 18px 0 4px; }
-.exec-crono-trabalho .t { font-family: var(--font-mono); font-size: 2.6rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
-.exec-crono-trabalho .l { margin-top: 8px; font-size: 0.78rem; color: var(--ink-dim); }
+/* Pill flutuante do cronômetro de trabalho (série em andamento) — mesma
+   posição/tamanho/sombra do pill de descanso logo abaixo, mas em preto, pra
+   ficar claro que é um estado diferente (contando pra cima, não pra baixo).
+   Ao terminar a série, ele pisca verde (.concluido) e desliza pra fora
+   (.saindo) antes do pill de descanso (que já é verde) tomar o mesmo lugar —
+   ver finalizarTrabalhoERegistrar em execucao.js. */
+.exec-crono-trabalho {
+  position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 12; max-width: 406px; margin: 0 auto;
+  background: #000; color: #fff; border-radius: 22px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.26s ease, opacity 0.26s ease;
+}
+.exec-crono-trabalho.exec-crono-trabalho-oculto { display: none; }
+.exec-crono-trabalho .txt { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.68; }
+.exec-crono-trabalho .t { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; margin-left: auto; }
+.exec-crono-trabalho.concluido { background: var(--accent); color: var(--accent-ink); }
+.exec-crono-trabalho.saindo { transform: translateY(-16px); opacity: 0; }
 
 /* Fixa acima do rodapé — não some com o scroll, ao contrário do cartão
    antigo, que ficava inline na lista e saía de vista com 5 séries acima. */

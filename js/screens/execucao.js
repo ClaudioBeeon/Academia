@@ -48,6 +48,10 @@ function arredondarIncremento(valor, passo) {
   return Math.round(valor / passo) * passo;
 }
 
+function esperar(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function montarTelaExecucao(db, contexto, callbacks) {
   const { exercicio, indice, total, todosExercicios, protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
   const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados } = callbacks;
@@ -190,10 +194,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   main.appendChild(notaEl);
 
   const cronoTrabalhoEl = document.createElement("div");
-  cronoTrabalhoEl.className = "exec-crono-trabalho";
-  cronoTrabalhoEl.innerHTML = `<div class="t">00:00</div><div class="l">A tela fica acesa até você terminar</div>`;
-  cronoTrabalhoEl.style.display = "none";
-  main.appendChild(cronoTrabalhoEl);
+  cronoTrabalhoEl.className = "exec-crono-trabalho exec-crono-trabalho-oculto";
+  cronoTrabalhoEl.innerHTML = `<div class="txt">Em andamento</div><div class="t">00:00</div>`;
+  root.appendChild(cronoTrabalhoEl);
 
   const progressaoHint = document.createElement("div");
   progressaoHint.className = "prev-hint";
@@ -438,7 +441,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     campoAtivo = "reps";
 
     inicioTrabalhoTs = Date.now();
-    cronoTrabalhoEl.style.display = "";
+    cronoTrabalhoEl.classList.remove("exec-crono-trabalho-oculto", "concluido", "saindo");
     atualizarCronoTrabalho();
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
 
@@ -450,9 +453,20 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   async function finalizarTrabalhoERegistrar() {
     const numero = numeroEmAndamento;
     pararTrabalho();
-    cronoTrabalhoEl.style.display = "none";
     numeroEmAndamento = null;
     campoAtivo = "carga";
+
+    // Feedback de "série registrada": o pill preto pisca verde, desliza pra
+    // fora, e só então o pill de descanso (já verde, mesma posição) entra —
+    // dá a sensação de um pill virando o outro, não de dois cronômetros
+    // desconectados.
+    cronoTrabalhoEl.classList.add("concluido");
+    await esperar(220);
+    cronoTrabalhoEl.classList.add("saindo");
+    await esperar(260);
+    cronoTrabalhoEl.classList.add("exec-crono-trabalho-oculto");
+    cronoTrabalhoEl.classList.remove("concluido", "saindo");
+
     await registrarSerieAtual(numero);
   }
 

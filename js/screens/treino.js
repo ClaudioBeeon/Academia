@@ -1,7 +1,8 @@
 // js/screens/treino.js
-import { getAll } from "../data/db.js";
+import { getAll, get } from "../data/db.js";
 import { getSeriesDoDia } from "../data/historico.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
+import { registrarCardio } from "../data/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
@@ -10,8 +11,11 @@ import { getCardioRecente } from "../data/cardio.js";
 import { getFicha, getInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
+import { abrirNovaAtividade } from "./novaAtividade.js";
+import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 
 const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
+const DIAS_SEMANA_EXTENSO = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
 function saudacaoPorHorario(agora = new Date()) {
   const hora = agora.getHours();
@@ -27,6 +31,11 @@ const ICONE_HALTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const ICONE_CHAMA = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 9a5 5 0 0 1-10 0c0-1.5.7-2.8.7-2.8S6 11 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></svg>`;
 const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
 const ICONE_RAIO = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>`;
+const ICONE_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>`;
+const ICONE_CAPSULA = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="16" height="6" rx="3" transform="rotate(-40 12 12)"/><line x1="9" y1="9" x2="15" y2="15" transform="rotate(-40 12 12)"/></svg>`;
+const ICONE_LUA = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg>`;
+const ICONE_GOTA = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c4 5 7 9 7 13a7 7 0 0 1-14 0c0-4 3-8 7-13z"/></svg>`;
+const ICONE_TACA = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l-1 6a5 5 0 0 1-10 0L6 3z"/><path d="M12 14v6M9 20h6"/></svg>`;
 
 function obterDataLocal() {
   const agora = new Date();
@@ -36,18 +45,20 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, onAbrirDia } = {}) {
+export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
-  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco] = await Promise.all([
+  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco, habito, perfil] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
     getCardioRecente(db, 1),
     getFicha(db),
     getInicioDoBloco(db),
+    getHabito(db, hoje),
+    get(db, "perfil", "1.0"),
   ]);
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
@@ -57,6 +68,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const { exerciciosHoje } = prepararSessaoDoDia({
     todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
   });
+  const controladorHabitos = criarControladorHabitos(db, hoje, habito ?? {});
 
   const root = document.createElement("div");
   root.className = "tela-treino";
@@ -65,18 +77,35 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   header.className = "top greeting";
   header.innerHTML = `
     <div>
-      <div class="date-label">${saudacaoPorHorario()} 👋</div>
-      <div class="day-title">Pronto pra treinar?</div>
+      <div class="day-title">${saudacaoPorHorario()} 👋</div>
+      <div class="date-label">${DIAS_SEMANA_EXTENSO[new Date().getDay()]} · Dia ${diaDaSessao} do ciclo</div>
     </div>
     <div class="icon-row">
-      <button type="button" class="icon-btn" aria-label="Notificações">${ICONE_SINO}</button>
-      <button type="button" class="icon-btn lime" aria-label="Adicionar">${ICONE_MAIS}</button>
+      <button type="button" class="icon-btn" aria-label="Notificações">${ICONE_SINO}${statusPermissao() === "default" ? '<i class="badge-dot" aria-hidden="true"></i>' : ""}</button>
+      <button type="button" class="icon-btn lime" aria-label="Nova atividade">${ICONE_MAIS}</button>
     </div>
   `;
   root.appendChild(header);
 
+  const sinoBtn = header.querySelector('[aria-label="Notificações"]');
+  sinoBtn.addEventListener("click", async () => {
+    if (statusPermissao() !== "default") return;
+    await pedirPermissaoNotificacao();
+    sinoBtn.querySelector(".badge-dot")?.remove();
+  });
+
+  const addBtn = header.querySelector('[aria-label="Nova atividade"]');
+  addBtn.addEventListener("click", async () => {
+    const resultado = await abrirNovaAtividade(perfil?.dadosBasicos?.peso_kg);
+    if (!resultado) return;
+    await registrarCardio(db, { data: hoje, ...resultado, mesmoDiaDeTreino: false });
+    if (onAtividadeAdicionada) onAtividadeAdicionada();
+  });
+
   const main = document.createElement("main");
   root.appendChild(main);
+
+  main.appendChild(montarChipsHabitos(controladorHabitos));
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
   // A ficha traz a duração real de cada dia (séries × descanso prescrito). Só
@@ -116,15 +145,115 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
     }));
   }
   main.appendChild(carrossel);
+  main.appendChild(montarDotsCarrossel(carrossel));
 
   main.appendChild(montarCardAtividade(atividade));
 
   const cardPausa = await montarCardPausaPostural(db, hoje, ficha?.pausaPostural);
   if (cardPausa) main.appendChild(cardPausa);
 
-  main.appendChild(await montarCardHabitos(db, hoje));
+  main.appendChild(montarCardHabitos(controladorHabitos));
 
   return root;
+}
+
+// Estado compartilhado dos hábitos do dia entre os chips do topo e o card
+// detalhado mais abaixo — evita os dois ficarem dessincronizados depois de
+// um toque em qualquer um dos dois lugares.
+function criarControladorHabitos(db, hoje, habitoInicial) {
+  const habito = { ...habitoInicial };
+  const assinantes = { creatina: [], alcool: [], sonoOntem: [], hidratacao: [] };
+
+  function assinar(campo, aoMudar) {
+    assinantes[campo].push(aoMudar);
+    aoMudar(habito[campo]);
+  }
+
+  async function definir(campo, valor) {
+    habito[campo] = valor;
+    await registrarHabito(db, hoje, { [campo]: valor });
+    for (const aoMudar of assinantes[campo]) aoMudar(valor);
+  }
+
+  return { habito, assinar, definir };
+}
+
+function montarDotsCarrossel(carrossel) {
+  const dots = document.createElement("div");
+  dots.className = "carrossel-dots";
+  dots.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < carrossel.children.length; i++) {
+    const dot = document.createElement("i");
+    if (i === 0) dot.classList.add("on");
+    dots.appendChild(dot);
+  }
+
+  let aguardandoFrame = false;
+  carrossel.addEventListener("scroll", () => {
+    if (aguardandoFrame) return;
+    aguardandoFrame = true;
+    requestAnimationFrame(() => {
+      const primeiroCard = carrossel.children[0];
+      const larguraCard = primeiroCard.getBoundingClientRect().width + 12;
+      const indice = Math.round(carrossel.scrollLeft / larguraCard);
+      dots.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === indice));
+      aguardandoFrame = false;
+    });
+  }, { passive: true });
+
+  return dots;
+}
+
+const ICONES_HABITO = { creatina: ICONE_CAPSULA, sonoOntem: ICONE_LUA, hidratacao: ICONE_GOTA, alcool: ICONE_TACA };
+
+function criarChipToggle(controlador, campo, rotulo) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "habito-chip";
+  chip.innerHTML = `<span class="ring" aria-hidden="true"></span><span class="txt">${rotulo}</span>`;
+  const anel = chip.querySelector(".ring");
+  chip.addEventListener("click", () => controlador.definir(campo, !controlador.habito[campo]));
+  controlador.assinar(campo, (valor) => {
+    chip.classList.toggle("done", valor === true);
+    chip.setAttribute("aria-pressed", String(valor === true));
+    anel.innerHTML = valor === true ? ICONE_CHECK : ICONES_HABITO[campo];
+  });
+  return chip;
+}
+
+function criarChipCiclo(controlador, campo, rotuloBase, opcoes) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "habito-chip";
+  chip.innerHTML = `<span class="ring" aria-hidden="true">${ICONES_HABITO[campo]}</span><span class="txt">${rotuloBase}</span>`;
+  const txt = chip.querySelector(".txt");
+  chip.addEventListener("click", () => {
+    const indiceAtual = opcoes.findIndex(([valor]) => valor === controlador.habito[campo]);
+    const proximo = opcoes[(indiceAtual + 1) % opcoes.length][0];
+    controlador.definir(campo, proximo);
+  });
+  controlador.assinar(campo, (valor) => {
+    const opcao = opcoes.find(([v]) => v === valor);
+    chip.classList.toggle("done", !!opcao);
+    txt.textContent = opcao ? opcao[1] : rotuloBase;
+  });
+  return chip;
+}
+
+// Álcool por último — é o hábito menos frequente dos quatro, não precisa do
+// primeiro toque disponível na fileira.
+function montarChipsHabitos(controlador) {
+  const linha = document.createElement("div");
+  linha.className = "habito-chips";
+  linha.appendChild(criarChipToggle(controlador, "creatina", "Creatina"));
+  linha.appendChild(criarChipCiclo(controlador, "sonoOntem", "Sono", [
+    ["bom", "Sono bom"], ["medio", "Sono médio"], ["ruim", "Sono ruim"],
+  ]));
+  linha.appendChild(criarChipCiclo(controlador, "hidratacao", "Água", [
+    ["clara", "Água clara"], ["media", "Água média"], ["escura", "Água escura"],
+  ]));
+  linha.appendChild(criarChipToggle(controlador, "alcool", "Álcool"));
+  return linha;
 }
 
 function horaAgora(agora = new Date()) {
@@ -209,7 +338,13 @@ async function montarCardPausaPostural(db, hoje, pausaPostural) {
   return card;
 }
 
-async function montarCardHabitos(db, hoje) {
+const OPCOES_AGUA = [
+  ["clara", "Clara", "Urina clara ao longo do dia — hidratação boa."],
+  ["media", "Amarela", "Amarelo médio — dá pra beber um pouco mais."],
+  ["escura", "Escura", "Urina escura — beba mais água hoje."],
+];
+
+function montarCardHabitos(controlador) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Hábitos de hoje</div></div>`;
@@ -219,8 +354,6 @@ async function montarCardHabitos(db, hoje) {
   corpo.style.cssText = "padding:0 18px 18px; display:flex; flex-direction:column; gap:12px;";
   card.appendChild(corpo);
 
-  const habito = (await getHabito(db, hoje)) ?? {};
-
   const linhaToggle = (campo, rotulo) => {
     const linha = document.createElement("div");
     linha.style.cssText = "display:flex; align-items:center; justify-content:space-between;";
@@ -228,20 +361,16 @@ async function montarCardHabitos(db, hoje) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "swap-pill";
-    const atualizarTexto = (valor) => { btn.textContent = valor === true ? "Sim" : valor === false ? "Não" : "Marcar"; };
-    atualizarTexto(habito[campo]);
-    btn.addEventListener("click", async () => {
-      const novoValor = !habito[campo];
-      habito[campo] = novoValor;
-      await registrarHabito(db, hoje, { [campo]: novoValor });
-      atualizarTexto(novoValor);
+    btn.addEventListener("click", () => controlador.definir(campo, !controlador.habito[campo]));
+    controlador.assinar(campo, (valor) => {
+      btn.textContent = valor === true ? "Sim" : valor === false ? "Não" : "Marcar";
+      btn.classList.toggle("selecionada", valor === true);
     });
     linha.appendChild(btn);
     return linha;
   };
 
   corpo.appendChild(linhaToggle("creatina", "Creatina hoje"));
-  corpo.appendChild(linhaToggle("alcool", "Álcool hoje"));
 
   const linhaSono = document.createElement("div");
   linhaSono.innerHTML = `<span>Sono de ontem</span>`;
@@ -252,12 +381,8 @@ async function montarCardHabitos(db, hoje) {
     btn.type = "button";
     btn.className = "swap-pill";
     btn.textContent = rotulo;
-    btn.style.opacity = habito.sonoOntem === valor ? "1" : "0.5";
-    btn.addEventListener("click", async () => {
-      habito.sonoOntem = valor;
-      await registrarHabito(db, hoje, { sonoOntem: valor });
-      opcoesSono.querySelectorAll("button").forEach((b) => { b.style.opacity = b === btn ? "1" : "0.5"; });
-    });
+    btn.addEventListener("click", () => controlador.definir("sonoOntem", valor));
+    controlador.assinar("sonoOntem", (valorAtual) => btn.classList.toggle("selecionada", valorAtual === valor));
     opcoesSono.appendChild(btn);
   }
   linhaSono.appendChild(opcoesSono);
@@ -270,35 +395,26 @@ async function montarCardHabitos(db, hoje) {
   linhaAgua.innerHTML = `<span>Hidratação hoje</span>`;
   const opcoesAgua = document.createElement("div");
   opcoesAgua.style.cssText = "display:flex; gap:8px; margin-top:6px;";
-  const OPCOES_AGUA = [
-    ["clara", "Clara", "Urina clara ao longo do dia — hidratação boa."],
-    ["media", "Amarela", "Amarelo médio — dá pra beber um pouco mais."],
-    ["escura", "Escura", "Urina escura — beba mais água hoje."],
-  ];
   const notaAgua = document.createElement("div");
   notaAgua.className = "prev-hint";
   notaAgua.style.marginTop = "6px";
-  const atualizarNotaAgua = (valor) => {
-    const opcao = OPCOES_AGUA.find(([v]) => v === valor);
-    notaAgua.textContent = opcao ? opcao[2] : "Marque pela cor da urina — é mais útil que contar litros.";
-  };
   for (const [valor, rotulo] of OPCOES_AGUA) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "swap-pill";
     btn.textContent = rotulo;
-    btn.style.opacity = habito.hidratacao === valor ? "1" : "0.5";
-    btn.addEventListener("click", async () => {
-      habito.hidratacao = valor;
-      await registrarHabito(db, hoje, { hidratacao: valor });
-      opcoesAgua.querySelectorAll("button").forEach((b) => { b.style.opacity = b === btn ? "1" : "0.5"; });
-      atualizarNotaAgua(valor);
-    });
+    btn.addEventListener("click", () => controlador.definir("hidratacao", valor));
+    controlador.assinar("hidratacao", (valorAtual) => btn.classList.toggle("selecionada", valorAtual === valor));
     opcoesAgua.appendChild(btn);
   }
-  atualizarNotaAgua(habito.hidratacao);
+  controlador.assinar("hidratacao", (valorAtual) => {
+    const opcao = OPCOES_AGUA.find(([v]) => v === valorAtual);
+    notaAgua.textContent = opcao ? opcao[2] : "Marque pela cor da urina — é mais útil que contar litros.";
+  });
   linhaAgua.append(opcoesAgua, notaAgua);
   corpo.appendChild(linhaAgua);
+
+  corpo.appendChild(linhaToggle("alcool", "Álcool hoje"));
 
   return card;
 }
@@ -309,6 +425,9 @@ const NOME_MODALIDADE_CARDIO = {
   escada: "Escada",
   caminhada: "Caminhada",
   corrida: "Corrida",
+  patins: "Patins",
+  volei_praia: "Vôlei de praia",
+  beach_tenis: "Beach tênis",
 };
 
 function montarCardCardio(ultimoCardio, cardioDeHoje, onIrParaCardio) {
@@ -402,19 +521,19 @@ function montarCardAtividade(atividade) {
   section.appendChild(cabecalho);
 
   const grid = document.createElement("div");
-  grid.className = "stats-grid";
+  grid.className = "stats-grid com-destaque";
+  grid.appendChild(criarStatTile(ICONE_RAIO, String(atividade.diasSeguidos), "Dias seguidos", "stat-tile-destaque"));
   grid.appendChild(criarStatTile(ICONE_HALTER, String(atividade.treinosEsteMes), "Treinos este mês"));
   grid.appendChild(criarStatTile(ICONE_CHAMA, String(atividade.seriesEstaSemana), "Séries esta semana"));
-  grid.appendChild(criarStatTile(ICONE_RELOGIO, `~${formatarMinutosAtivos(atividade.minutosAtivosEstaSemana)}`, "Tempo ativo (estimado)"));
-  grid.appendChild(criarStatTile(ICONE_RAIO, String(atividade.diasSeguidos), "Dias seguidos"));
+  grid.appendChild(criarStatTile(ICONE_RELOGIO, `~${formatarMinutosAtivos(atividade.minutosAtivosEstaSemana)}`, "Tempo ativo (estimado)", "stat-tile-largo"));
   section.appendChild(grid);
 
   return section;
 }
 
-function criarStatTile(icone, valor, rotulo) {
+function criarStatTile(icone, valor, rotulo, classeExtra = "") {
   const tile = document.createElement("div");
-  tile.className = "stat-tile";
+  tile.className = classeExtra ? `stat-tile ${classeExtra}` : "stat-tile";
   const ic = document.createElement("div");
   ic.className = "ic";
   ic.innerHTML = icone;

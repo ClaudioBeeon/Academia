@@ -54,13 +54,13 @@ body {
    elemento tocável do app — cartões, pills, botões, chips. */
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
-.set-ring, .carga-sheet-acoes button {
+.set-ring, .carga-sheet-acoes button, .habito-chip {
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
 .plano-hero.clicavel:active, .exec-carga-pill:active:not(:disabled),
-.exec-footer-primary:active, .exec-footer-sq:active {
+.exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active {
   transform: scale(0.96);
   opacity: 0.88;
 }
@@ -73,10 +73,30 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .vazio { color: var(--ink-faint); padding: 20px 0; }
 
 .icon-row { display: flex; gap: 9px; flex: 0 0 auto; }
-.icon-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: none; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
+.icon-btn { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--card); border: none; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto; }
 .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn.lime { background: var(--accent); color: var(--accent-ink); }
 .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.badge-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--card); }
+
+/* Chips de hábito — acesso rápido logo abaixo do cabeçalho */
+.habito-chips { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 18px; scrollbar-width: none; }
+.habito-chips::-webkit-scrollbar { display: none; }
+.habito-chip {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 7px;
+  background: var(--card); border: none; border-radius: 999px;
+  padding: 7px 14px 7px 7px; min-height: 38px;
+  font-size: 0.76rem; font-weight: 700; color: var(--ink-dim);
+  cursor: pointer; font-family: var(--font-display);
+}
+.habito-chip .ring {
+  width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--card-2); display: flex; align-items: center; justify-content: center;
+}
+.habito-chip .ring svg { width: 11px; height: 11px; }
+.habito-chip.done { color: var(--ink); }
+.habito-chip.done .ring { background: var(--accent); color: var(--accent-ink); }
+.habito-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .plano-hero { background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 20px; }
 .plano-hero .rotulo { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.62; }
@@ -91,16 +111,27 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .plano-hero.alt button { background: var(--accent); color: var(--accent-ink); }
 
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.stats-grid.com-destaque { grid-template-columns: 1.3fr 1fr; }
 .stat-tile { background: var(--card); border-radius: 20px; padding: 15px; }
 .stat-tile .ic { width: 30px; height: 30px; border-radius: 9px; background: var(--card-2); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 11px; }
 .stat-tile .ic svg { width: 15px; height: 15px; }
 .stat-tile b { display: block; font-family: var(--font-mono); font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
 .stat-tile b.stat-tile-texto { font-size: 0.82rem; font-family: var(--font-display); font-weight: 700; }
 .stat-tile span { display: block; font-size: 0.72rem; color: var(--ink-dim); font-weight: 500; margin-top: 7px; }
+.stat-tile-destaque { grid-row: span 2; display: flex; flex-direction: column; justify-content: space-between; }
+.stat-tile-destaque .ic { background: color-mix(in srgb, var(--accent) 16%, transparent); margin-bottom: 0; }
+.stat-tile-destaque b { font-size: 2.3rem; }
+.stat-tile-largo { grid-column: 1 / -1; display: flex; align-items: center; gap: 11px; }
+.stat-tile-largo .ic { margin-bottom: 0; }
+.stat-tile-largo b { font-size: 1.15rem; }
+.stat-tile-largo span { margin-top: 0; }
 
-.carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 22px; }
+.carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
 .carrossel-plano::-webkit-scrollbar { display: none; }
 .carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
+.carrossel-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 22px; }
+.carrossel-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--card-2); transition: width 0.2s ease, background 0.2s ease; }
+.carrossel-dots i.on { width: 15px; border-radius: 3px; background: var(--accent); }
 .atividade-secao { margin-bottom: 20px; }
 .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .shead h4 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
@@ -342,6 +373,22 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content { paddi
 .carga-sheet-acoes button { flex: 1; min-height: 48px; border-radius: 999px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
 .carga-sheet-cancelar { background: var(--card-2); color: var(--ink-dim); }
 .carga-sheet-confirmar { background: var(--accent); color: var(--accent-ink); }
+
+/* Folha "Nova atividade" (js/screens/novaAtividade.js) — mesmo padrão de
+   folha do seletor de carga, com um formulário no lugar do slider. */
+.atividade-sheet { align-items: stretch; padding-top: 18px; }
+.atividade-sheet h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 16px; text-align: center; text-transform: none; }
+.atividade-form { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+.atividade-form select, .atividade-form input[type="text"], .atividade-form input[type="number"] {
+  width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 12px; padding: 11px 12px; font-family: var(--font-display); font-size: 0.9rem;
+}
+.atividade-form input[type="number"] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.atividade-form select:focus-visible, .atividade-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.atividade-linha { display: flex; gap: 10px; }
+.atividade-linha .set-field { flex: 1; }
+.atividade-estimativa { min-height: 1.1em; font-size: 0.8rem; color: var(--ink-dim); text-align: center; }
+.atividade-estimativa b { color: var(--accent); font-family: var(--font-mono); font-weight: 800; }
 
 /* Popup de perguntas diárias — mesma folha do seletor de carga, conteúdo próprio */
 .perguntas-sheet { padding-top: 18px; align-items: stretch; }

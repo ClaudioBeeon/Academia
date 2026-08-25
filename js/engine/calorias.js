@@ -18,6 +18,9 @@ const MET_POR_MODALIDADE_CARDIO = {
   escada: 8.0,
   caminhada: 3.5,
   corrida: 9.8,
+  patins: 7.0,
+  volei_praia: 8.0,
+  beach_tenis: 7.3,
 };
 const MET_CARDIO_PADRAO = 6.0;
 

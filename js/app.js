@@ -121,6 +121,7 @@ function renderShell(db) {
             diaForcado: numero,
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),
+          onAtividadeAdicionada: () => renderTab("hoje"),
         }), { direcao });
         return;
       }

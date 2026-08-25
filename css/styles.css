@@ -359,8 +359,63 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-footer-primary { flex: 1; min-height: 52px; border: none; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-family: inherit; font-weight: 800; font-size: 1rem; cursor: pointer; }
 .exec-footer-primary:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 
-body:has(.tela-execucao) #tab-bar, body:has(.tela-fila) #tab-bar { display: none; }
-body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content { padding-bottom: 0; }
+body:has(.tela-execucao) #tab-bar, body:has(.tela-fila) #tab-bar, body:has(.tela-cardio) #tab-bar { display: none; }
+body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:has(.tela-cardio) #tab-content { padding-bottom: 0; }
+
+/* Cronômetro do cardio do dia (js/screens/cardioTimer.js) */
+.tela-cardio main { align-items: center; padding-top: 26px; }
+.cardio-anel { position: relative; display: inline-block; line-height: 0; }
+.cardio-anel .progresso { transition: stroke-dashoffset 0.4s linear; }
+.cardio-anel .centro {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; line-height: 1;
+}
+.cardio-anel .rel {
+  font-family: var(--font-mono); font-size: 3.1rem; font-weight: 800;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.04em;
+}
+.cardio-anel .sub { margin-top: 10px; font-size: 0.78rem; color: var(--ink-faint); font-weight: 600; }
+.tela-cardio.cardio-fim .cardio-anel .rel { color: var(--accent); }
+
+.cardio-controles { display: flex; align-items: center; gap: 10px; margin-top: 30px; }
+.cardio-ajuste {
+  min-width: 74px; min-height: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: transparent; color: var(--ink-dim); font-family: var(--font-display);
+  font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.cardio-ajuste:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cardio-play {
+  min-width: 132px; min-height: 52px; border-radius: 999px; border: none;
+  background: var(--accent); color: var(--accent-ink); font-family: var(--font-display);
+  font-size: 0.92rem; font-weight: 800; cursor: pointer;
+}
+.cardio-play.rodando { background: var(--card-2); color: var(--ink); }
+.cardio-play:disabled { opacity: 0.55; cursor: default; }
+.cardio-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.cardio-nota { margin: 20px 0 0; font-size: 0.78rem; color: var(--ink-faint); text-align: center; line-height: 1.5; }
+
+.cardio-intensidade { margin-top: 26px; width: 100%; }
+.cardio-intensidade .rot {
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; text-align: center;
+}
+.cardio-intensidade .opcoes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.cardio-intensidade .swap-pill { font-size: 0.78rem; padding: 8px 12px; }
+
+.tela-cardio .foot { padding: 22px 0 24px; }
+.cardio-encerrar {
+  width: 100%; min-height: 50px; border: none; border-radius: 999px;
+  background: var(--card-2); color: var(--ink); font-family: var(--font-display);
+  font-size: 0.88rem; font-weight: 800; cursor: pointer;
+}
+.tela-cardio.cardio-fim .cardio-encerrar { background: var(--accent); color: var(--accent-ink); }
+.cardio-encerrar:disabled { opacity: 0.6; cursor: default; }
+.cardio-encerrar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cardio-anel .progresso { transition: none; }
+}
 
 /* Seletor de carga: folha modal com barra deslizável vertical (estilo volume do iOS) */
 .carga-sheet-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0); display: flex; align-items: flex-end; justify-content: center; z-index: 50; transition: background-color 0.28s ease; }

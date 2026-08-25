@@ -47,10 +47,19 @@ export function criarCronometro({ duracaoInicialSegundos, aoAtualizar, aoFinaliz
     alvoTimestamp = null;
   }
 
+  // Encurtar o tempo até zero encerra o cronômetro, igual a deixar ele
+  // chegar lá sozinho. Sem isso, apertar "−30" até o fim parava o relógio
+  // em 00:00 sem nunca disparar aoFinalizar: resincronizar() enxergava o
+  // restante já em 0, considerava que nada tinha mudado e voltava cedo —
+  // então a barra de descanso ficava presa na tela.
   function ajustar(deltaSegundos) {
     restante = Math.max(0, restante + deltaSegundos);
     if (alvoTimestamp != null) alvoTimestamp = Date.now() + restante * 1000;
     aoAtualizar(restante);
+    if (restante <= 0) {
+      parar();
+      aoFinalizar();
+    }
   }
 
   return { iniciar, parar, ajustar, tick, resincronizar, obterRestante: () => restante };

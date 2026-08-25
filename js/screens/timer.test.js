@@ -40,6 +40,25 @@ test("ajustar soma segundos e nunca deixa negativo", () => {
   assert.deepEqual(atualizacoes, [40, 0]);
 });
 
+test("ajustar até zero finaliza e limpa o intervalo", () => {
+  let finalizou = false;
+  let intervaloLimpo = null;
+  const cronometro = criarCronometro({
+    duracaoInicialSegundos: 30,
+    aoAtualizar: () => {},
+    aoFinalizar: () => { finalizou = true; },
+  });
+  cronometro.iniciar(() => 456);
+  cronometro.ajustar(-30);
+  assert.equal(cronometro.obterRestante(), 0);
+  assert.equal(finalizou, true, "encurtar o tempo até zero precisa disparar aoFinalizar");
+
+  // Depois de finalizado, parar() não tem mais intervalo pra limpar — é o
+  // próprio ajustar() que já encerrou o setInterval.
+  cronometro.parar((id) => { intervaloLimpo = id; });
+  assert.equal(intervaloLimpo, null);
+});
+
 test("iniciar usa a implementação de setInterval injetada", () => {
   let callback = null;
   let intervalMs = null;

@@ -45,7 +45,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
+export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -137,7 +137,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onComecarTreino, on
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
-  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio));
+  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
@@ -434,7 +434,7 @@ const NOME_MODALIDADE_CARDIO = {
   beach_tenis: "Beach tênis",
 };
 
-function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio) {
+function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onIniciarCardio) {
   const card = document.createElement("section");
   card.className = "plano-hero";
 
@@ -476,11 +476,16 @@ function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio) {
   }
   card.appendChild(meta);
 
+  // Com cardio prescrito e ainda não feito, o botão abre o cronômetro da
+  // sessão em vez de mandar pra tela de lançamento manual — registrar vem
+  // depois, no fim do tempo, com os minutos que realmente rolaram.
+  const podeIniciar = !cardioLogadoHoje && cardioDeHoje;
   const botao = document.createElement("button");
   botao.type = "button";
-  botao.textContent = cardioLogadoHoje ? "Ver mais" : "Registrar";
+  botao.textContent = cardioLogadoHoje ? "Ver mais" : podeIniciar ? "Iniciar" : "Registrar";
   botao.addEventListener("click", () => {
-    if (onIrParaCardio) onIrParaCardio();
+    if (podeIniciar && onIniciarCardio) onIniciarCardio(cardioDeHoje);
+    else if (onIrParaCardio) onIrParaCardio();
   });
   card.appendChild(botao);
 

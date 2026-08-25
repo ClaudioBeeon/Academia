@@ -139,7 +139,11 @@ function renderShell(db) {
         return;
       }
       if (tabName === "divisao") {
-        await trocarConteudo(content, () => montarTelaDivisao(db), { direcao });
+        await trocarConteudo(content, () => montarTelaDivisao(db, {
+          onAbrirHistoricoTreinos: () => trocarConteudo(content, () => montarTelaHistoricoSessoes(db, {
+            aoVoltar: () => renderTab("divisao", "voltar"),
+          }), { direcao: "avancar" }),
+        }), { direcao });
         return;
       }
       if (tabName === "dieta") {

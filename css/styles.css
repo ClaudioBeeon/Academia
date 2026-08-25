@@ -98,12 +98,12 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .habito-chip.done .ring { background: var(--accent); color: var(--accent-ink); }
 .habito-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.plano-hero { background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 20px; }
+.plano-hero { display: flex; flex-direction: column; background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 20px; }
 .plano-hero .rotulo { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.62; }
 .plano-hero h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; margin-top: 9px; line-height: 1.15; }
-.plano-hero .meta { display: flex; gap: 14px; margin-top: 14px; font-size: 0.76rem; font-weight: 600; opacity: 0.72; flex-wrap: wrap; }
+.plano-hero .meta { display: flex; gap: 14px; margin-top: 14px; margin-bottom: 16px; font-size: 0.76rem; font-weight: 600; opacity: 0.72; flex-wrap: wrap; }
 .plano-hero .meta b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 700; }
-.plano-hero button { margin-top: 16px; width: 100%; min-height: 46px; border: none; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-weight: 700; font-size: 0.88rem; padding: 14px; cursor: pointer; font-family: var(--font-display); }
+.plano-hero button { margin-top: auto; width: 100%; min-height: 46px; border: none; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-weight: 700; font-size: 0.88rem; padding: 14px; cursor: pointer; font-family: var(--font-display); }
 .plano-hero button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 .plano-hero.clicavel { cursor: pointer; }
 .plano-hero.alt { background: var(--card); color: var(--ink); }
@@ -126,7 +126,10 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .stat-tile-largo b { font-size: 1.15rem; }
 .stat-tile-largo span { margin-top: 0; }
 
-.carrossel-plano { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
+/* align-items padrão (stretch): todo card do carrossel fica com a altura do
+   mais alto — .plano-hero absorve essa sobra empurrando o botão pro fundo
+   via margin-top:auto, em vez de deixar espaço morto depois do botão. */
+.carrossel-plano { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; margin-bottom: 10px; }
 .carrossel-plano::-webkit-scrollbar { display: none; }
 .carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
 .carrossel-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 22px; }

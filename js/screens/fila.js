@@ -3,118 +3,109 @@ import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 
-function montarAnelProgresso(concluidos, total, size = 156, espessura = 12) {
-  const raio = (size - espessura) / 2;
-  const perimetro = 2 * Math.PI * raio;
-  const fracao = total > 0 ? concluidos / total : 0;
-  const offset = perimetro * (1 - fracao);
-  const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
-      <circle cx="${size / 2}" cy="${size / 2}" r="${raio}" fill="none" stroke="var(--card-2)" stroke-width="${espessura}" />
-      <circle cx="${size / 2}" cy="${size / 2}" r="${raio}" fill="none" stroke="var(--accent)" stroke-width="${espessura}"
-        stroke-linecap="round" stroke-dasharray="${perimetro.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
-        transform="rotate(-90 ${size / 2} ${size / 2})" />
-    </svg>`;
+// Um traço por exercício do dia. Substitui o anel de 156px que ocupava um
+// terço da primeira tela pra dizer exatamente a mesma coisa que a lista.
+function montarBarraProgresso(concluidos, total) {
   const wrap = document.createElement("div");
-  wrap.className = "fila-progresso-ring";
-  wrap.innerHTML = `
-    <div class="ring-inner">
-      ${svg}
-      <div class="ring-ctr"><u>Hoje</u><b>${concluidos}/${total}</b><s>exercícios</s></div>
-    </div>
-  `;
+  wrap.className = "fila-barra";
+  const trilho = document.createElement("div");
+  trilho.className = "trilho";
+  for (let i = 0; i < total; i++) {
+    const traco = document.createElement("i");
+    if (i < concluidos) traco.className = "on";
+    trilho.appendChild(traco);
+  }
+  const contador = document.createElement("span");
+  contador.className = "n";
+  contador.textContent = `${concluidos}/${total}`;
+  wrap.append(trilho, contador);
   return wrap;
 }
 
 const ICONE_CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
 
+// Linha compacta no topo — o aquecimento acontece uma vez, antes de tudo, e
+// não precisa do tamanho de um bloco principal pelo resto da sessão. Abre
+// num toque com os movimentos e seus checks.
 function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
   const total = aquecimento?.exercicios?.length ?? 0;
   const movimentosFeitos = new Set(habito.aquecimentoMovimentos ?? []);
 
-  const card = document.createElement("section");
-  card.className = "exercise-card bloco-apoio";
+  const card = document.createElement("details");
+  card.className = "fila-aquecimento";
 
-  const head = document.createElement("div");
-  head.className = "bloco-apoio-head sem-check";
-  head.innerHTML = `
-    <div>
-      <div class="bloco-apoio-titulo"></div>
-      <div class="bloco-apoio-sub"></div>
-    </div>
+  const resumo = document.createElement("summary");
+  resumo.innerHTML = `
+    <span class="ic">${ICONE_CHECK}</span>
+    <span class="t"><b></b><s></s></span>
+    <span class="c"></span>
   `;
-  head.querySelector(".bloco-apoio-titulo").textContent = aquecimento?.nome ?? "Aquecimento";
-  head.querySelector(".bloco-apoio-sub").textContent = aquecimento
+  resumo.querySelector("b").textContent = aquecimento?.nome ?? "Aquecimento";
+  resumo.querySelector("s").textContent = aquecimento
     ? `${aquecimento.duracaoMin} min · antes de tudo`
     : "1-2 séries leves antes do primeiro composto";
+  card.appendChild(resumo);
 
-  if (total > 0) {
-    const progresso = document.createElement("div");
-    progresso.className = "fila-status bloco-apoio-progresso";
-    head.appendChild(progresso);
-    const atualizarProgresso = () => {
-      progresso.textContent = `${movimentosFeitos.size}/${total}`;
-      progresso.classList.toggle("feito", movimentosFeitos.size === total);
-    };
-    atualizarProgresso();
-    card.appendChild(head);
+  const contador = resumo.querySelector(".c");
+  const atualizarProgresso = () => {
+    if (total === 0) { contador.textContent = ""; return; }
+    contador.textContent = `${movimentosFeitos.size}/${total}`;
+    card.classList.toggle("feito", movimentosFeitos.size === total);
+  };
+  atualizarProgresso();
 
-    const det = document.createElement("details");
-    det.className = "bloco-apoio-lista";
-    const sum = document.createElement("summary");
-    sum.textContent = `Ver os ${total} movimentos`;
-    det.appendChild(sum);
+  if (total === 0) return card;
 
-    if (aquecimento.porque) {
-      const porque = document.createElement("p");
-      porque.className = "bloco-apoio-porque";
-      porque.textContent = aquecimento.porque;
-      det.appendChild(porque);
-    }
+  const corpo = document.createElement("div");
+  corpo.className = "fila-aquecimento-corpo";
+  card.appendChild(corpo);
 
-    aquecimento.exercicios.forEach((item, indice) => {
-      const li = document.createElement("div");
-      li.className = "bloco-apoio-item bloco-apoio-item-check";
-      li.innerHTML = `
-        <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
-        <div class="bloco-apoio-item-corpo">
-          <h5></h5>
-          <span class="bloco-apoio-presc"></span>
-          <p></p>
-        </div>
-      `;
-      li.querySelector("h5").textContent = item.nome;
-      li.querySelector(".bloco-apoio-presc").textContent = item.prescricao;
-      li.querySelector("p").textContent = item.como;
-
-      const botaoCheck = li.querySelector(".bloco-apoio-check");
-      const aplicarEstado = () => {
-        const feito = movimentosFeitos.has(indice);
-        botaoCheck.innerHTML = feito ? ICONE_CHECK : "";
-        botaoCheck.classList.toggle("feito", feito);
-        li.classList.toggle("feito", feito);
-      };
-      aplicarEstado();
-
-      botaoCheck.addEventListener("click", async () => {
-        if (movimentosFeitos.has(indice)) movimentosFeitos.delete(indice);
-        else movimentosFeitos.add(indice);
-        aplicarEstado();
-        atualizarProgresso();
-        habito.aquecimentoMovimentos = [...movimentosFeitos];
-        habito.aquecimentoFeito = movimentosFeitos.size === total;
-        await registrarHabito(db, hoje, {
-          aquecimentoMovimentos: habito.aquecimentoMovimentos,
-          aquecimentoFeito: habito.aquecimentoFeito,
-        });
-      });
-
-      det.appendChild(li);
-    });
-    card.appendChild(det);
-  } else {
-    card.appendChild(head);
+  if (aquecimento.porque) {
+    const porque = document.createElement("p");
+    porque.className = "bloco-apoio-porque";
+    porque.textContent = aquecimento.porque;
+    corpo.appendChild(porque);
   }
+
+  aquecimento.exercicios.forEach((item, indice) => {
+    const li = document.createElement("div");
+    li.className = "bloco-apoio-item bloco-apoio-item-check";
+    li.innerHTML = `
+      <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
+      <div class="bloco-apoio-item-corpo">
+        <h5></h5>
+        <span class="bloco-apoio-presc"></span>
+        <p></p>
+      </div>
+    `;
+    li.querySelector("h5").textContent = item.nome;
+    li.querySelector(".bloco-apoio-presc").textContent = item.prescricao;
+    li.querySelector("p").textContent = item.como;
+
+    const botaoCheck = li.querySelector(".bloco-apoio-check");
+    const aplicarEstado = () => {
+      const feito = movimentosFeitos.has(indice);
+      botaoCheck.innerHTML = feito ? ICONE_CHECK : "";
+      botaoCheck.classList.toggle("feito", feito);
+      li.classList.toggle("feito", feito);
+    };
+    aplicarEstado();
+
+    botaoCheck.addEventListener("click", async () => {
+      if (movimentosFeitos.has(indice)) movimentosFeitos.delete(indice);
+      else movimentosFeitos.add(indice);
+      aplicarEstado();
+      atualizarProgresso();
+      habito.aquecimentoMovimentos = [...movimentosFeitos];
+      habito.aquecimentoFeito = movimentosFeitos.size === total;
+      await registrarHabito(db, hoje, {
+        aquecimentoMovimentos: habito.aquecimentoMovimentos,
+        aquecimentoFeito: habito.aquecimentoFeito,
+      });
+    });
+
+    corpo.appendChild(li);
+  });
 
   return card;
 }
@@ -197,6 +188,78 @@ function nomeDoMusculo(chave) {
   return NOME_MUSCULO[chave] ?? chave.replace(/_/g, " ");
 }
 
+// Séries, faixa de reps, RIR e descanso já vêm da ficha em `prescricao` —
+// antes só apareciam depois de entrar no exercício, sendo o dado mais
+// consultado durante a sessão.
+function partesDaPrescricao(exercicio) {
+  const alvo = exercicio.seriesAlvo ?? 3;
+  const p = exercicio.prescricao;
+  const partes = [p?.repeticoes ? `${alvo} × ${p.repeticoes.min}-${p.repeticoes.max}` : `${alvo} séries`];
+  if (p?.rirAlvo != null) partes.push(`RIR ${p.rirAlvo}`);
+  if (p?.descansoSegundos) partes.push(`${p.descansoSegundos}s`);
+  return partes;
+}
+
+function montarBlocoAgora(exercicio, indice, seriesFeitas, aoComecar) {
+  const alvo = exercicio.seriesAlvo ?? 3;
+  const bloco = document.createElement("section");
+  bloco.className = "fila-agora";
+  bloco.innerHTML = `
+    <div class="topo">
+      <div class="corpo">
+        <div class="up"></div>
+        <h2></h2>
+      </div>
+    </div>
+    <div class="chips"></div>
+    <button type="button"></button>
+  `;
+  bloco.querySelector(".topo").prepend(criarIconeExercicio(exercicio.id, 62, exercicio.imagemUrl));
+  bloco.querySelector(".up").textContent = `Exercício ${indice + 1} · ${nomeDoMusculo(exercicio.musculoPrimario)}`;
+  bloco.querySelector("h2").textContent = exercicio.nome;
+
+  const chips = bloco.querySelector(".chips");
+  for (const parte of partesDaPrescricao(exercicio)) {
+    const chip = document.createElement("span");
+    chip.textContent = parte;
+    chips.appendChild(chip);
+  }
+
+  const botao = bloco.querySelector("button");
+  botao.textContent = seriesFeitas > 0
+    ? `Continuar — série ${Math.min(alvo, seriesFeitas + 1)} de ${alvo}`
+    : "Começar série 1";
+  botao.addEventListener("click", aoComecar);
+  return bloco;
+}
+
+// O número é a posição do exercício na ficha, não na lista: como os feitos
+// descem pro fim, é ele que preserva a ordem original do treino.
+function montarLinhaExercicio(exercicio, indice, seriesFeitas, feito, aoAbrir) {
+  const alvo = exercicio.seriesAlvo ?? 3;
+  const linha = document.createElement("section");
+  linha.className = feito ? "fila-linha feito" : "fila-linha";
+  linha.innerHTML = `
+    <div class="mid"><div class="nm"></div><div class="pr"></div></div>
+    <div class="num"></div>
+  `;
+  linha.prepend(criarIconeExercicio(exercicio.id, 46, exercicio.imagemUrl));
+  linha.querySelector(".nm").textContent = exercicio.nome;
+  linha.querySelector(".pr").textContent = !feito && seriesFeitas > 0
+    ? `${seriesFeitas}/${alvo} séries feitas`
+    : partesDaPrescricao(exercicio).join(" · ");
+  linha.querySelector(".num").textContent = String(indice + 1);
+  linha.addEventListener("click", aoAbrir);
+  return linha;
+}
+
+function montarRotuloSecao(texto) {
+  const rotulo = document.createElement("div");
+  rotulo.className = "fila-sec";
+  rotulo.textContent = texto;
+  return rotulo;
+}
+
 export async function montarTelaFila(db, contexto, callbacks) {
   const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1 } = contexto;
   const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
@@ -207,12 +270,10 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const habitoHoje = (await getHabito(db, hoje)) ?? {};
 
   let totalSeriesFeitas = 0;
-  let totalSeriesPrevistas = 0;
   let exerciciosConcluidos = 0;
   const estados = seriesPorExercicio.map((series, indice) => {
     const seriesAlvo = exerciciosHoje[indice].seriesAlvo ?? 3;
     totalSeriesFeitas += series.length;
-    totalSeriesPrevistas += seriesAlvo;
     if (series.length >= seriesAlvo) {
       exerciciosConcluidos++;
       return "concluido";
@@ -223,14 +284,23 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const root = document.createElement("div");
   root.className = "tela-fila";
 
+  // A semana do mesociclo cabe numa linha de sobrescrito — antes era um
+  // parágrafo de cinco linhas entre o progresso e o primeiro exercício.
+  const semanas = ficha?.mesociclo?.semanas;
+  const infoSemana = semanas?.find((s) => s.semana === semanaDoBloco);
+  const contexto1 = [`Dia ${diaInfo.numero}`];
+  if (infoSemana && semanas) contexto1.push(`Semana ${infoSemana.semana} de ${semanas.length}`);
+
   const header = document.createElement("header");
   header.className = "top";
   header.innerHTML = `
     <div>
-      <div class="date-label">${diaInfo.titulo}</div>
-      <div class="day-title">Fila do dia</div>
+      <div class="date-label"></div>
+      <div class="day-title"></div>
     </div>
   `;
+  header.querySelector(".date-label").textContent = contexto1.join(" · ");
+  header.querySelector(".day-title").textContent = diaInfo.titulo;
   const voltarBtn = document.createElement("button");
   voltarBtn.type = "button";
   voltarBtn.className = "icon-btn";
@@ -243,53 +313,49 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const main = document.createElement("main");
   root.appendChild(main);
 
+  main.appendChild(montarBarraProgresso(exerciciosConcluidos, exerciciosHoje.length));
+
   const aquecimentoTemMovimentos = (ficha?.aquecimento?.exercicios?.length ?? 0) > 0;
   main.appendChild(montarChecklistAquecimento(db, hoje, ficha?.aquecimento, habitoHoje));
 
-  const anel = montarAnelProgresso(exerciciosConcluidos, exerciciosHoje.length);
-  const legenda = document.createElement("p");
-  legenda.textContent = `${totalSeriesPrevistas} séries no total · ${totalSeriesFeitas}/${totalSeriesPrevistas} feitas`;
-  anel.appendChild(legenda);
-  main.appendChild(anel);
+  // O exercício da vez é o primeiro que ainda não fechou as séries previstas.
+  // A partição é por estado, não por posição: quem foi concluído desce pro
+  // fim mesmo que o usuário tenha pulado a ordem da ficha.
+  const indiceAtual = estados.findIndex((e) => e !== "concluido");
+  const abrir = (indice) => () => { if (onExecutar) onExecutar(indice); };
 
-  // Semana do mesociclo: o volume da ficha muda a partir da semana 3, então
-  // dizer em que semana o usuário está evita ele achar que o app se perdeu.
-  if (ficha?.mesociclo?.semanas) {
-    const info = ficha.mesociclo.semanas.find((s) => s.semana === semanaDoBloco);
-    if (info) {
-      const faixa = document.createElement("div");
-      faixa.className = "faixa-semana";
-      const titulo = document.createElement("b");
-      titulo.textContent = `Semana ${info.semana} de 5 · RIR ${info.rirAlvo} · ${info.volume}`;
-      const obj = document.createElement("span");
-      obj.textContent = info.objetivo;
-      faixa.append(titulo, obj);
-      main.appendChild(faixa);
+  if (indiceAtual !== -1) {
+    main.appendChild(montarRotuloSecao("Agora"));
+    main.appendChild(montarBlocoAgora(
+      exerciciosHoje[indiceAtual], indiceAtual,
+      seriesPorExercicio[indiceAtual].length, abrir(indiceAtual)
+    ));
+  }
+
+  const adiantar = [];
+  const concluidos = [];
+  exerciciosHoje.forEach((exercicio, indice) => {
+    if (indice === indiceAtual) return;
+    (estados[indice] === "concluido" ? concluidos : adiantar).push({ exercicio, indice });
+  });
+
+  if (adiantar.length > 0) {
+    main.appendChild(montarRotuloSecao("A seguir"));
+    for (const { exercicio, indice } of adiantar) {
+      main.appendChild(montarLinhaExercicio(
+        exercicio, indice, seriesPorExercicio[indice].length, false, abrir(indice)
+      ));
     }
   }
 
-  exerciciosHoje.forEach((exercicio, indice) => {
-    const item = document.createElement("section");
-    item.className = "exercise-card fila-item fila-item-" + estados[indice];
-    item.innerHTML = `
-      <div class="exercise-head">
-        <div class="fila-item-info">
-          <div>
-            <div class="exercise-name"></div>
-            <div class="exercise-meta"></div>
-          </div>
-        </div>
-        <div class="fila-status"></div>
-      </div>
-    `;
-    item.querySelector(".fila-item-info").prepend(criarIconeExercicio(exercicio.id, 52, exercicio.imagemUrl));
-    item.querySelector(".exercise-name").textContent = exercicio.nome;
-    item.querySelector(".exercise-meta").textContent = nomeDoMusculo(exercicio.musculoPrimario);
-    const statusEl = item.querySelector(".fila-status");
-    statusEl.textContent = estados[indice] === "concluido" ? "✓" : estados[indice] === "andamento" ? `${seriesPorExercicio[indice].length}/${exercicio.seriesAlvo ?? 3}` : "";
-    item.addEventListener("click", () => { if (onExecutar) onExecutar(indice); });
-    main.appendChild(item);
-  });
+  if (concluidos.length > 0) {
+    main.appendChild(montarRotuloSecao("Feitos"));
+    for (const { exercicio, indice } of concluidos) {
+      main.appendChild(montarLinhaExercicio(
+        exercicio, indice, seriesPorExercicio[indice].length, true, abrir(indice)
+      ));
+    }
+  }
 
   // Alongamento vem DEPOIS dos exercícios — frente do corpo por último,
   // quando o peitoral já está quente. Cardio não entra mais na fila: é a

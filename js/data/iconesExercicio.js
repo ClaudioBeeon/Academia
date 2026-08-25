@@ -3,9 +3,14 @@
 // Convenção visual: corpo/tronco/pernas em preto (CORPO), braços e
 // equipamento (peso, cabo, barra) em verde-lima (var(--accent)) — os
 // "detalhes verdes" pedidos, destacando a parte que trabalha o músculo.
-
-const CORPO = "#0d0f0d";
-const DETALHE = "var(--accent)";
+//
+// As duas cores saem por variável (--fig e --eq) pra que cada tela escolha
+// o fundo do azulejo e ajuste o boneco a ele. O corpo quase preto some num
+// azulejo escuro — em fundo claro ele fica em preto, em fundo escuro é
+// invertido pra claro. Os defaults abaixo reproduzem o visual original, e
+// css/styles.css os declara em .icone-exercicio.
+const CORPO = "var(--fig, #0d0f0d)";
+const DETALHE = "var(--eq, var(--accent))";
 const SW = 8;
 const SA = 7;
 

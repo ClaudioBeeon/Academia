@@ -54,13 +54,14 @@ body {
    elemento tocável do app — cartões, pills, botões, chips. */
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
-.set-ring, .carga-sheet-acoes button, .habito-chip {
+.set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha {
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
 .plano-hero.clicavel:active, .exec-carga-pill:active:not(:disabled),
-.exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active {
+.exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active,
+.fila-linha:active {
   transform: scale(0.96);
   opacity: 0.88;
 }
@@ -177,7 +178,10 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .rest-ctl button { background: var(--card-2); border: none; color: var(--ink-dim); border-radius: 999px; padding: 7px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; font-family: var(--font-display); }
 .rest-ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.icone-exercicio { flex: 0 0 auto; background: var(--card-2); border-radius: 14px; overflow: hidden; }
+/* --fig (corpo do boneco) e --eq (equipamento) são consumidos pelos SVGs de
+   js/data/iconesExercicio.js. Estes valores reproduzem o visual original;
+   cada tela pode redefini-los junto com o fundo do azulejo. */
+.icone-exercicio { flex: 0 0 auto; background: var(--card-2); border-radius: 14px; overflow: hidden; --fig: #0d0f0d; --eq: var(--accent); }
 
 .explicacao-execucao { margin: 16px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 14px; }
 .explicacao-execucao summary { font-weight: 700; cursor: pointer; color: var(--ink); }
@@ -247,12 +251,6 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .bloco-apoio-check svg { width: 16px; height: 16px; }
 .bloco-apoio-check.feito { background: var(--accent); color: var(--accent-ink); }
 
-.faixa-semana {
-  display: flex; flex-direction: column; gap: 3px; padding: 12px 16px;
-  background: var(--card-2); border-radius: 14px; margin-bottom: 2px;
-}
-.faixa-semana b { font-size: 0.82rem; color: var(--accent); letter-spacing: -0.01em; }
-.faixa-semana span { font-size: 0.78rem; color: var(--ink-dim); line-height: 1.45; }
 .nota-do-dia {
   margin: 0; padding: 0 4px; font-size: 0.8rem; line-height: 1.5;
   color: var(--ink-faint); font-style: italic;
@@ -301,8 +299,12 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 /* Execução — linha do tempo das séries, trio carga/reps/RIR com um campo
    aceso por vez, e barra de descanso fixa (não rola com o resto da tela). */
 .exec-linha-tempo { padding-bottom: 20px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
-.exec-lt-barra { height: 3px; background: var(--card-2); border-radius: 2px; }
-.exec-lt-barra i { display: block; height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width 0.25s ease; }
+/* Um traço por série — mesma leitura da barra da fila do dia, que usa um
+   traço por exercício. */
+.exec-lt-barra { display: flex; gap: 3px; }
+.exec-lt-barra i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background 0.25s ease; }
+.exec-lt-barra i.on { background: var(--accent); }
+.exec-lt-barra i.agora { background: color-mix(in srgb, var(--accent) 34%, transparent); }
 .exec-lt-marcas { display: grid; grid-template-columns: repeat(var(--exec-series, 3), minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
 .exec-lt-marca { min-width: 0; text-align: center; font-family: var(--font-mono); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .exec-lt-marca .kg { font-weight: 800; letter-spacing: -0.02em; }
@@ -426,14 +428,73 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content { paddi
 .foot { padding: 14px 0 24px; }
 .foot button { width: 100%; }
 
-/* Fila do dia: ring progress header */
-.fila-progresso-ring { text-align: center; padding: 6px 0 20px; }
-.fila-progresso-ring .ring-inner { position: relative; display: inline-block; }
-.fila-progresso-ring .ring-ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.fila-progresso-ring .ring-ctr u { text-decoration: none; font-size: 11px; color: var(--ink-faint); font-weight: 600; }
-.fila-progresso-ring .ring-ctr b { font-family: var(--font-mono); font-size: 2.1rem; font-weight: 800; margin-top: 4px; letter-spacing: -0.03em; }
-.fila-progresso-ring .ring-ctr s { text-decoration: none; font-size: 11px; color: var(--ink-faint); margin-top: 4px; font-weight: 500; }
-.fila-progresso-ring p { margin: 12px 0 0; font-size: 0.76rem; color: var(--ink-dim); font-weight: 500; }
+/* Fila do dia — barra de progresso (um traço por exercício), aquecimento
+   compacto, bloco "Agora" e linhas de exercício com pictograma. */
+.fila-barra { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
+.fila-barra .trilho { flex: 1; display: flex; gap: 3px; }
+.fila-barra .trilho i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background 0.3s ease; }
+.fila-barra .trilho i.on { background: var(--accent); }
+.fila-barra .n { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+.fila-aquecimento { background: var(--card); border-radius: 16px; }
+.fila-aquecimento > summary {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  min-height: 44px; cursor: pointer; list-style: none;
+}
+.fila-aquecimento > summary::-webkit-details-marker { display: none; }
+.fila-aquecimento > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 16px; }
+.fila-aquecimento .ic {
+  width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto;
+  background: var(--card-2); color: var(--ink-faint);
+  display: flex; align-items: center; justify-content: center;
+}
+.fila-aquecimento .ic svg { width: 13px; height: 13px; }
+.fila-aquecimento.feito .ic { background: var(--accent); color: var(--accent-ink); }
+.fila-aquecimento .t { flex: 1; min-width: 0; }
+.fila-aquecimento .t b { display: block; font-size: 0.78rem; font-weight: 700; }
+.fila-aquecimento .t s { display: block; text-decoration: none; font-size: 0.66rem; color: var(--ink-faint); font-weight: 500; margin-top: 1px; }
+.fila-aquecimento .c { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.fila-aquecimento.feito .c { color: var(--accent); }
+.fila-aquecimento-corpo { padding: 2px 14px 14px; }
+
+.fila-sec {
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faint); margin: 8px 0 -4px;
+}
+
+.fila-agora { background: var(--accent); color: var(--accent-ink); border-radius: 22px; padding: 12px; }
+.fila-agora .topo { display: flex; align-items: center; gap: 12px; }
+.fila-agora .corpo { min-width: 0; }
+.fila-agora .icone-exercicio { width: 62px; height: 62px; border-radius: 16px; background: #EDEBE6; --fig: #0d0f0d; --eq: #A8CC2E; }
+.fila-agora .up { font-size: 0.54rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55; }
+.fila-agora h2 { font-size: 0.95rem; font-weight: 800; margin: 4px 0 0; line-height: 1.18; letter-spacing: -0.02em; }
+.fila-agora .chips { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.fila-agora .chips span {
+  background: rgba(20, 20, 20, 0.13); border-radius: 7px; padding: 4px 8px;
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 800;
+}
+.fila-agora button {
+  margin-top: 11px; width: 100%; min-height: 44px; border: none; border-radius: 999px;
+  background: var(--accent-ink); color: var(--accent); font-weight: 800;
+  font-size: 0.82rem; cursor: pointer; font-family: var(--font-display);
+}
+.fila-agora button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+.fila-linha {
+  display: flex; align-items: center; gap: 11px; cursor: pointer;
+  background: var(--card); border-radius: 18px; padding: 9px 12px 9px 9px;
+}
+.fila-linha .icone-exercicio { width: 46px; height: 46px; border-radius: 13px; --fig: #E6E6E6; --eq: var(--accent); }
+.fila-linha .mid { flex: 1; min-width: 0; }
+.fila-linha .nm { font-size: 0.8rem; font-weight: 700; line-height: 1.25; }
+.fila-linha .pr { font-family: var(--font-mono); font-size: 0.63rem; color: var(--ink-faint); margin-top: 3px; }
+.fila-linha .num {
+  flex: 0 0 auto; font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800;
+  color: #4A4A4A; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.fila-linha.feito { opacity: 0.48; }
+.fila-linha.feito .nm { text-decoration: line-through; text-decoration-color: #4A4A4A; }
+.fila-linha.feito .icone-exercicio { --fig: #6E6E6E; --eq: #5C7020; }
 
 /* Check-in card */
 .checkin-qual { display: flex; gap: 6px; margin-bottom: 4px; }

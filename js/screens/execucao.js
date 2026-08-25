@@ -161,7 +161,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const linhaTempoEl = document.createElement("div");
   linhaTempoEl.className = "exec-linha-tempo";
   linhaTempoEl.style.setProperty("--exec-series", totalSeriesAlvo);
-  linhaTempoEl.innerHTML = `<div class="exec-lt-barra"><i></i></div><div class="exec-lt-marcas"></div>`;
+  linhaTempoEl.innerHTML = `<div class="exec-lt-barra"></div><div class="exec-lt-marcas"></div>`;
   main.appendChild(linhaTempoEl);
 
   // O trio carga/reps/RIR: só um fica "aceso" por vez (o que a tela está
@@ -269,11 +269,20 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     return null;
   }
 
+  // Mesma barra segmentada da fila do dia, aqui com um traço por série em vez
+  // de por exercício: a posição na série é lida pelo traço aceso, então a
+  // marca de baixo não precisa mais repetir "série N" em texto.
   function renderizarLinhaTempo() {
     const pendente = numeroPendenteAtual();
-    const feitas = seriesHoje.length;
-    const fracao = totalSeriesAlvo > 0 ? Math.min(1, feitas / totalSeriesAlvo) : 0;
-    linhaTempoEl.querySelector(".exec-lt-barra i").style.width = `${(fracao * 100).toFixed(0)}%`;
+
+    const barraEl = linhaTempoEl.querySelector(".exec-lt-barra");
+    barraEl.innerHTML = "";
+    for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
+      const traco = document.createElement("i");
+      if (seriesHoje.some((s) => s.serieNumero === numero)) traco.className = "on";
+      else if (numero === pendente) traco.className = "agora";
+      barraEl.appendChild(traco);
+    }
 
     const marcasEl = linhaTempoEl.querySelector(".exec-lt-marcas");
     marcasEl.innerHTML = "";
@@ -285,7 +294,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         marca.innerHTML = `<div class="kg">${formatarNumero(feita.carga)}×${feita.reps}</div><div class="rir">RIR ${feita.rir}</div>`;
       } else if (numero === pendente) {
         marca.classList.add("agora");
-        marca.innerHTML = `<div class="kg">agora</div><div class="rir">série ${numero}</div>`;
+        marca.innerHTML = `<div class="kg">agora</div><div class="rir">&nbsp;</div>`;
       } else {
         marca.classList.add("vazia");
         marca.innerHTML = `<div class="kg">—</div><div class="rir">&nbsp;</div>`;

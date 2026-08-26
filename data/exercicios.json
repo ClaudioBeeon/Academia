@@ -1,7 +1,7 @@
 {
-  "versao": "1.2",
+  "versao": "1.3",
   "dataAtualizacao": "2026-08-26",
-  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita)",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo)",
   "exercicios": [
     {
       "id": "supino_inclinado_halteres",
@@ -413,6 +413,280 @@
       "cargaAlongada": true,
       "incrementoMinimo_kg": 2,
       "observacoesExecucao": "Joelhos levemente flexionados e FIXOS. Empurre o quadril pra trás deixando os halteres deslizarem rente à perna, até sentir o alongamento atrás da coxa. A coluna não arredonda em nenhum momento — se arredondar, você desceu demais."
+    },
+    {
+      "id": "supino_reto_barra",
+      "nome": "Supino reto com barra",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [
+        { "musculo": "triceps", "contribuicao": 0.5 },
+        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_pesado",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "pegada um pouco mais larga que os ombros, barra desce até tocar levemente o peito, cotovelos a ~45° do tronco. Exercício de maior demanda técnica — use com moderação."
+    },
+    {
+      "id": "crucifixo_reto_halteres",
+      "nome": "Crucifixo reto com halteres",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "cotovelos levemente flexionados o tempo todo, abertura controlada até sentir o alongamento no peito, sem deixar os halteres baterem no topo."
+    },
+    {
+      "id": "peck_deck_maquina",
+      "nome": "Voador (peck deck) na máquina",
+      "musculoPrimario": "peito",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "cotovelos na altura do ombro, aperte o peito no fechamento sem tirar as costas do encosto."
+    },
+    {
+      "id": "puxada_pegada_fechada",
+      "nome": "Puxada frente (pegada fechada/triângulo)",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        { "musculo": "biceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "pegada fechada (triângulo ou barra reta estreita), puxe até o peito levando os cotovelos pra trás e pra baixo — mais foco na parte inferior das costas que a pegada aberta."
+    },
+    {
+      "id": "remada_cavalinho_tbar",
+      "nome": "Remada cavalinho (T-bar)",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [
+        { "musculo": "biceps", "contribuicao": 0.5 },
+        { "musculo": "deltoide_posterior", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_pesado",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "peito apoiado ou tronco inclinado fixo, puxe a barra em direção ao abdômen apertando as escápulas. Exercício de maior demanda técnica — use com moderação."
+    },
+    {
+      "id": "pullover_cabo",
+      "nome": "Pullover no cabo",
+      "musculoPrimario": "costas",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "braços quase estendidos, puxe a barra/corda de cima pra baixo num arco, sentindo o alongamento da dorsal no início do movimento. Cotovelos fixos — não é exercício de tríceps."
+    },
+    {
+      "id": "desenvolvimento_halteres",
+      "nome": "Desenvolvimento de ombro com halteres",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [
+        { "musculo": "triceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "halteres na altura dos ombros, empurre pra cima sem travar os cotovelos no topo, sem arquear demais a lombar."
+    },
+    {
+      "id": "elevacao_frontal_halteres",
+      "nome": "Elevação frontal com halteres",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "suba o halter até a altura do ombro sem usar embalo do quadril, alternando os braços ou os dois juntos."
+    },
+    {
+      "id": "rosca_alternada_halteres",
+      "nome": "Rosca alternada com halteres",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "gire o punho pra fora (supinação) conforme sobe, cotovelo fixo ao lado do corpo, alternando os braços."
+    },
+    {
+      "id": "rosca_concentrada",
+      "nome": "Rosca concentrada",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "cotovelo apoiado na parte interna da coxa, movimento lento e controlado — ótimo pra sentir o pico de contração no topo."
+    },
+    {
+      "id": "triceps_coice_halter",
+      "nome": "Tríceps coice com halter",
+      "musculoPrimario": "triceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "tronco inclinado à frente, braço paralelo ao chão, estenda só o antebraço mantendo o cotovelo fixo e alto."
+    },
+    {
+      "id": "agachamento_livre_barra",
+      "nome": "Agachamento livre com barra",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        { "musculo": "gluteo", "contribuicao": 0.5 },
+        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_pesado",
+      "equipamento": "barra",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "barra apoiada no trapézio, desça até a coxa passar da paralela mantendo o peito erguido e os joelhos alinhados com os pés. Exercício de maior demanda técnica — use com moderação, RIR mais alto se preferir."
+    },
+    {
+      "id": "afundo_halteres",
+      "nome": "Afundo com halteres",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        { "musculo": "gluteo", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "passo à frente, desça até o joelho de trás quase tocar o chão, tronco ereto. Bom pra equilibrar diferença de força entre os lados — faça o lado mais fraco primeiro."
+    },
+    {
+      "id": "flexora_em_pe_unilateral",
+      "nome": "Cadeira flexora em pé (unilateral)",
+      "musculoPrimario": "posterior_coxa",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "um lado de cada vez, quadril fixo no apoio, controle a volta sem deixar a carga bater."
+    },
+    {
+      "id": "elevacao_pelvica_barra",
+      "nome": "Elevação pélvica com barra (hip thrust)",
+      "musculoPrimario": "gluteo",
+      "musculosSecundarios": [
+        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "costas apoiadas num banco, barra sobre o quadril, suba até o corpo formar uma linha reta do ombro ao joelho, apertando o glúteo no topo."
+    },
+    {
+      "id": "coice_cabo_gluteo",
+      "nome": "Coice no cabo (glúteo)",
+      "musculoPrimario": "gluteo",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "tornozelo preso na polia baixa, tronco levemente inclinado à frente, empurre a perna pra trás apertando o glúteo, sem usar a lombar pra impulsionar."
+    },
+    {
+      "id": "passada_halteres",
+      "nome": "Passada com halteres (afundo caminhando)",
+      "musculoPrimario": "gluteo",
+      "musculosSecundarios": [
+        { "musculo": "quadriceps", "contribuicao": 0.5 }
+      ],
+      "tipo": "composto_moderado",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "passos alternados caminhando à frente, tronco ereto, halteres nas mãos. Bom pra equilibrar diferença de força entre os lados."
+    },
+    {
+      "id": "panturrilha_sentado_maquina",
+      "nome": "Panturrilha sentado na máquina",
+      "musculoPrimario": "panturrilha",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "joelhos fletidos sob o apoio — o foco muda do gastrocnêmio pro sóleo nessa posição, complementa a panturrilha em pé."
+    },
+    {
+      "id": "panturrilha_leg_press",
+      "nome": "Panturrilha no leg press",
+      "musculoPrimario": "panturrilha",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 5,
+      "observacoesExecucao": "pés na ponta da plataforma do leg press, empurre só com o tornozelo, pernas quase estendidas."
+    },
+    {
+      "id": "elevacao_pernas_paralelas",
+      "nome": "Elevação de pernas (paralelas ou pendurado)",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "peso_corporal",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 0,
+      "observacoesExecucao": "apoiado nas paralelas ou pendurado na barra, suba os joelhos (ou pernas estendidas) sem balançar o corpo, controlando a descida."
+    },
+    {
+      "id": "abdominal_polia_alta",
+      "nome": "Abdominal na polia alta (cabo)",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "ajoelhado de frente pra polia alta, flexione o tronco vindo do abdômen, sem puxar com os braços."
+    },
+    {
+      "id": "crucifixo_invertido_halteres",
+      "nome": "Crucifixo invertido com halteres",
+      "musculoPrimario": "deltoide_posterior",
+      "musculosSecundarios": [
+        { "musculo": "costas", "contribuicao": 0.5 }
+      ],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "tronco inclinado à frente (ou deitado de bruços num banco inclinado), abra os braços em arco levando os cotovelos pra trás, sem usar embalo."
+    },
+    {
+      "id": "rosca_punho_invertida",
+      "nome": "Rosca de punho invertida (extensores)",
+      "musculoPrimario": "antebraco",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "antebraços apoiados no banco, palmas voltadas pra baixo, suba só o punho — trabalha os extensores, complementando a rosca de punho normal."
     }
   ]
 }

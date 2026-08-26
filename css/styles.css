@@ -336,6 +336,77 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-nota { font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); margin-bottom: 4px; }
 .exec-nota b { color: var(--ink); font-family: var(--font-mono); font-weight: 800; }
 
+/* Guia de cadência (js/screens/guiaCadencia.js): senoide cinza rolando com
+   a bolinha lima seguindo o ritmo prescrito. Só aparece com a série em
+   andamento. */
+.guia-cadencia { position: relative; margin: 4px 0 12px; }
+.guia-cadencia[hidden] { display: none; }
+.guia-cadencia svg { width: 100%; height: 150px; display: block; }
+.guia-cadencia::before, .guia-cadencia::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 34px; pointer-events: none;
+}
+.guia-cadencia::before { left: 0; background: linear-gradient(90deg, var(--paper), transparent); }
+.guia-cadencia::after { right: 0; background: linear-gradient(-90deg, var(--paper), transparent); }
+.guia-fase {
+  text-align: center; margin-top: 2px; font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+}
+
+/* Linha "Ritmo" — mostra a cadência em vigor e abre o editor. */
+.exec-ritmo {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: none; border-radius: 14px;
+  padding: 10px 12px; min-height: 44px; margin-bottom: 12px;
+  cursor: pointer; font-family: var(--font-display); text-align: left;
+}
+.exec-ritmo .rot { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); flex: 0 0 auto; }
+.exec-ritmo .txt { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-dim); }
+.exec-ritmo .editar { flex: 0 0 auto; font-size: 0.68rem; font-weight: 800; color: var(--accent); }
+.exec-ritmo.ajustado .txt { color: var(--ink); }
+.exec-ritmo.ajustado .rot::after { content: " · seu"; color: var(--accent); }
+.exec-ritmo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Folha de ajuste de cadência (js/screens/editorCadencia.js) */
+.cadencia-sheet { align-items: stretch; padding-top: 18px; }
+.cadencia-sheet h3 { font-size: 1.05rem; font-weight: 800; text-align: center; text-transform: none; color: var(--ink); margin-bottom: 2px; }
+.cadencia-exercicio { text-align: center; font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 18px; }
+.cadencia-campos { display: flex; flex-direction: column; gap: 10px; }
+.cadencia-linha { display: flex; align-items: center; gap: 12px; }
+.cadencia-linha .rot { flex: 1; min-width: 0; }
+.cadencia-linha .rot b { display: block; font-size: 0.85rem; font-weight: 700; }
+.cadencia-linha .rot span { display: block; font-size: 0.68rem; color: var(--ink-faint); margin-top: 1px; }
+.cadencia-linha .ctl { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.cadencia-linha .ctl button {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: transparent; color: var(--ink); font-size: 1.2rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; line-height: 1;
+}
+.cadencia-linha .ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cadencia-linha .val {
+  min-width: 52px; text-align: center; font-family: var(--font-mono);
+  font-size: 0.95rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+
+.cadencia-resumo {
+  display: flex; align-items: center; gap: 12px; margin-top: 18px;
+  padding: 12px 14px; background: var(--card-2); border-radius: 14px;
+}
+.cadencia-resumo .total { flex: 0 0 auto; }
+.cadencia-resumo .total b { display: block; font-family: var(--font-mono); font-size: 1.35rem; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+.cadencia-resumo .total span { display: block; font-size: 0.6rem; color: var(--ink-faint); margin-top: 1px; }
+.cadencia-resumo .prosa { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-dim); line-height: 1.45; }
+.cadencia-resumo.estourado .total b { color: #E2765B; }
+
+.cadencia-erro { margin: 10px 0 0; font-size: 0.76rem; line-height: 1.45; color: #E2765B; display: none; }
+.cadencia-erro.visivel { display: block; }
+.cadencia-restaurar {
+  display: block; margin: 14px auto 0; background: none; border: none;
+  color: var(--ink-faint); font-size: 0.76rem; font-weight: 700;
+  padding: 6px; cursor: pointer; font-family: inherit; text-decoration: underline;
+}
+.cadencia-restaurar[hidden] { display: none; }
+.cadencia-sheet .carga-sheet-confirmar:disabled { opacity: 0.45; cursor: default; }
+
 /* Caixa flutuante única do cronômetro — compartilhada entre trabalho
    (contando pra cima, preta) e descanso (contando pra baixo, lima).
    Trocar de estado recolore a MESMA caixa (transition no background) e a

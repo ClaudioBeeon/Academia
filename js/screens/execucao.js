@@ -6,6 +6,10 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
+import { montarGuiaCadencia } from "./guiaCadencia.js";
+import { abrirEditorCadencia } from "./editorCadencia.js";
+import { cadenciaDoExercicio, textoDaCadencia } from "../engine/cadencia.js";
+import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from "../data/ajustesCadencia.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -191,6 +195,52 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const notaEl = document.createElement("p");
   notaEl.className = "exec-nota";
   main.appendChild(notaEl);
+
+  // Guia de cadência: fica escondido até a série começar — o ritmo só faz
+  // sentido enquanto a repetição está acontecendo.
+  const ajusteSalvo = await getAjusteCadencia(db, exercicio.id);
+  const cadenciaDaFicha = cadenciaDoExercicio(exercicio);
+  let cadenciaAtual = cadenciaDoExercicio(exercicio, ajusteSalvo);
+  let temAjuste = Boolean(ajusteSalvo);
+
+  const guia = montarGuiaCadencia(cadenciaAtual);
+  guia.elemento.hidden = true;
+  main.appendChild(guia.elemento);
+
+  const ritmoEl = document.createElement("button");
+  ritmoEl.type = "button";
+  ritmoEl.className = "exec-ritmo";
+  main.appendChild(ritmoEl);
+
+  function renderizarRitmo() {
+    ritmoEl.innerHTML = `<span class="rot">Ritmo</span><span class="txt"></span><span class="editar">Ajustar</span>`;
+    ritmoEl.querySelector(".txt").textContent = textoDaCadencia(cadenciaAtual);
+    ritmoEl.classList.toggle("ajustado", temAjuste);
+  }
+  renderizarRitmo();
+
+  ritmoEl.addEventListener("click", async () => {
+    const resultado = await abrirEditorCadencia({
+      nomeExercicio: exercicio.nome,
+      cadenciaAtual,
+      cadenciaDaFicha,
+      temAjuste,
+    });
+    if (!resultado) return;
+
+    if (resultado.restaurar) {
+      await limparAjusteCadencia(db, exercicio.id);
+      cadenciaAtual = cadenciaDaFicha;
+      temAjuste = false;
+    } else {
+      await salvarAjusteCadencia(db, exercicio.id, resultado.cadencia);
+      cadenciaAtual = cadenciaDoExercicio(exercicio, resultado.cadencia);
+      temAjuste = true;
+    }
+    // A bolinha passa a andar no tempo novo na hora.
+    guia.definirCadencia(cadenciaAtual);
+    renderizarRitmo();
+  });
 
   // Uma única caixa flutuante pro cronômetro, compartilhada entre trabalho
   // (contando pra cima, preta) e descanso (contando pra baixo, lima). Trocar
@@ -419,6 +469,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       intervalTrabalho = null;
     }
     inicioTrabalhoTs = null;
+    guia.parar();
+    guia.elemento.hidden = true;
   }
 
   function pararDescanso({ ocultar = true } = {}) {
@@ -478,6 +530,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     inicioTrabalhoTs = Date.now();
     mostrarCronometro("trabalho", "Em andamento", "00:00", { comTransicao: descansoVisivel });
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
+
+    guia.elemento.hidden = false;
+    guia.iniciar();
 
     pedirWakeLock();
 

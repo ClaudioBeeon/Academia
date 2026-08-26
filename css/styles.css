@@ -86,7 +86,7 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .habito-chip {
   flex: 0 0 auto; display: flex; align-items: center; gap: 7px;
   background: var(--card); border: none; border-radius: 999px;
-  padding: 7px 14px 7px 7px; min-height: 38px;
+  padding: 7px 14px 7px 7px; min-height: 44px;
   font-size: 0.76rem; font-weight: 700; color: var(--ink-dim);
   cursor: pointer; font-family: var(--font-display);
 }
@@ -181,7 +181,12 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 /* --fig (corpo do boneco) e --eq (equipamento) são consumidos pelos SVGs de
    js/data/iconesExercicio.js. Estes valores reproduzem o visual original;
    cada tela pode redefini-los junto com o fundo do azulejo. */
+/* svg é inline por padrão e reserva ~4px de espaço de descendente abaixo da
+   linha de base — com o wrapper em overflow:hidden, esses 4px cortavam
+   silenciosamente a base de todo pictograma do app. display:block tira o
+   svg do fluxo de texto e fecha o encaixe. */
 .icone-exercicio { flex: 0 0 auto; background: var(--card-2); border-radius: 14px; overflow: hidden; --fig: #0d0f0d; --eq: var(--accent); }
+.icone-exercicio svg { display: block; }
 
 .explicacao-execucao { margin: 16px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 14px; }
 .explicacao-execucao summary { font-weight: 700; cursor: pointer; color: var(--ink); }

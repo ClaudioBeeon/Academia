@@ -554,6 +554,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       aoFechar: fecharTelaCheia,
       aoTerminar: () => finalizarTrabalhoERegistrar(),
       aoAjustarDescanso: (delta) => { if (cronometroAtivo) cronometroAtivo.ajustar(delta); },
+      // "Pular descanso": zera o restante na hora — mesma via do botão
+      // "−30" levado até o fim, que já dispara aoFinalizar corretamente.
+      aoPularDescanso: () => { if (cronometroAtivo) cronometroAtivo.ajustar(-cronometroAtivo.obterRestante()); },
     });
     root.appendChild(telaCheiaAtual.elemento);
     pedirWakeLock();

@@ -45,7 +45,9 @@ function formatarRelogio(segundos) {
  * cancela a série nem o descanso). `aoTerminar` é o botão
  * "Terminei — registrar", que decide o que fazer com a série em
  * andamento — o telão não sabe registrar nada sozinho. `aoAjustarDescanso`
- * é chamado pelos botões ±30 do anel de descanso.
+ * é chamado pelos botões ±30 do anel de descanso. `aoPularDescanso` é
+ * chamado por "Pular descanso" — encerra o descanso na hora, mesmo com
+ * tempo sobrando.
  */
 export function montarTelaSerieCheia({
   exercicio,
@@ -59,6 +61,7 @@ export function montarTelaSerieCheia({
   aoFechar,
   aoTerminar,
   aoAjustarDescanso,
+  aoPularDescanso,
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
@@ -116,6 +119,7 @@ export function montarTelaSerieCheia({
           <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
           <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
         </div>
+        <button type="button" class="sc-anel-pular">Pular descanso</button>
       </div>
       <div class="sc-corpo-contagem">
         <b class="sc-contagem-n" role="status" aria-live="polite"></b>
@@ -144,6 +148,7 @@ export function montarTelaSerieCheia({
   anelProgresso.style.strokeDashoffset = "0";
   elemento.querySelector('.sc-anel-ctl [data-action="menos"]').addEventListener("click", () => { if (aoAjustarDescanso) aoAjustarDescanso(-30); });
   elemento.querySelector('.sc-anel-ctl [data-action="mais"]').addEventListener("click", () => { if (aoAjustarDescanso) aoAjustarDescanso(30); });
+  elemento.querySelector(".sc-anel-pular").addEventListener("click", () => { if (aoPularDescanso) aoPularDescanso(); });
 
   const AMP = 78;
   const CY = 130;

@@ -4,6 +4,8 @@
 // pra hoje e ainda não registrado. Sem isso, "Concluir sessão" ou terminar
 // o último exercício iam direto pro relatório e o cardio do dia ficava pra
 // trás sem ninguém decidir isso de propósito.
+import { animarSpring } from "../lib/spring.js";
+
 const NOME_MODALIDADE = {
   bicicleta: "Bicicleta", eliptico: "Elíptico", escada: "Escada",
   caminhada: "Caminhada", corrida: "Corrida", patins: "Patins",
@@ -31,11 +33,17 @@ export function abrirPromptCardio(cardioDeHoje) {
       ? `${nome} · previsto ${cardioDeHoje.duracaoMin} min`
       : nome;
     document.body.appendChild(overlay);
+    const sheetEl = overlay.querySelector(".carga-sheet");
+    sheetEl.style.transform = "translate3d(0, 100%, 0)";
+    animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 320 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
     requestAnimationFrame(() => overlay.classList.add("aberta"));
 
     function fechar(resultado) {
       overlay.classList.remove("aberta");
-      setTimeout(() => overlay.remove(), 240);
+      const alturaAtual = sheetEl.getBoundingClientRect().height || 320;
+      animarSpring(sheetEl, { y: 0 }, { y: alturaAtual }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => {
+        overlay.remove();
+      });
       resolve(resultado);
     }
 

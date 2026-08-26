@@ -8,6 +8,11 @@ const IOS_PADRAO = { rigidez: 300, amortecimento: 26, massa: 1 };
 const EPSILON_POSICAO = 0.4;
 const EPSILON_VELOCIDADE = 1.2;
 
+// Avaliado uma vez no carregamento — não é preciso reagir a uma troca ao
+// vivo da preferência em nenhum outro lugar deste app.
+const prefereMenosMovimento =
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function simularMola(valorInicial, valorAlvo, { rigidez, amortecimento, massa }) {
   let posicao = valorInicial;
   let velocidade = 0;
@@ -29,6 +34,23 @@ function simularMola(valorInicial, valorAlvo, { rigidez, amortecimento, massa })
  * quando a mola de todas as propriedades assenta (ou quando parar() é chamado).
  */
 export function animarSpring(elemento, de, para, config = {}) {
+  if (prefereMenosMovimento) {
+    // Menos movimento não é zero movimento: a opacidade ainda cruza (ajuda
+    // a perceber a troca), só o deslocamento/escala vai direto pro valor
+    // final sem passar pela física da mola.
+    const transformPartes = [];
+    if ("x" in para || "y" in para) transformPartes.push(`translate3d(${para.x ?? 0}px, ${para.y ?? 0}px, 0)`);
+    if ("scale" in para) transformPartes.push(`scale(${para.scale ?? 1})`);
+    if (transformPartes.length) elemento.style.transform = transformPartes.join(" ");
+    let finalizado = Promise.resolve();
+    if ("opacity" in para) {
+      elemento.style.transition = "opacity 0.2s ease";
+      requestAnimationFrame(() => { elemento.style.opacity = String(para.opacity); });
+      finalizado = new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    return { parar: () => {}, finalizado };
+  }
+
   const { rigidez, amortecimento, massa } = { ...IOS_PADRAO, ...config };
   const props = Object.keys(para);
   const passos = Object.fromEntries(

@@ -6,6 +6,7 @@
 // calorias usa o MET da modalidade quando conhecida, e cai no MET padrão
 // de cardio (js/engine/calorias.js) pra qualquer atividade digitada à mão.
 import { estimarCaloriasCardio } from "../engine/calorias.js";
+import { animarSpring } from "../lib/spring.js";
 
 const ATIVIDADES = [
   ["bicicleta", "Bicicleta"],
@@ -63,6 +64,9 @@ export function abrirNovaAtividade(pesoKg) {
       </div>
     `;
     document.body.appendChild(overlay);
+    const sheetEl = overlay.querySelector(".carga-sheet");
+    sheetEl.style.transform = "translate3d(0, 100%, 0)";
+    animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 320 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
     requestAnimationFrame(() => overlay.classList.add("aberta"));
 
     const form = overlay.querySelector(".atividade-form");
@@ -91,7 +95,10 @@ export function abrirNovaAtividade(pesoKg) {
 
     function fechar(resultado) {
       overlay.classList.remove("aberta");
-      setTimeout(() => overlay.remove(), 240);
+      const alturaAtual = sheetEl.getBoundingClientRect().height || 320;
+      animarSpring(sheetEl, { y: 0 }, { y: alturaAtual }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => {
+        overlay.remove();
+      });
       resolve(resultado);
     }
 

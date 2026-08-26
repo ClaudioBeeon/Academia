@@ -10,6 +10,7 @@ import { montarTelaSerieCheia } from "./telaSerieCheia.js";
 import { abrirEditorCadencia } from "./editorCadencia.js";
 import { cadenciaDoExercicio, textoDaCadencia } from "../engine/cadencia.js";
 import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from "../data/ajustesCadencia.js";
+import { animarDetails } from "../lib/detailsAnimado.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -130,14 +131,12 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     main.appendChild(ferramentasPill);
 
     const painelFerramentas = document.createElement("div");
-    painelFerramentas.className = "sets";
-    painelFerramentas.style.display = "none";
+    painelFerramentas.className = "sets ferramentas-painel";
     painelFerramentas.style.padding = "0 0 12px";
     main.appendChild(painelFerramentas);
 
     ferramentasPill.addEventListener("click", () => {
-      const abrindo = painelFerramentas.style.display === "none";
-      painelFerramentas.style.display = abrindo ? "flex" : "none";
+      const abrindo = !painelFerramentas.classList.contains("aberto");
       if (abrindo) {
         const pesoAlvo = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : equipamento.pesoBarra);
         const anilhas = calcularAnilhas(pesoAlvo, equipamento.pesoBarra, equipamento.anilhasDisponiveis);
@@ -159,6 +158,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
           </div>
         `;
       }
+      painelFerramentas.classList.toggle("aberto", abrindo);
     });
   }
 
@@ -334,13 +334,17 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     const summary = document.createElement("summary");
     summary.textContent = prescricao ? "Guia do exercício" : "Como executar";
     explicacao.appendChild(summary);
+    const corpoExplicacao = document.createElement("div");
+    corpoExplicacao.className = "explicacao-execucao-corpo";
     for (const [titulo, texto] of blocos) {
       const h = document.createElement("h5");
       h.textContent = titulo;
       const p = document.createElement("p");
       p.textContent = texto;
-      explicacao.append(h, p);
+      corpoExplicacao.append(h, p);
     }
+    explicacao.appendChild(corpoExplicacao);
+    animarDetails(explicacao, corpoExplicacao);
     main.appendChild(explicacao);
   }
 
@@ -742,13 +746,16 @@ function mostrarToastPR(prs) {
   toast.style.position = "fixed";
   toast.style.left = "50%";
   toast.style.bottom = `${proximoOffsetToast()}px`;
-  toast.style.transform = "translateX(-50%)";
   toast.style.width = "calc(100% - 44px)";
   toast.style.maxWidth = "398px";
   toast.style.zIndex = "10";
   toast.innerHTML = `<div><div class="label">🏆 Recorde pessoal</div><div class="time" style="font-size:1rem;">${prs.map((p) => p.mensagem).join(" ")}</div></div>`;
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  requestAnimationFrame(() => toast.classList.add("mostrado"));
+  setTimeout(() => {
+    toast.classList.remove("mostrado");
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
 }
 
 function proximoOffsetToast() {

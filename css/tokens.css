@@ -11,4 +11,7 @@
   --radius: 26px;
   --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-fast: 0.2s;
+  --duration-standard: 0.3s;
 }

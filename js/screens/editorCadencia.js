@@ -7,6 +7,7 @@
 // usuário: se ele pedir 5s + 4s, a folha explica que passaria do teto de 8s
 // em vez de aceitar e gravar outra coisa.
 import { validarCadencia, totalDaRepeticao, textoDaCadencia, TOTAL_MAXIMO_SEGUNDOS, FASE_MINIMA_SEGUNDOS } from "../engine/cadencia.js";
+import { animarSpring } from "../lib/spring.js";
 
 const PASSO = 0.5;
 
@@ -51,6 +52,9 @@ export function abrirEditorCadencia({ nomeExercicio, cadenciaAtual, cadenciaDaFi
       </div>
     `;
     document.body.appendChild(overlay);
+    const sheetEl = overlay.querySelector(".carga-sheet");
+    sheetEl.style.transform = "translate3d(0, 100%, 0)";
+    animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 320 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
     requestAnimationFrame(() => overlay.classList.add("aberta"));
 
     overlay.querySelector(".cadencia-exercicio").textContent = nomeExercicio;
@@ -110,7 +114,10 @@ export function abrirEditorCadencia({ nomeExercicio, cadenciaAtual, cadenciaDaFi
 
     function fechar(resultado) {
       overlay.classList.remove("aberta");
-      setTimeout(() => overlay.remove(), 240);
+      const alturaAtual = sheetEl.getBoundingClientRect().height || 320;
+      animarSpring(sheetEl, { y: 0 }, { y: alturaAtual }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => {
+        overlay.remove();
+      });
       resolve(resultado);
     }
 

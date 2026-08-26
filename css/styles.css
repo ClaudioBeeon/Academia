@@ -60,22 +60,22 @@ body {
 #tab-bar button svg { width: 20px; height: 20px; }
 #tab-bar button.active { color: var(--accent); }
 #tab-bar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
-#tab-bar button { transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); }
-#tab-bar button:active { transform: scale(0.86); }
+#tab-bar button { transition: transform 0.15s var(--ease-out); }
+#tab-bar button:active { transform: scale(0.97); }
 
 /* Feedback de toque (estilo iOS: escala levemente ao pressionar) em todo
    elemento tocável do app — cartões, pills, botões, chips. */
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
 .set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha {
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease-out;
+  transition: transform 0.15s var(--ease-out), opacity 0.15s ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
 .plano-hero.clicavel:active, .exec-carga-pill:active:not(:disabled),
 .exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active,
 .fila-linha:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
   opacity: 0.88;
 }
 
@@ -147,7 +147,7 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .carrossel-plano::-webkit-scrollbar { display: none; }
 .carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
 .carrossel-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 22px; }
-.carrossel-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--card-2); transition: width 0.2s ease, background 0.2s ease; }
+.carrossel-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--card-2); transition: width var(--duration-fast) ease, background var(--duration-fast) ease; }
 .carrossel-dots i.on { width: 15px; border-radius: 3px; background: var(--accent); }
 .atividade-secao { margin-bottom: 20px; }
 .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
@@ -170,6 +170,16 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .swap-pill.selecionada { background: var(--accent); color: var(--accent-ink); }
 
 .sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+.ferramentas-painel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+.ferramentas-painel.aberto { max-height: 240px; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .ferramentas-painel { transition: opacity var(--duration-fast) ease; }
+}
 .set-row { display: grid; grid-template-columns: 34px 1fr 1fr 1fr; align-items: center; gap: 9px; padding: 9px; border-radius: 16px; background: var(--card-2); }
 .set-row.done { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .set-ring { width: 30px; height: 30px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--ink-dim); border: none; padding: 0; margin: 0; appearance: none; cursor: pointer; }
@@ -191,6 +201,21 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .rest-ctl button { background: var(--card-2); border: none; color: var(--ink-dim); border-radius: 999px; padding: 7px 12px; font-size: 0.76rem; font-weight: 700; cursor: pointer; font-family: var(--font-display); }
 .rest-ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Toast de recorde pessoal — único momento "raro/comemorativo" do app,
+   por isso é o único lugar com uma entrada mais generosa (scale + subida). */
+.toast-flutuante {
+  opacity: 0;
+  transform: translateX(-50%) translateY(16px) scale(0.96);
+  transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+}
+.toast-flutuante.mostrado {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-flutuante { transition: opacity var(--duration-fast) ease; transform: translateX(-50%); }
+}
+
 /* --fig (corpo do boneco) e --eq (equipamento) são consumidos pelos SVGs de
    js/data/iconesExercicio.js. Estes valores reproduzem o visual original;
    cada tela pode redefini-los junto com o fundo do azulejo. */
@@ -203,6 +228,12 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 .explicacao-execucao { margin: 16px 0 0; padding: 12px 14px; background: var(--card-2); border-radius: 14px; }
 .explicacao-execucao summary { font-weight: 700; cursor: pointer; color: var(--ink); }
+.explicacao-execucao-corpo {
+  overflow: hidden; transition: height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .explicacao-execucao-corpo { transition: opacity var(--duration-fast) ease; }
+}
 .creds-avancado summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--ink-faint); }
 .explicacao-execucao p { margin: 8px 0 0; font-size: 0.85rem; color: var(--ink-dim); line-height: 1.5; }
 .explicacao-execucao h5 {
@@ -232,6 +263,12 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .bloco-apoio-lista { padding: 0 18px 15px; }
 .bloco-apoio-lista summary {
   cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--accent); padding: 4px 0;
+}
+.bloco-apoio-lista-corpo {
+  overflow: hidden; transition: height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bloco-apoio-lista-corpo { transition: opacity var(--duration-fast) ease; }
 }
 .bloco-apoio-porque {
   margin: 10px 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim);
@@ -287,7 +324,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
   height: 8px; background: var(--card); border-radius: 999px;
   overflow: hidden; margin-top: 8px;
 }
-.meta-barra-preenchida { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.meta-barra-preenchida { height: 100%; border-radius: 999px; transition: width var(--duration-standard) ease; }
 .meta-barra-preenchida.ok { background: var(--accent); }
 .meta-barra-preenchida.abaixo { background: #e0b04a; }
 .meta-barra-nota { margin-top: 7px; font-size: 0.76rem; line-height: 1.45; color: var(--ink-dim); }
@@ -320,7 +357,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 /* Um traço por série — mesma leitura da barra da fila do dia, que usa um
    traço por exercício. */
 .exec-lt-barra { display: flex; gap: 3px; }
-.exec-lt-barra i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background 0.25s ease; }
+.exec-lt-barra i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background var(--duration-fast) ease; }
 .exec-lt-barra i.on { background: var(--accent); }
 .exec-lt-barra i.agora { background: color-mix(in srgb, var(--accent) 34%, transparent); }
 .exec-lt-marcas { display: grid; grid-template-columns: repeat(var(--exec-series, 3), minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
@@ -530,7 +567,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .sc-anel-box svg { width: 100%; height: 100%; display: block; }
 .sc-anel-box circle { fill: none; stroke-width: 14; }
 .sc-anel-trilha { stroke: var(--card-2); }
-.sc-anel-progresso { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
+.sc-anel-progresso { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset var(--duration-standard) linear; }
 .sc-anel-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .sc-anel-centro b {
   font-family: var(--font-mono); font-size: 2.5rem; font-weight: 800;
@@ -576,7 +613,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 /* Cronômetro do cardio do dia (js/screens/cardioTimer.js) */
 .tela-cardio main { align-items: center; padding-top: 26px; }
 .cardio-anel { position: relative; display: inline-block; line-height: 0; }
-.cardio-anel .progresso { transition: stroke-dashoffset 0.4s linear; }
+.cardio-anel .progresso { transition: stroke-dashoffset var(--duration-standard) linear; }
 .cardio-anel .centro {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; line-height: 1;
@@ -629,7 +666,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 }
 
 /* Seletor de carga: folha modal com barra deslizável vertical (estilo volume do iOS) */
-.carga-sheet-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0); display: flex; align-items: flex-end; justify-content: center; z-index: 50; transition: background-color 0.28s ease; }
+.carga-sheet-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0); display: flex; align-items: flex-end; justify-content: center; z-index: 50; transition: background-color var(--duration-standard) ease; }
 .carga-sheet-overlay.aberta { background: oklch(0% 0 0 / 0.55); }
 .carga-sheet-handle { width: 36px; height: 5px; border-radius: 999px; background: var(--line); margin-bottom: 14px; touch-action: none; }
 .carga-sheet { width: 100%; max-width: 398px; background: var(--card); border-radius: 28px 28px 0 0; padding: 14px 22px calc(22px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; will-change: transform; }
@@ -706,7 +743,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
    compacto, bloco "Agora" e linhas de exercício com pictograma. */
 .fila-barra { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
 .fila-barra .trilho { flex: 1; display: flex; gap: 3px; }
-.fila-barra .trilho i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background 0.3s ease; }
+.fila-barra .trilho i { flex: 1; height: 6px; border-radius: 3px; background: var(--card-2); transition: background var(--duration-standard) ease; }
 .fila-barra .trilho i.on { background: var(--accent); }
 .fila-barra .n { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
 
@@ -729,7 +766,13 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .fila-aquecimento .t s { display: block; text-decoration: none; font-size: 0.66rem; color: var(--ink-faint); font-weight: 500; margin-top: 1px; }
 .fila-aquecimento .c { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .fila-aquecimento.feito .c { color: var(--accent); }
-.fila-aquecimento-corpo { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
+.fila-aquecimento-corpo {
+  padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 6px;
+  overflow: hidden; transition: height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fila-aquecimento-corpo { transition: opacity var(--duration-fast) ease; }
+}
 
 /* Cada movimento do aquecimento — caixa fechada por padrão (nome + prescrição),
    abre num toque pra mostrar a execução. Marcar feito não abre a caixa.
@@ -748,7 +791,13 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .fila-aquec-item .nm { display: block; font-size: 0.82rem; font-weight: 700; line-height: 1.25; }
 .fila-aquec-item .presc { display: block; font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint); margin-top: 3px; }
 .fila-aquec-item.feito .nm { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
-.fila-aquec-item > p { margin: 0; padding: 0 12px 12px 46px; font-size: 0.78rem; line-height: 1.5; color: var(--ink-dim); }
+.fila-aquec-item > p {
+  margin: 0; padding: 0 12px 12px 46px; font-size: 0.78rem; line-height: 1.5; color: var(--ink-dim);
+  overflow: hidden; transition: height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fila-aquec-item > p { transition: opacity var(--duration-fast) ease; }
+}
 .fila-aquec-item .bloco-apoio-check { width: 26px; height: 26px; flex: 0 0 auto; margin-top: 0; background: var(--card); }
 .fila-aquec-item .bloco-apoio-check svg { width: 14px; height: 14px; }
 

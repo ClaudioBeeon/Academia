@@ -2,6 +2,7 @@
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
+import { animarDetails } from "../lib/detailsAnimado.js";
 
 // Um traço por exercício do dia. Substitui o anel de 156px que ocupava um
 // terço da primeira tela pra dizer exatamente a mesma coisa que a lista.
@@ -59,6 +60,7 @@ function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
   const corpo = document.createElement("div");
   corpo.className = "fila-aquecimento-corpo";
   card.appendChild(corpo);
+  animarDetails(card, corpo);
 
   // Cada movimento é uma caixa fechada por padrão (nome + prescrição) — o
   // texto de execução só aparece se o usuário tocar pra abrir. O "porque"
@@ -105,6 +107,7 @@ function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
       });
     });
 
+    animarDetails(li, li.querySelector("p"));
     corpo.appendChild(li);
   });
 
@@ -153,11 +156,16 @@ function montarBlocoAlongamento(db, hoje, alongamento, habito) {
   sum.textContent = `Ver os ${alongamento.exercicios.length} alongamentos`;
   det.appendChild(sum);
 
+  const corpo = document.createElement("div");
+  corpo.className = "bloco-apoio-lista-corpo";
+  det.appendChild(corpo);
+  animarDetails(det, corpo);
+
   if (alongamento.porque) {
     const porque = document.createElement("p");
     porque.className = "bloco-apoio-porque";
     porque.textContent = alongamento.porque;
-    det.appendChild(porque);
+    corpo.appendChild(porque);
   }
 
   for (const item of alongamento.exercicios) {
@@ -171,7 +179,7 @@ function montarBlocoAlongamento(db, hoje, alongamento, habito) {
     const como = document.createElement("p");
     como.textContent = item.como;
     li.append(nome, presc, como);
-    det.appendChild(li);
+    corpo.appendChild(li);
   }
   card.appendChild(det);
   return card;

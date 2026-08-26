@@ -15,6 +15,7 @@
 import { registrarHabito } from "../data/habitos.js";
 import { registrarCheckin } from "../data/checkin.js";
 import { obterPerguntasPendentes, obterPerguntasCheckinPendentes } from "../engine/perguntasDiarias.js";
+import { animarSpring } from "../lib/spring.js";
 
 export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje, { aoFechar } = {}) {
   const pendentes = [
@@ -37,6 +38,9 @@ export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinH
     </div>
   `;
   document.body.appendChild(overlay);
+  const sheetEl = overlay.querySelector(".carga-sheet");
+  sheetEl.style.transform = "translate3d(0, 100%, 0)";
+  animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 320 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
   requestAnimationFrame(() => overlay.classList.add("aberta"));
 
   const progresso = overlay.querySelector(".perguntas-progresso");
@@ -46,7 +50,10 @@ export async function montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinH
 
   function fechar() {
     overlay.classList.remove("aberta");
-    setTimeout(() => overlay.remove(), 240);
+    const alturaAtual = sheetEl.getBoundingClientRect().height || 320;
+    animarSpring(sheetEl, { y: 0 }, { y: alturaAtual }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => {
+      overlay.remove();
+    });
     if (aoFechar) aoFechar();
   }
 

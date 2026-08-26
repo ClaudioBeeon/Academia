@@ -10,8 +10,10 @@
 // - "descanso": o mesmo cabeçalho/trilha, mas o corpo vira um anel
 //   regressivo lima com o tempo restante no centro — quem toca "Terminei"
 //   já vê a contagem do descanso sem sair da tela.
-// - "contagem": um número grande contando 5→1 antes da onda (dá tempo de
-//   posicionar o celular) ou 3→1 antes de retomar depois do descanso.
+// - "contagem": um número grande contando regressivo antes da onda — 5→1
+//   na primeira série do exercício (dá tempo de posicionar o celular) ou
+//   3→1 nas seguintes, sempre disparado por um toque em "Comecei a
+//   série" (nunca sozinho).
 import { fasesDaCadencia, totalDaRepeticao } from "../engine/cadencia.js";
 import { formaOnda as forma, construirPercursoOnda as construirPercurso } from "../engine/ondaCadencia.js";
 
@@ -34,10 +36,10 @@ function formatarRelogio(segundos) {
 
 /**
  * Monta o telão. Devolve { elemento, iniciarTrabalho, pararTrabalho,
- * mostrarDescanso, atualizarDescanso, mostrarContagem, atualizarSerieAtual }
- * — quem chama controla o ciclo de vida (a animação e os cronômetros só
- * correm com a série/descanso em andamento) e decide quando anexar/remover
- * `elemento` do DOM.
+ * mostrarDescanso, atualizarDescanso, mostrarContagem } — quem chama
+ * controla o ciclo de vida (a animação e os cronômetros só correm com a
+ * série/descanso em andamento) e decide quando anexar/remover `elemento`
+ * do DOM.
  *
  * `aoFechar` é a seta de voltar no cabeçalho (só esconde o telão, não
  * cancela a série nem o descanso). `aoTerminar` é o botão
@@ -154,8 +156,6 @@ export function montarTelaSerieCheia({
   const anelTextoEl = elemento.querySelector(".sc-anel-t");
   const contagemNumeroEl = elemento.querySelector(".sc-contagem-n");
   const contagemRotuloEl = elemento.querySelector(".sc-contagem-rotulo");
-  const trilhoTracosEl = elemento.querySelector(".sc-trilho-tracos");
-  const trilhoNumeroEl = elemento.querySelector(".sc-trilho-n");
 
   let d = "";
   const PASSOS = 80;
@@ -283,16 +283,6 @@ export function montarTelaSerieCheia({
     }, 1000);
   }
 
-  // Atualiza a trilha/número de série sem reconstruir o telão — usado no
-  // avanço automático pro próximo trabalho depois do descanso, onde o
-  // mesmo telão continua aberto.
-  function atualizarSerieAtual(numero) {
-    [...trilhoTracosEl.children].forEach((traco, indice) => {
-      traco.className = indice + 1 <= numero ? "on" : "";
-    });
-    trilhoNumeroEl.textContent = `${numero}/${totalSeriesAlvo}`;
-  }
-
   return {
     elemento,
     iniciarTrabalho,
@@ -300,6 +290,5 @@ export function montarTelaSerieCheia({
     mostrarDescanso,
     atualizarDescanso,
     mostrarContagem,
-    atualizarSerieAtual,
   };
 }

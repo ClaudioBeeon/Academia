@@ -516,20 +516,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     cronoTEl.textContent = `${min}:${seg}`;
   }
 
-  // Estado da série nova (qual número, reps/RIR de partida) — comum ao
-  // toque manual em "Comecei a série" e ao avanço automático depois do
-  // descanso, que reaproveita o mesmo telão em vez de reconstruir tudo.
-  function prepararEstadoDaSerie(numero) {
-    numeroEmAndamento = numero;
-    const iniciais = valoresIniciaisParaSerie(numero);
-    repsAtual = iniciais.reps;
-    rirAtual = iniciais.rir;
-    campoAtivo = "reps";
-  }
-
   // A onda só começa a rodar de verdade depois da contagem regressiva do
-  // telão (5s na primeira série, 3s ao sair do descanso) — dá tempo de
-  // largar o celular na posição antes do cronômetro subir.
+  // telão — dá tempo de largar o celular na posição antes do cronômetro
+  // subir.
   function comecarTrabalhoAgora(comTransicaoNoCronometro) {
     inicioTrabalhoTs = Date.now();
     mostrarCronometro("trabalho", "Em andamento", "00:00", { comTransicao: Boolean(comTransicaoNoCronometro) });
@@ -547,7 +536,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     const descansoVisivel = !cronometroPillEl.classList.contains("exec-cronometro-oculto");
     pararDescanso({ ocultar: !descansoVisivel });
 
-    prepararEstadoDaSerie(numero);
+    numeroEmAndamento = numero;
+    const iniciais = valoresIniciaisParaSerie(numero);
+    repsAtual = iniciais.reps;
+    rirAtual = iniciais.rir;
+    campoAtivo = "reps";
 
     telaCheiaAtual = montarTelaSerieCheia({
       exercicio,
@@ -565,7 +558,15 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     root.appendChild(telaCheiaAtual.elemento);
     pedirWakeLock();
 
-    telaCheiaAtual.mostrarContagem(5, "Posicione o celular", () => comecarTrabalhoAgora(descansoVisivel));
+    // A primeira série do exercício ganha 5s ("posicione o celular" — é a
+    // primeira vez chegando nesse aparelho); a partir da segunda, o celular
+    // já está no lugar e bastam 3s de aviso antes de retomar.
+    const primeiraSerie = numero === 1;
+    telaCheiaAtual.mostrarContagem(
+      primeiraSerie ? 5 : 3,
+      primeiraSerie ? "Posicione o celular" : "Prepare-se",
+      () => comecarTrabalhoAgora(descansoVisivel),
+    );
 
     renderizarTudo();
   }
@@ -605,21 +606,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       aoFinalizar: () => {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         cronometroPillEl.classList.add("exec-cronometro-oculto");
-
-        // Com o telão ainda aberto (não foi fechado na seta de voltar) e
-        // ainda existindo série pendente, o descanso emenda direto numa
-        // contagem de 3s pro próximo trabalho — sem precisar tocar
-        // "Comecei a série" de novo. Se o telão foi fechado ou não sobrou
-        // série, cai no comportamento de sempre: só fecha.
-        const proximaSerie = numeroPendenteAtual();
-        if (telaCheiaAtual && proximaSerie != null) {
-          prepararEstadoDaSerie(proximaSerie);
-          telaCheiaAtual.atualizarSerieAtual(proximaSerie);
-          renderizarTudo();
-          telaCheiaAtual.mostrarContagem(3, "Prepare-se", () => comecarTrabalhoAgora(false));
-        } else {
-          fecharTelaCheia();
-        }
+        // O descanso só para por aqui — avançar pra próxima série continua
+        // exigindo o toque em "Comecei a série" (é ele que decide a
+        // contagem de 5s ou 3s, ver iniciarTrabalho()).
+        fecharTelaCheia();
       },
     });
 

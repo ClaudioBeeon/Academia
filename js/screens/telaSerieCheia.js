@@ -66,7 +66,6 @@ export function montarTelaSerieCheia({
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
-  elemento.dataset.modo = "contagem";
 
   let tracos = "";
   for (let n = 1; n <= totalSeriesAlvo; n++) {
@@ -142,7 +141,33 @@ export function montarTelaSerieCheia({
   tiles[2].textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
 
   elemento.querySelector(".sc-voltar").addEventListener("click", () => { if (aoFechar) aoFechar(); });
-  elemento.querySelector(".sc-terminar").addEventListener("click", () => { if (aoTerminar) aoTerminar(); });
+  const terminarBtn = elemento.querySelector(".sc-terminar");
+  terminarBtn.addEventListener("click", () => {
+    // O aperto de confirmação toca junto com o crossfade pro descanso — o
+    // mesmo toque que fecha a onda é o que abre o anel, então os dois
+    // reagem juntos em vez de um cortar seco pro outro.
+    terminarBtn.classList.remove("confirmando");
+    void terminarBtn.offsetWidth; // reinicia a animação se for tocado de novo rápido
+    terminarBtn.classList.add("confirmando");
+    if (aoTerminar) aoTerminar();
+  });
+
+  // Um corpo por modo, sobrepostos — trocar de modo alterna qual deles
+  // carrega a classe "ativo" (crossfade + leve escala via CSS) em vez de
+  // um corte seco. O data-modo na raiz continua existindo só pro rodapé
+  // (só o modo "trabalho" mostra "Terminei — registrar").
+  const corposPorModo = {
+    trabalho: elemento.querySelector(".sc-corpo-trabalho"),
+    descanso: elemento.querySelector(".sc-corpo-descanso"),
+    contagem: elemento.querySelector(".sc-corpo-contagem"),
+  };
+  function mostrarModo(modo) {
+    elemento.dataset.modo = modo;
+    for (const [chave, corpo] of Object.entries(corposPorModo)) {
+      corpo.classList.toggle("ativo", chave === modo);
+    }
+  }
+  mostrarModo("contagem");
 
   const anelProgresso = elemento.querySelector(".sc-anel-progresso");
   anelProgresso.style.strokeDasharray = String(CIRCUNFERENCIA_ANEL);
@@ -232,7 +257,7 @@ export function montarTelaSerieCheia({
   }
 
   function iniciarTrabalho() {
-    elemento.dataset.modo = "trabalho";
+    mostrarModo("trabalho");
     if (quadroId != null) return;
     inicioOndaTs = null;
     rotuloAtual = null;
@@ -254,7 +279,7 @@ export function montarTelaSerieCheia({
   // Troca o corpo do telão pro anel regressivo — chamado quando a série
   // termina e o descanso começa, sem fechar o telão nem trocar de tela.
   function mostrarDescanso(duracaoInicialSegundos) {
-    elemento.dataset.modo = "descanso";
+    mostrarModo("descanso");
     atualizarDescanso(duracaoInicialSegundos, duracaoInicialSegundos);
   }
 
@@ -271,7 +296,7 @@ export function montarTelaSerieCheia({
   // segundo certo.
   function mostrarContagem(segundosTotais, rotulo, aoTerminar) {
     if (contagemIntervalId != null) { clearInterval(contagemIntervalId); contagemIntervalId = null; }
-    elemento.dataset.modo = "contagem";
+    mostrarModo("contagem");
     contagemRotuloEl.textContent = rotulo;
     // Volta a tile de reps pra faixa-alvo enquanto ainda não começou a
     // contar repetição — evita mostrar o número da série anterior.

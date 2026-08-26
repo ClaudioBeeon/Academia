@@ -542,15 +542,29 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* O corpo inteiro é sobreposto — trabalho, descanso e a contagem dividem o
    mesmo lugar na tela, sem redimensionar nada ao redor (cabeçalho, trilha,
-   tiles). Só o modo ativo (data-modo na raiz) fica visível. */
+   tiles). Trocar de modo agora é um crossfade com leve escala (nunca
+   scale(0) — a onda "encolhe e esmaece" pro anel, que já entra
+   ligeiramente maior e some, como se um respirasse no lugar do outro) em
+   vez do corte seco de antes — é a mesma dupla curva/duração usada em
+   toda folha do app, só que aplicada a três estados em vez de dois. */
 .sc-corpo { position: relative; flex: 1; min-height: 0; }
 .sc-corpo-trabalho, .sc-corpo-descanso, .sc-corpo-contagem {
-  position: absolute; inset: 0; display: none; flex-direction: column;
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none; transform: scale(0.98);
+  transition: opacity var(--duration-standard) var(--ease-out),
+    transform var(--duration-standard) var(--ease-out);
 }
-.serie-cheia[data-modo="trabalho"] .sc-corpo-trabalho { display: flex; }
-.serie-cheia[data-modo="descanso"] .sc-corpo-descanso { display: flex; }
-.serie-cheia[data-modo="contagem"] .sc-corpo-contagem { display: flex; }
-.serie-cheia:not([data-modo="trabalho"]) .sc-foot { display: none; }
+.sc-corpo-trabalho.ativo, .sc-corpo-descanso.ativo, .sc-corpo-contagem.ativo {
+  opacity: 1; pointer-events: auto; transform: scale(1);
+}
+.sc-foot { opacity: 1; transition: opacity var(--duration-standard) var(--ease-out); }
+.serie-cheia:not([data-modo="trabalho"]) .sc-foot { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-corpo-trabalho, .sc-corpo-descanso, .sc-corpo-contagem {
+    transform: none; transition: opacity var(--duration-fast) ease;
+  }
+  .sc-foot { transition: opacity var(--duration-fast) ease; }
+}
 
 /* Contagem regressiva (5s antes da primeira onda, 3s ao sair do descanso). */
 .sc-corpo-contagem { align-items: center; justify-content: center; gap: 14px; }
@@ -596,6 +610,18 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
   width: 100%; min-height: 52px; border: none; border-radius: 999px;
   background: var(--accent); color: var(--accent-ink); font-weight: 800;
   font-size: 0.9rem; font-family: inherit; cursor: pointer;
+}
+/* Aperto de confirmação — um gesto só, não algo tocado várias vezes por
+   segundo, então keyframes (não uma transition) são a ferramenta certa
+   aqui. Toca junto com o crossfade do corpo pro anel de descanso. */
+@keyframes sc-confirmar-pulso {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+.sc-terminar.confirmando { animation: sc-confirmar-pulso 0.4s var(--ease-out); }
+@media (prefers-reduced-motion: reduce) {
+  .sc-terminar.confirmando { animation: none; }
 }
 .sc-terminar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 

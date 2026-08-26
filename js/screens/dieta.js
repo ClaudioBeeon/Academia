@@ -4,7 +4,8 @@ import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAliment
 import { getMedidas } from "../data/medidas.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia, pisoGorduraDiaria } from "../engine/nutricao.js";
-import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, getApiKey } from "../ai/gemini.js";
+import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, responderPerguntaDieta, getApiKey } from "../ai/gemini.js";
+import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -359,6 +360,21 @@ export async function montarTelaDieta(db) {
   main.appendChild(cardResumo.elemento);
   agendarResumoAutomatico = cardResumo.agendar;
   agendarResumoAutomatico(); // cobre "abrir o app" — a carga inicial já rodou antes deste ponto
+
+  // Dúvida livre sobre o dia alimentar (ex.: "posso comer um brigadeiro
+  // hoje?") — usa o mesmo contexto (totais já calculados, metas) do resumo
+  // automático acima, nunca inventa o que já foi consumido.
+  const caixaPerguntaDieta = document.createElement("section");
+  caixaPerguntaDieta.className = "exercise-card";
+  caixaPerguntaDieta.appendChild(montarCaixaPerguntaIA({
+    titulo: "Dúvidas sobre a dieta de hoje?",
+    placeholder: "ex: posso comer um brigadeiro hoje?",
+    perguntar: (pergunta) => {
+      if (!contextoNutricionalAtual) return Promise.resolve({ ok: false, mensagem: "Preencha sua idade acima primeiro — a meta calórica depende dela." });
+      return responderPerguntaDieta(contextoNutricionalAtual, pergunta);
+    },
+  }));
+  main.appendChild(caixaPerguntaDieta);
 
   if (intervaloChecagemDeVirada) clearInterval(intervaloChecagemDeVirada);
   intervaloChecagemDeVirada = setInterval(async () => {

@@ -13,6 +13,8 @@ import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from ".
 import { animarDetails } from "../lib/detailsAnimado.js";
 import { abrirSubstituirExercicio } from "./substituirExercicio.js";
 import { montarTelaHistorico } from "./historico.js";
+import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
+import { responderPerguntaExercicio } from "../ai/gemini.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -360,6 +362,14 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     animarDetails(explicacao, corpoExplicacao);
     main.appendChild(explicacao);
   }
+
+  // Dúvida livre sobre este exercício específico — a IA já sabe qual é, o
+  // usuário só pergunta ("sinto isso na lombar, é normal?").
+  main.appendChild(montarCaixaPerguntaIA({
+    titulo: "Dúvidas sobre este exercício?",
+    placeholder: "ex: sinto isso mais no ombro que no peito, é normal?",
+    perguntar: (pergunta) => responderPerguntaExercicio(exercicio, pergunta),
+  }));
 
   function numeroPendenteAtual() {
     for (let numero = 1; numero <= totalSeriesAlvo; numero++) {

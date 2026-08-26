@@ -1057,3 +1057,17 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .calendario-legenda { display: flex; gap: 14px; padding: 0 18px 18px; font-size: 0.74rem; color: var(--ink-faint); flex-wrap: wrap; }
 .calendario-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--accent); margin-right: 5px; vertical-align: -1px; font-style: normal; }
 .calendario-legenda i.vazio { background: var(--card-2); }
+
+/* Caixa de pergunta livre pra IA — reaproveitada no fim de cada exercício
+   (execução) e na aba Dieta. */
+.caixa-pergunta-ia { padding: 14px 18px 18px; border-top: 1px solid var(--line); }
+.cpia-titulo { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+.cpia-linha { display: flex; align-items: flex-end; gap: 8px; }
+.cpia-input { flex: 1; min-width: 0; resize: none; background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 0.85rem; max-height: 100px; }
+.cpia-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cpia-enviar { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--accent);
+  color: var(--accent-ink); font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cpia-enviar:disabled { opacity: 0.5; cursor: default; }
+.cpia-status { padding: 8px 0 0; }
+.cpia-resposta { font-size: 0.85rem; line-height: 1.6; color: var(--ink); padding-top: 6px; white-space: pre-wrap; }

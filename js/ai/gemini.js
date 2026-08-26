@@ -139,6 +139,45 @@ Responda APENAS com um JSON válido, sem texto ao redor, no formato:
   }
 }
 
+// Pergunta livre sobre um exercício específico, feita na própria tela de
+// execução (ex.: "sinto isso na lombar, é normal?"). A IA já sabe qual
+// exercício é — o usuário não precisa reexplicar contexto que a tela já tem.
+export async function responderPerguntaExercicio(exercicio, pergunta, opcoes = {}) {
+  const prescricao = exercicio.prescricao;
+  const contextoPrescricao = prescricao
+    ? `Como executar: ${prescricao.comoExecutar ?? "não informado"}\nAtenção: ${prescricao.atencao ?? "não informado"}`
+    : exercicio.observacoesExecucao
+      ? `Observações: ${exercicio.observacoesExecucao}`
+      : "Sem observações cadastradas.";
+
+  const prompt = `Você é um assistente de treino de musculação, respondendo a dúvida de alguém durante o próprio treino, sobre um exercício específico. Responda em português, direto, em no máximo 3 frases, sem markdown, sem título. Se a dúvida envolver dor (não desconforto muscular normal), oriente a procurar um profissional em vez de arriscar um diagnóstico.
+
+Exercício: ${exercicio.nome} (músculo: ${exercicio.musculo ?? "não informado"})
+${contextoPrescricao}
+
+Pergunta do usuário: "${pergunta}"`;
+
+  return chamarGemini(prompt, opcoes);
+}
+
+// Pergunta livre sobre a dieta do dia (ex.: "posso comer um brigadeiro
+// hoje?"), feita na aba Dieta. Recebe o mesmo contexto que já alimenta o
+// resumo automático — a IA nunca inventa quanto já foi consumido, só o que
+// o motor determinístico calculou.
+export async function responderPerguntaDieta({ fase, total, metaCalorica, metaProteina, refeicoesRestantes }, pergunta, opcoes = {}) {
+  const prompt = `Você é um assistente de nutrição respondendo a uma dúvida pontual sobre o dia alimentar de alguém, dentro de um app pessoal de acompanhamento. Responda em português, direto, em no máximo 4 frases, sem markdown, sem título. Baseie a resposta só nos números abaixo — nunca invente o que a pessoa já comeu.
+
+Fase/objetivo atual: ${fase ?? "não informado"}
+Consumido hoje: ${Math.round(total.kcal)} kcal, ${total.proteina_g.toFixed(0)}g de proteína, ${total.carboidrato_g.toFixed(0)}g de carboidrato, ${total.gordura_g.toFixed(1)}g de gordura.
+Meta calórica do dia: ${metaCalorica.meta_kcal} kcal (piso de segurança: ${metaCalorica.piso_kcal} kcal).
+Meta de proteína: ${metaProteina ? `${metaProteina.min_g}–${metaProteina.max_g}g` : "não calculada"}.
+${refeicoesRestantes ? `Refeições que ainda faltam hoje: ${refeicoesRestantes}.` : "Sem informação sobre refeições restantes."}
+
+Pergunta do usuário: "${pergunta}"`;
+
+  return chamarGemini(prompt, opcoes);
+}
+
 // Transforma os totais do dia + os alertas já decididos pelo motor
 // determinístico (js/engine/nutricao.js) num parágrafo explicativo. A IA
 // nunca julga os números por conta própria — só recebe o que o motor já

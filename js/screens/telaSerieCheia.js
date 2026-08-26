@@ -10,6 +10,8 @@
 // - "descanso": o mesmo cabeçalho/trilha, mas o corpo vira um anel
 //   regressivo lima com o tempo restante no centro — quem toca "Terminei"
 //   já vê a contagem do descanso sem sair da tela.
+// - "contagem": um número grande contando 5→1 antes da onda (dá tempo de
+//   posicionar o celular) ou 3→1 antes de retomar depois do descanso.
 import { fasesDaCadencia, totalDaRepeticao } from "../engine/cadencia.js";
 import { formaOnda as forma, construirPercursoOnda as construirPercurso } from "../engine/ondaCadencia.js";
 
@@ -32,9 +34,10 @@ function formatarRelogio(segundos) {
 
 /**
  * Monta o telão. Devolve { elemento, iniciarTrabalho, pararTrabalho,
- * mostrarDescanso, atualizarDescanso } — quem chama controla o ciclo de
- * vida (a animação e os cronômetros só correm com a série/descanso em
- * andamento) e decide quando anexar/remover `elemento` do DOM.
+ * mostrarDescanso, atualizarDescanso, mostrarContagem, atualizarSerieAtual }
+ * — quem chama controla o ciclo de vida (a animação e os cronômetros só
+ * correm com a série/descanso em andamento) e decide quando anexar/remover
+ * `elemento` do DOM.
  *
  * `aoFechar` é a seta de voltar no cabeçalho (só esconde o telão, não
  * cancela a série nem o descanso). `aoTerminar` é o botão
@@ -57,7 +60,7 @@ export function montarTelaSerieCheia({
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
-  elemento.dataset.modo = "trabalho";
+  elemento.dataset.modo = "contagem";
 
   let tracos = "";
   for (let n = 1; n <= totalSeriesAlvo; n++) {
@@ -112,6 +115,10 @@ export function montarTelaSerieCheia({
           <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
         </div>
       </div>
+      <div class="sc-corpo-contagem">
+        <b class="sc-contagem-n" role="status" aria-live="polite"></b>
+        <span class="sc-contagem-rotulo"></span>
+      </div>
     </div>
     <div class="sc-foot"><button type="button" class="sc-terminar">Terminei — registrar</button></div>
   `;
@@ -123,6 +130,8 @@ export function montarTelaSerieCheia({
   const tiles = elemento.querySelectorAll(".sc-tile b");
   tiles[0].textContent = `${formatarNumero(cargaSelecionada)}`;
   const tileRepsEl = tiles[1];
+  const textoFaixaReps = repsMin === repsMax ? formatarNumero(repsMax) : `${formatarNumero(repsMin)}–${formatarNumero(repsMax)}`;
+  tileRepsEl.textContent = textoFaixaReps;
   tiles[2].textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
 
   elemento.querySelector(".sc-voltar").addEventListener("click", () => { if (aoFechar) aoFechar(); });
@@ -143,6 +152,10 @@ export function montarTelaSerieCheia({
   const faseEl = elemento.querySelector(".sc-fase");
   const cronoEl = elemento.querySelector(".sc-crono");
   const anelTextoEl = elemento.querySelector(".sc-anel-t");
+  const contagemNumeroEl = elemento.querySelector(".sc-contagem-n");
+  const contagemRotuloEl = elemento.querySelector(".sc-contagem-rotulo");
+  const trilhoTracosEl = elemento.querySelector(".sc-trilho-tracos");
+  const trilhoNumeroEl = elemento.querySelector(".sc-trilho-n");
 
   let d = "";
   const PASSOS = 80;
@@ -172,6 +185,7 @@ export function montarTelaSerieCheia({
   let repAtual = 1;
   let inicioTrabalhoTs = Date.now();
   let intervaloCrono = null;
+  let contagemIntervalId = null;
 
   // A repetição contada é derivada direto do relógio da onda (quantos
   // ciclos completos já se passaram) — não existe um contador separado
@@ -226,6 +240,7 @@ export function montarTelaSerieCheia({
     if (quadroId != null) cancelAnimationFrame(quadroId);
     quadroId = null;
     if (intervaloCrono) { clearInterval(intervaloCrono); intervaloCrono = null; }
+    if (contagemIntervalId != null) { clearInterval(contagemIntervalId); contagemIntervalId = null; }
   }
 
   // Troca o corpo do telão pro anel regressivo — chamado quando a série
@@ -241,5 +256,50 @@ export function montarTelaSerieCheia({
     anelTextoEl.textContent = formatarRelogio(Math.max(0, restante));
   }
 
-  return { elemento, iniciarTrabalho, pararTrabalho, mostrarDescanso, atualizarDescanso };
+  // Contagem regressiva simples (5s antes da primeira série da tela — dá
+  // tempo de posicionar o celular — ou 3s ao sair do descanso). Não usa
+  // rAF: um número por segundo não precisa de quadro a quadro, e um
+  // setInterval reage bem a qualquer atraso do navegador sem desviar do
+  // segundo certo.
+  function mostrarContagem(segundosTotais, rotulo, aoTerminar) {
+    if (contagemIntervalId != null) { clearInterval(contagemIntervalId); contagemIntervalId = null; }
+    elemento.dataset.modo = "contagem";
+    contagemRotuloEl.textContent = rotulo;
+    // Volta a tile de reps pra faixa-alvo enquanto ainda não começou a
+    // contar repetição — evita mostrar o número da série anterior.
+    tileRepsEl.textContent = textoFaixaReps;
+
+    let restante = segundosTotais;
+    contagemNumeroEl.textContent = String(restante);
+    contagemIntervalId = setInterval(() => {
+      restante -= 1;
+      if (restante <= 0) {
+        clearInterval(contagemIntervalId);
+        contagemIntervalId = null;
+        if (aoTerminar) aoTerminar();
+        return;
+      }
+      contagemNumeroEl.textContent = String(restante);
+    }, 1000);
+  }
+
+  // Atualiza a trilha/número de série sem reconstruir o telão — usado no
+  // avanço automático pro próximo trabalho depois do descanso, onde o
+  // mesmo telão continua aberto.
+  function atualizarSerieAtual(numero) {
+    [...trilhoTracosEl.children].forEach((traco, indice) => {
+      traco.className = indice + 1 <= numero ? "on" : "";
+    });
+    trilhoNumeroEl.textContent = `${numero}/${totalSeriesAlvo}`;
+  }
+
+  return {
+    elemento,
+    iniciarTrabalho,
+    pararTrabalho,
+    mostrarDescanso,
+    atualizarDescanso,
+    mostrarContagem,
+    atualizarSerieAtual,
+  };
 }

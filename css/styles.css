@@ -492,7 +492,6 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .sc-tile b { display: block; font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800; }
 .sc-tile span { display: block; font-size: 0.6rem; color: var(--ink-faint); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
 
-.sc-corpo { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .sc-onda-box { flex: 1 1 auto; position: relative; min-height: 0; }
 .sc-onda-box svg { width: 100%; height: 100%; display: block; }
 .sc-fase { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
@@ -504,14 +503,25 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 .sc-crono-bloco span { display: block; font-family: var(--font-mono); font-size: 0.64rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; }
 
-.sc-corpo-trabalho, .sc-corpo-descanso { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-/* O corpo inteiro é sobreposto — trabalho e descanso dividem o mesmo lugar
-   na tela, sem redimensionar nada ao redor (cabeçalho, trilha, tiles). */
-.sc-corpo { position: relative; }
-.sc-corpo-trabalho, .sc-corpo-descanso { position: absolute; inset: 0; }
-.serie-cheia[data-modo="trabalho"] .sc-corpo-descanso { display: none; }
-.serie-cheia[data-modo="descanso"] .sc-corpo-trabalho { display: none; }
-.serie-cheia[data-modo="descanso"] .sc-foot { display: none; }
+/* O corpo inteiro é sobreposto — trabalho, descanso e a contagem dividem o
+   mesmo lugar na tela, sem redimensionar nada ao redor (cabeçalho, trilha,
+   tiles). Só o modo ativo (data-modo na raiz) fica visível. */
+.sc-corpo { position: relative; flex: 1; min-height: 0; }
+.sc-corpo-trabalho, .sc-corpo-descanso, .sc-corpo-contagem {
+  position: absolute; inset: 0; display: none; flex-direction: column;
+}
+.serie-cheia[data-modo="trabalho"] .sc-corpo-trabalho { display: flex; }
+.serie-cheia[data-modo="descanso"] .sc-corpo-descanso { display: flex; }
+.serie-cheia[data-modo="contagem"] .sc-corpo-contagem { display: flex; }
+.serie-cheia:not([data-modo="trabalho"]) .sc-foot { display: none; }
+
+/* Contagem regressiva (5s antes da primeira onda, 3s ao sair do descanso). */
+.sc-corpo-contagem { align-items: center; justify-content: center; gap: 14px; }
+.sc-contagem-n {
+  font-family: var(--font-mono); font-size: 6rem; font-weight: 800; line-height: 1;
+  letter-spacing: -0.03em; color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.sc-contagem-rotulo { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* Anel de descanso — o mesmo cronômetro que antes só existia na caixa
    flutuante, agora regressivo e grande, no lugar da onda. */

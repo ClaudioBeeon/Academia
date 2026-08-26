@@ -60,26 +60,23 @@ function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
   corpo.className = "fila-aquecimento-corpo";
   card.appendChild(corpo);
 
-  if (aquecimento.porque) {
-    const porque = document.createElement("p");
-    porque.className = "bloco-apoio-porque";
-    porque.textContent = aquecimento.porque;
-    corpo.appendChild(porque);
-  }
-
+  // Cada movimento é uma caixa fechada por padrão (nome + prescrição) — o
+  // texto de execução só aparece se o usuário tocar pra abrir. O "porque"
+  // do aquecimento inteiro (parágrafo sobre postura) não entra mais aqui:
+  // é contexto de programa, não algo que se lê no meio do treino.
   aquecimento.exercicios.forEach((item, indice) => {
-    const li = document.createElement("div");
-    li.className = "bloco-apoio-item bloco-apoio-item-check";
+    const li = document.createElement("details");
+    li.className = "fila-aquec-item";
     li.innerHTML = `
-      <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
-      <div class="bloco-apoio-item-corpo">
-        <h5></h5>
-        <span class="bloco-apoio-presc"></span>
-        <p></p>
-      </div>
+      <summary>
+        <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
+        <span class="nm"></span>
+        <span class="presc"></span>
+      </summary>
+      <p></p>
     `;
-    li.querySelector("h5").textContent = item.nome;
-    li.querySelector(".bloco-apoio-presc").textContent = item.prescricao;
+    li.querySelector(".nm").textContent = item.nome;
+    li.querySelector(".presc").textContent = item.prescricao;
     li.querySelector("p").textContent = item.como;
 
     const botaoCheck = li.querySelector(".bloco-apoio-check");
@@ -91,7 +88,12 @@ function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
     };
     aplicarEstado();
 
-    botaoCheck.addEventListener("click", async () => {
+    botaoCheck.addEventListener("click", async (event) => {
+      // Sem isto, o clique no check também dispara o toggle nativo do
+      // <details> — o box abriria/fecharia toda vez que se marca feito.
+      event.preventDefault();
+      event.stopPropagation();
+
       if (movimentosFeitos.has(indice)) movimentosFeitos.delete(indice);
       else movimentosFeitos.add(indice);
       aplicarEstado();

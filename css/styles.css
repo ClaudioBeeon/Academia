@@ -531,7 +531,23 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .fila-aquecimento .t s { display: block; text-decoration: none; font-size: 0.66rem; color: var(--ink-faint); font-weight: 500; margin-top: 1px; }
 .fila-aquecimento .c { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .fila-aquecimento.feito .c { color: var(--accent); }
-.fila-aquecimento-corpo { padding: 2px 14px 14px; }
+.fila-aquecimento-corpo { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Cada movimento do aquecimento — caixa fechada por padrão (nome + prescrição),
+   abre num toque pra mostrar a execução. Marcar feito não abre a caixa. */
+.fila-aquec-item { background: var(--card-2); border-radius: 12px; }
+.fila-aquec-item > summary {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  min-height: 44px; cursor: pointer; list-style: none;
+}
+.fila-aquec-item > summary::-webkit-details-marker { display: none; }
+.fila-aquec-item > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.fila-aquec-item .nm { flex: 1; min-width: 0; font-size: 0.82rem; font-weight: 700; }
+.fila-aquec-item .presc { font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint); text-align: right; }
+.fila-aquec-item.feito .nm { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+.fila-aquec-item > p { margin: 0; padding: 0 12px 12px 46px; font-size: 0.78rem; line-height: 1.5; color: var(--ink-dim); }
+.fila-aquec-item .bloco-apoio-check { width: 26px; height: 26px; flex: 0 0 auto; margin-top: 0; background: var(--card); }
+.fila-aquec-item .bloco-apoio-check svg { width: 14px; height: 14px; }
 
 .fila-sec {
   font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em;

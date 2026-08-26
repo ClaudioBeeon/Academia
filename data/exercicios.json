@@ -1,7 +1,7 @@
 {
-  "versao": "1.1",
-  "dataAtualizacao": "2026-08-23",
-  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps)",
+  "versao": "1.2",
+  "dataAtualizacao": "2026-08-26",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita)",
   "exercicios": [
     {
       "id": "supino_inclinado_halteres",
@@ -130,6 +130,28 @@
       "observacoesExecucao": "cabo passando por trás do corpo mantém tensão na posição alongada, melhor que halteres nesse quesito."
     },
     {
+      "id": "elevacao_lateral_halteres",
+      "nome": "Elevação lateral com halteres",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "cotovelos levemente flexionados, subir até a linha do ombro sem usar embalo do corpo."
+    },
+    {
+      "id": "elevacao_lateral_maquina",
+      "nome": "Elevação lateral na máquina",
+      "musculoPrimario": "ombro",
+      "musculosSecundarios": [],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "encosto ajustado pra o eixo da máquina ficar na altura do ombro; boa opção quando o cabo/polia está ocupado."
+    },
+    {
       "id": "rosca_direta_barra_w",
       "nome": "Rosca direta com barra W",
       "musculoPrimario": "biceps",
@@ -172,6 +194,28 @@
       "cargaAlongada": true,
       "incrementoMinimo_kg": 2.5,
       "observacoesExecucao": "carrega o tríceps na posição alongada, controlar bem a descida perto da testa."
+    },
+    {
+      "id": "triceps_frances_halteres",
+      "nome": "Tríceps francês com halteres",
+      "musculoPrimario": "triceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "cotovelos apontando pro teto, descer o halter atrás da cabeça sem abrir os cotovelos."
+    },
+    {
+      "id": "triceps_maquina",
+      "nome": "Tríceps na máquina",
+      "musculoPrimario": "triceps",
+      "musculosSecundarios": [],
+      "tipo": "maquina",
+      "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2,
+      "observacoesExecucao": "encosto trava o cotovelo no lugar — boa opção quando a barra W ou o pulley estão ocupados."
     },
     {
       "id": "leg_press_45",

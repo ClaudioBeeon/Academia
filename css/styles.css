@@ -169,6 +169,13 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .swap-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .swap-pill.selecionada { background: var(--accent); color: var(--accent-ink); }
 
+/* Ações do cabeçalho da execução — "Trocar" e "Deixar pra depois", as duas
+   folgas de hoje que não tocam a ficha. Empilhadas (não lado a lado) pra
+   caberem sem espremer o nome do exercício num telefone estreito. */
+.exec-acoes-header { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 0 auto; }
+.exec-acoes-header .swap-pill { min-height: 36px; padding: 6px 12px; font-size: 0.78rem; }
+.adiar-pill { color: var(--ink-faint); }
+
 .sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
 .ferramentas-painel {
   overflow: hidden;
@@ -756,6 +763,23 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 }
 .atividade-modo-nota { margin: 2px 0 0; font-size: 0.72rem; line-height: 1.4; color: var(--ink-faint); text-align: center; }
 .atividade-sheet .carga-sheet-confirmar { background: var(--card-2); color: var(--ink-dim); }
+
+/* Folha "Trocar exercício" (js/screens/substituirExercicio.js) — troca só
+   por hoje, mesmo padrão de folha das outras. */
+.substituir-sheet { align-items: stretch; padding-top: 18px; }
+.substituir-sheet h3 { font-size: 1.05rem; font-weight: 800; text-align: center; text-transform: none; color: var(--ink); margin-bottom: 6px; }
+.substituir-nota { text-align: center; font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 16px; line-height: 1.4; }
+.substituir-lista { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.substituir-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; min-height: 52px; padding: 10px 14px; border-radius: 14px;
+  background: var(--card-2); border: none; color: var(--ink); font-family: inherit;
+  cursor: pointer; text-align: left;
+}
+.substituir-item .nm { font-size: 0.86rem; font-weight: 700; }
+.substituir-item .eq { font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; flex: 0 0 auto; }
+.substituir-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.substituir-vazio { text-align: center; font-size: 0.82rem; color: var(--ink-faint); padding: 20px 10px; }
 
 /* Popup de perguntas diárias — mesma folha do seletor de carga, conteúdo próprio */
 .perguntas-sheet { padding-top: 18px; align-items: stretch; }

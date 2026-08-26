@@ -11,6 +11,7 @@ import { abrirEditorCadencia } from "./editorCadencia.js";
 import { cadenciaDoExercicio, textoDaCadencia } from "../engine/cadencia.js";
 import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from "../data/ajustesCadencia.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
+import { abrirSubstituirExercicio } from "./substituirExercicio.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -57,8 +58,8 @@ function esperar(ms) {
 }
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
-  const { exercicio, indice, total, todosExercicios, protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
-  const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados } = callbacks;
+  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
+  const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
@@ -112,11 +113,22 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   `;
   header.querySelector(".exec-titulo").textContent = exercicio.nome;
   header.querySelector(".voltar-btn").addEventListener("click", () => { if (onFechar) onFechar(); });
+  const acoesHeader = document.createElement("div");
+  acoesHeader.className = "exec-acoes-header";
   const trocarBtn = document.createElement("button");
   trocarBtn.type = "button";
   trocarBtn.className = "swap-pill trocar-pill";
   trocarBtn.textContent = "Trocar";
-  header.appendChild(trocarBtn);
+  acoesHeader.appendChild(trocarBtn);
+  if (onExercicioAdiado && total > 1) {
+    const adiarBtn = document.createElement("button");
+    adiarBtn.type = "button";
+    adiarBtn.className = "swap-pill adiar-pill";
+    adiarBtn.textContent = "Deixar pra depois";
+    adiarBtn.addEventListener("click", () => onExercicioAdiado(exercicio.id));
+    acoesHeader.appendChild(adiarBtn);
+  }
+  header.appendChild(acoesHeader);
   root.appendChild(header);
 
   const main = document.createElement("main");
@@ -702,10 +714,14 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     if (onSerieRegistrada) await onSerieRegistrada();
   }
 
-  trocarBtn.addEventListener("click", () => {
-    const sugestoes = sugerirSubstitutos(exercicio.id, todosExercicios);
-    const nomes = sugestoes.map((e) => e.nome).join(", ") || "nenhuma alternativa encontrada";
-    alert(`Alternativas: ${nomes}`);
+  trocarBtn.addEventListener("click", async () => {
+    // Nunca sugere um exercício que já está na fila de hoje — senão trocar
+    // pra ele criava duas caixas iguais na mesma sessão.
+    const outrosDeHoje = new Set(idsExerciciosHoje.filter((id) => id !== exercicio.id));
+    const sugestoes = sugerirSubstitutos(exercicio.id, todosExercicios, 8).filter((e) => !outrosDeHoje.has(e.id)).slice(0, 4);
+    const escolhido = await abrirSubstituirExercicio({ nomeAtual: exercicio.nome, sugestoes });
+    if (!escolhido) return;
+    if (onExercicioSubstituido) await onExercicioSubstituido(exercicio.id, escolhido.id);
   });
 
   const rodape = document.createElement("div");

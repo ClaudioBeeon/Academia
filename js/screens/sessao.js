@@ -1,7 +1,8 @@
 // js/screens/sessao.js
 import { getAll } from "../data/db.js";
 import { getEquipamento } from "../data/equipamento.js";
-import { excluirSeriesDoDia } from "../data/historico.js";
+import { excluirSeriesDoDia, getSeriesDoDia } from "../data/historico.js";
+import { getSubstituicoesDoDia, salvarSubstituicao, getAdiamentosDoDia, adiarExercicio, aplicarAjustesSessaoDoDia } from "../data/ajustesSessao.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
@@ -53,9 +54,25 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
   let diaPersistido = modoPreview || Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
 
-  const { exerciciosHoje, diaDaFicha } = prepararSessaoDoDia({
+  const { exerciciosHoje: exerciciosBase, diaDaFicha } = prepararSessaoDoDia({
     todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
   });
+
+  // Substituição ("trocar exercício") e adiamento ("pular pra depois") só
+  // valem pra hoje — nunca tocam a ficha. Recalculados sempre a partir de
+  // `exerciciosBase` (nunca uns em cima dos outros) sempre que um dos dois
+  // muda, senão substituir o substituto ou adiar duas vezes bagunçaria.
+  let exerciciosHoje = exerciciosBase;
+  async function recarregarAjustesDoDia() {
+    const [substituicoes, adiamentos, seriesHoje] = await Promise.all([
+      getSubstituicoesDoDia(db, hoje),
+      getAdiamentosDoDia(db, hoje),
+      modoPreview ? [] : getSeriesDoDia(db, hoje),
+    ]);
+    const exerciciosComSerieHoje = new Set(seriesHoje.map((s) => s.exercicioId));
+    exerciciosHoje = aplicarAjustesSessaoDoDia(exerciciosBase, todosExercicios, substituicoes, adiamentos, exerciciosComSerieHoje);
+  }
+  if (!modoPreview) await recarregarAjustesDoDia();
 
   const root = document.createElement("div");
   let estadoAtual = "fila";
@@ -134,6 +151,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
           indice: indiceExercicioAtual + 1,
           total: exerciciosHoje.length,
           todosExercicios,
+          idsExerciciosHoje: exerciciosHoje.map((e) => e.id),
           protocolo,
           equipamento,
           hoje,
@@ -150,6 +168,24 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
             } else {
               await irParaRelatorioOuPerguntarCardio();
             }
+          },
+          // "Trocar exercício": salva a troca (só hoje) e recarrega no
+          // mesmo lugar da fila — o substituto assume o índice de quem
+          // saiu, com a mesma prescrição/séries-alvo.
+          onExercicioSubstituido: async (exercicioAtualId, novoExercicioId) => {
+            await salvarSubstituicao(db, hoje, exercicioAtualId, novoExercicioId);
+            await recarregarAjustesDoDia();
+            await renderizar("trocarAba");
+          },
+          // "Pular pra depois": o exercício vai pro fim da fila de hoje —
+          // como ele sai do índice atual, o que era o próximo assume esse
+          // mesmo índice, então só recarregar e continuar em "execução" já
+          // mostra ele.
+          onExercicioAdiado: async (exercicioId) => {
+            await adiarExercicio(db, hoje, exercicioId);
+            await recarregarAjustesDoDia();
+            if (indiceExercicioAtual >= exerciciosHoje.length) indiceExercicioAtual = Math.max(0, exerciciosHoje.length - 1);
+            await renderizar("avancar");
           },
           onAbrirHistorico: async (exercicio) => {
             historicoExercicio = exercicio;

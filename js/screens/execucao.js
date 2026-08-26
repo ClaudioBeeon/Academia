@@ -193,15 +193,18 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   main.appendChild(notaEl);
 
   // Uma única caixa flutuante pro cronômetro, compartilhada entre trabalho
-  // (contando pra cima, preta) e descanso (contando pra baixo, lima) — troca
-  // de estado é a mesma caixa recolorindo e trocando o texto de dentro, não
-  // duas caixas se revezando em slide.
+  // (contando pra cima, preta) e descanso (contando pra baixo, lima). Trocar
+  // de estado recolore a MESMA caixa e faz a leitura de dentro girar como um
+  // carrossel vertical — a de agora sobe e sai por cima, a nova entra
+  // subindo de baixo —, sempre dentro do mesmo tamanho de caixa.
   const cronometroPillEl = document.createElement("div");
   cronometroPillEl.className = "exec-cronometro exec-cronometro-oculto";
   cronometroPillEl.innerHTML = `
-    <div class="leitura">
-      <div class="txt"></div>
-      <div class="t">00:00</div>
+    <div class="carrossel">
+      <div class="leitura">
+        <div class="txt"></div>
+        <div class="t">00:00</div>
+      </div>
     </div>
     <div class="ctl" hidden>
       <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
@@ -209,29 +212,63 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     </div>
   `;
   root.appendChild(cronometroPillEl);
-  const leituraEl = cronometroPillEl.querySelector(".leitura");
-  const cronoTxtEl = cronometroPillEl.querySelector(".txt");
-  const cronoTEl = cronometroPillEl.querySelector(".t");
+  const carrosselEl = cronometroPillEl.querySelector(".carrossel");
   const cronoCtlEl = cronometroPillEl.querySelector(".ctl");
+  let leituraAtualEl = carrosselEl.querySelector(".leitura");
+  let cronoTxtEl = leituraAtualEl.querySelector(".txt");
+  let cronoTEl = leituraAtualEl.querySelector(".t");
+  let transicaoTimeoutId = null;
+
+  function concluirTransicaoCarrossel(leituraFinal) {
+    if (transicaoTimeoutId) { clearTimeout(transicaoTimeoutId); transicaoTimeoutId = null; }
+    carrosselEl.querySelectorAll(".leitura").forEach((el) => { if (el !== leituraFinal) el.remove(); });
+    leituraFinal.classList.remove("carrossel-entrando", "carrossel-saindo");
+    carrosselEl.style.height = "";
+    leituraAtualEl = leituraFinal;
+    cronoTxtEl = leituraFinal.querySelector(".txt");
+    cronoTEl = leituraFinal.querySelector(".t");
+  }
 
   function mostrarCronometro(estado, rotulo, valorTexto, { comTransicao = false } = {}) {
     const jaVisivel = !cronometroPillEl.classList.contains("exec-cronometro-oculto");
-    const aplicar = () => {
-      cronometroPillEl.dataset.estado = estado;
-      cronometroPillEl.classList.remove("exec-cronometro-oculto");
+    cronometroPillEl.dataset.estado = estado;
+    cronometroPillEl.classList.remove("exec-cronometro-oculto");
+
+    if (!comTransicao || !jaVisivel) {
+      concluirTransicaoCarrossel(leituraAtualEl);
       cronoTxtEl.textContent = rotulo;
       cronoTEl.textContent = valorTexto;
       cronoCtlEl.hidden = estado !== "descanso";
-    };
-    if (comTransicao && jaVisivel) {
-      leituraEl.classList.add("trocando");
-      setTimeout(() => {
-        aplicar();
-        requestAnimationFrame(() => leituraEl.classList.remove("trocando"));
-      }, 160);
-    } else {
-      aplicar();
+      return;
     }
+
+    // Descanso some na hora (não faz sentido os botões ±30 ficarem visíveis
+    // enquanto o carrossel ainda mostra o cronômetro de trabalho saindo).
+    if (estado !== "descanso") cronoCtlEl.hidden = true;
+
+    const alturaAtual = leituraAtualEl.getBoundingClientRect().height;
+    carrosselEl.style.height = `${alturaAtual}px`;
+
+    const saindo = leituraAtualEl;
+    const entrando = saindo.cloneNode(true);
+    entrando.querySelector(".txt").textContent = rotulo;
+    entrando.querySelector(".t").textContent = valorTexto;
+    entrando.classList.add("carrossel-entrando");
+    carrosselEl.appendChild(entrando);
+
+    // Força o navegador a pintar o estado inicial (embaixo, fora de vista)
+    // antes de disparar a transição — sem isso o browser costuma juntar as
+    // duas mudanças de estilo num único frame e a animação não roda.
+    entrando.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      saindo.classList.add("carrossel-saindo");
+      entrando.classList.remove("carrossel-entrando");
+    });
+
+    transicaoTimeoutId = setTimeout(() => {
+      concluirTransicaoCarrossel(entrando);
+      cronoCtlEl.hidden = estado !== "descanso";
+    }, 340);
   }
 
   const prescricao = exercicio.prescricao;
@@ -384,12 +421,12 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     inicioTrabalhoTs = null;
   }
 
-  function pararDescanso() {
+  function pararDescanso({ ocultar = true } = {}) {
     if (cronometroAtivo) {
       cronometroAtivo.parar();
       cronometroAtivo = null;
     }
-    cronometroPillEl.classList.add("exec-cronometro-oculto");
+    if (ocultar) cronometroPillEl.classList.add("exec-cronometro-oculto");
   }
 
   // O navegador solta o Wake Lock sozinho assim que a aba sai de foco e não
@@ -426,8 +463,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     // Começar uma nova série tem que encerrar o descanso de verdade — antes
     // disso o relógio de descanso continuava contando por baixo mesmo depois
     // de "Comecei a série" ser tocado, porque só o timer de trabalho era
-    // iniciado e o de descanso nunca era parado.
-    pararDescanso();
+    // iniciado e o de descanso nunca era parado. Se o descanso ainda estava
+    // na tela, o carrossel gira pra trabalho em vez de sumir e reaparecer —
+    // o ciclo trabalho→descanso→trabalho fica sempre na mesma caixa.
+    const descansoVisivel = !cronometroPillEl.classList.contains("exec-cronometro-oculto");
+    pararDescanso({ ocultar: !descansoVisivel });
 
     numeroEmAndamento = numero;
     const iniciais = valoresIniciaisParaSerie(numero);
@@ -436,7 +476,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     campoAtivo = "reps";
 
     inicioTrabalhoTs = Date.now();
-    mostrarCronometro("trabalho", "Em andamento", "00:00");
+    mostrarCronometro("trabalho", "Em andamento", "00:00", { comTransicao: descansoVisivel });
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
 
     pedirWakeLock();
@@ -462,8 +502,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     if (cronometroAtivo) cronometroAtivo.parar();
 
     // A mesma caixa que mostrava o trabalho vira descanso: recolore de preto
-    // pra lima e troca o texto de dentro, com um cross-fade rápido do
-    // conteúdo — não duas caixas se revezando em slide.
+    // pra lima e a leitura de dentro gira em carrossel — sobe e sai por
+    // cima, a nova entra subindo de baixo.
     mostrarCronometro("descanso", "Descanso", formatarRelogio(descansoSegundos), { comTransicao: true });
 
     const cronometro = criarCronometro({

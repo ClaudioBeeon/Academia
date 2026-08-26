@@ -338,10 +338,10 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* Caixa flutuante única do cronômetro — compartilhada entre trabalho
    (contando pra cima, preta) e descanso (contando pra baixo, lima).
-   Trocar de estado recolore a MESMA caixa (transition no background) e
-   troca só o conteúdo de dentro (.leitura cross-fade) — nunca desliza a
-   caixa inteira nem monta uma segunda por cima. Ver mostrarCronometro()
-   em execucao.js. */
+   Trocar de estado recolore a MESMA caixa (transition no background) e a
+   leitura de dentro gira como um carrossel vertical: a de agora sobe e sai
+   por cima, a nova entra subindo de baixo — a caixa nunca desliza inteira
+   nem muda de tamanho. Ver mostrarCronometro() em execucao.js. */
 .exec-cronometro {
   position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom));
   z-index: 12; max-width: 406px; margin: 0 auto;
@@ -352,12 +352,22 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 .exec-cronometro.exec-cronometro-oculto { display: none; }
 .exec-cronometro[data-estado="descanso"] { background: var(--accent); color: var(--accent-ink); }
-.exec-cronometro .leitura {
-  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
-  transition: opacity 0.16s ease;
-}
-.exec-cronometro .leitura.trocando { opacity: 0; }
+
+.exec-cronometro .carrossel { position: relative; flex: 1; min-width: 0; overflow: hidden; }
+.exec-cronometro .leitura { display: flex; align-items: center; gap: 12px; }
 .exec-cronometro[data-estado="trabalho"] .leitura .t { margin-left: auto; }
+
+/* Durante a troca, as duas leituras (saindo/entrando) ficam sobrepostas
+   dentro do carrossel — a altura fixa em px (definida via JS no início da
+   transição) evita qualquer salto de tamanho da caixa nesse meio-tempo. */
+.exec-cronometro .carrossel .leitura.carrossel-entrando,
+.exec-cronometro .carrossel .leitura.carrossel-saindo {
+  position: absolute; top: 0; left: 0; right: 0;
+  transition: transform 0.32s cubic-bezier(0.32, 0, 0.2, 1);
+}
+.exec-cronometro .carrossel .leitura.carrossel-entrando { transform: translateY(100%); }
+.exec-cronometro .carrossel .leitura.carrossel-saindo { transform: translateY(-100%); }
+
 .exec-cronometro .txt { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.68; }
 .exec-cronometro .t { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
 .exec-cronometro .ctl { margin-left: auto; display: flex; gap: 6px; flex: 0 0 auto; }
@@ -366,7 +376,9 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-cronometro .ctl button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .exec-cronometro, .exec-cronometro .leitura { transition: none; }
+  .exec-cronometro { transition: none; }
+  .exec-cronometro .carrossel .leitura.carrossel-entrando,
+  .exec-cronometro .carrossel .leitura.carrossel-saindo { transition: none; }
 }
 
 .tela-execucao main { padding-bottom: 130px; }

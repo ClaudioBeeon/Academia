@@ -1,16 +1,29 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow-x: clip; }
+/* <html> ficava com fundo transparente — só <body> tinha var(--paper). Em
+   iOS isso deixa a área por trás do bounce/rubber-band scroll, ou a fresta
+   de vídeo, sem cor: nas bordas aparece o branco/preto padrão do sistema
+   por baixo em vez do grafite do app. Pinta o document root inteiro pra
+   nunca sobrar fresta sem cor, em qualquer tamanho de tela. */
+html { background: var(--paper); }
 body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
-  padding-bottom: env(safe-area-inset-bottom);
   padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
+/* Sem largura máxima fixa: o app preenche a tela inteira em qualquer
+   aparelho. max-width existia pra não esticar demais em telas muito largas
+   (tablet/desktop), mas ficava perceptível como "moldura" em qualquer
+   viewport que não fosse exatamente o previsto — troca por um teto bem mais
+   alto, que só entra em ação em telas de tablet pra cima. */
 #tab-content {
-  max-width: 430px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0 20px 130px;
 }
@@ -407,6 +420,18 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .cadencia-restaurar[hidden] { display: none; }
 .cadencia-sheet .carga-sheet-confirmar:disabled { opacity: 0.45; cursor: default; }
 
+/* Prompt "falta o cardio" (js/screens/cardioPrompt.js) — decisão explícita
+   antes de fechar a sessão, sem opção de dispensar sem escolher. */
+.cardio-prompt-sheet h3 { font-size: 1.05rem; font-weight: 800; text-align: center; text-transform: none; color: var(--ink); margin-bottom: 6px; }
+.cardio-prompt-desc { text-align: center; font-size: 0.86rem; color: var(--ink-dim); margin: 0 0 22px; }
+.cardio-prompt-acoes { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.cardio-prompt-acoes button {
+  min-height: 50px; border-radius: 999px; border: none; font-weight: 800;
+  font-size: 0.88rem; cursor: pointer; font-family: inherit;
+}
+.cardio-prompt-agora { background: var(--accent); color: var(--accent-ink); }
+.cardio-prompt-depois { background: var(--card-2); color: var(--ink-dim); }
+
 /* Caixa flutuante única do cronômetro — compartilhada entre trabalho
    (contando pra cima, preta) e descanso (contando pra baixo, lima).
    Trocar de estado recolore a MESMA caixa (transition no background) e a
@@ -584,6 +609,14 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .foot { padding: 14px 0 24px; }
 .foot button { width: 100%; }
 
+/* Cronômetro da sessão inteira (fila do dia) */
+.fila-cronometro-sessao {
+  display: inline-flex; align-items: baseline; gap: 6px; margin-top: 8px;
+  background: var(--card); border-radius: 999px; padding: 5px 12px;
+}
+.fila-cronometro-sessao .rot { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.fila-cronometro-sessao .t { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+
 /* Fila do dia — barra de progresso (um traço por exercício), aquecimento
    compacto, bloco "Agora" e linhas de exercício com pictograma. */
 .fila-barra { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; }
@@ -614,7 +647,11 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .fila-aquecimento-corpo { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
 
 /* Cada movimento do aquecimento — caixa fechada por padrão (nome + prescrição),
-   abre num toque pra mostrar a execução. Marcar feito não abre a caixa. */
+   abre num toque pra mostrar a execução. Marcar feito não abre a caixa.
+   Mesmo padrão de .fila-linha (nome em cima, prescrição embaixo, os dois
+   dentro de .mid) — nome e prescrição lado a lado sem largura reservada
+   pra nenhum dos dois colidiam quando o nome do exercício era longo o
+   bastante pra quebrar linha (ex.: "Chin tuck (queixo pra dentro)"). */
 .fila-aquec-item { background: var(--card-2); border-radius: 12px; }
 .fila-aquec-item > summary {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px;
@@ -622,8 +659,9 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 }
 .fila-aquec-item > summary::-webkit-details-marker { display: none; }
 .fila-aquec-item > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
-.fila-aquec-item .nm { flex: 1; min-width: 0; font-size: 0.82rem; font-weight: 700; }
-.fila-aquec-item .presc { font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint); text-align: right; }
+.fila-aquec-item .mid { flex: 1; min-width: 0; }
+.fila-aquec-item .nm { display: block; font-size: 0.82rem; font-weight: 700; line-height: 1.25; }
+.fila-aquec-item .presc { display: block; font-family: var(--font-mono); font-size: 0.66rem; color: var(--ink-faint); margin-top: 3px; }
 .fila-aquec-item.feito .nm { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
 .fila-aquec-item > p { margin: 0; padding: 0 12px 12px 46px; font-size: 0.78rem; line-height: 1.5; color: var(--ink-dim); }
 .fila-aquec-item .bloco-apoio-check { width: 26px; height: 26px; flex: 0 0 auto; margin-top: 0; background: var(--card); }

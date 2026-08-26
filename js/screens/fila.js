@@ -70,8 +70,7 @@ function montarChecklistAquecimento(db, hoje, aquecimento, habito) {
     li.innerHTML = `
       <summary>
         <button type="button" class="bloco-apoio-check" aria-label="Marcar ${item.nome} como feito"></button>
-        <span class="nm"></span>
-        <span class="presc"></span>
+        <div class="mid"><span class="nm"></span><span class="presc"></span></div>
       </summary>
       <p></p>
     `;
@@ -263,7 +262,7 @@ function montarRotuloSecao(texto) {
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
-  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1 } = contexto;
+  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1, inicioSessaoTs = null } = contexto;
   const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
 
   const seriesPorExercicio = await Promise.all(
@@ -311,6 +310,41 @@ export async function montarTelaFila(db, contexto, callbacks) {
   voltarBtn.addEventListener("click", () => { if (onVoltar) onVoltar(); });
   header.appendChild(voltarBtn);
   root.appendChild(header);
+
+  // Cronômetro da sessão inteira — começa quando "Começar treino" é tocado
+  // na Início e conta até o relatório final, atravessando cardio e tudo.
+  // Não existe no modo preview (abrir o card de um dia futuro só pra olhar).
+  // Fica dentro do bloco do título (não do header inteiro) pra não quebrar
+  // o space-between de duas colunas que o header já usa com o botão fechar.
+  let intervalSessao = null;
+  if (inicioSessaoTs != null) {
+    const cronoEl = document.createElement("div");
+    cronoEl.className = "fila-cronometro-sessao";
+    cronoEl.innerHTML = `<span class="rot">Sessão</span><span class="t">00:00</span>`;
+    header.firstElementChild.appendChild(cronoEl);
+    const tEl = cronoEl.querySelector(".t");
+
+    const atualizar = () => {
+      const segundos = Math.max(0, Math.floor((Date.now() - inicioSessaoTs) / 1000));
+      const min = String(Math.floor(segundos / 60)).padStart(2, "0");
+      const seg = String(segundos % 60).padStart(2, "0");
+      tEl.textContent = `${min}:${seg}`;
+    };
+    atualizar();
+    intervalSessao = setInterval(atualizar, 1000);
+
+    // setInterval atrasa/pausa com o app em segundo plano — como o relógio
+    // é derivado de Date.now() a cada tick (não acumula), só precisa forçar
+    // uma atualização na volta pro primeiro plano pra não parecer travado.
+    const aoVoltarAoPrimeiroPlano = () => { if (document.visibilityState !== "hidden") atualizar(); };
+    document.addEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+    window.addEventListener("focus", aoVoltarAoPrimeiroPlano);
+    root._dispose = () => {
+      clearInterval(intervalSessao);
+      document.removeEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+      window.removeEventListener("focus", aoVoltarAoPrimeiroPlano);
+    };
+  }
 
   const main = document.createElement("main");
   root.appendChild(main);

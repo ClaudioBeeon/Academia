@@ -11,6 +11,9 @@ import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
 import { montarTelaHistorico } from "./historico.js";
+import { montarTelaCardio } from "./cardioTimer.js";
+import { abrirPromptCardio } from "./cardioPrompt.js";
+import { getCardioDoDia } from "../data/cardio.js";
 import { trocarConteudo } from "./transicaoTela.js";
 
 function obterDataLocal() {
@@ -62,6 +65,9 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
   let telaAtual = null;
   let historicoExercicio = null;
   const prsDaSessao = [];
+  // Sessão de verdade (não preview): o cronômetro da fila conta a partir
+  // daqui e continua atravessando exercícios e cardio até o relatório.
+  const inicioSessaoTs = modoPreview ? null : Date.now();
 
   const persistirDiaSeNecessario = async () => {
     if (!diaPersistido) {
@@ -70,6 +76,27 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
     }
   };
 
+  // Único portão de saída da sessão pro relatório. Terminar o último
+  // exercício e "Concluir sessão" na fila caem os dois aqui — nenhum dos
+  // dois pode pular direto pro relatório quando existe cardio prescrito
+  // pra hoje e ainda não registrado.
+  async function irParaRelatorioOuPerguntarCardio() {
+    const cardioDeHoje = modoPreview ? null : diaDaFicha?.cardio;
+    if (cardioDeHoje) {
+      const jaFeito = (await getCardioDoDia(db, hoje)).length > 0;
+      if (!jaFeito) {
+        const escolha = await abrirPromptCardio(cardioDeHoje);
+        if (escolha === "agora") {
+          estadoAtual = "cardio";
+          await renderizar("avancar");
+          return;
+        }
+      }
+    }
+    estadoAtual = "relatorio";
+    await renderizar("avancar");
+  }
+
   async function renderizar(direcao = "trocarAba") {
     if (telaAtual && telaAtual._dispose) {
       telaAtual._dispose();
@@ -77,16 +104,13 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
 
     telaAtual = await trocarConteudo(root, async () => {
       if (estadoAtual === "fila") {
-        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco }, {
+        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco, inicioSessaoTs }, {
           onExecutar: async (indice) => {
             indiceExercicioAtual = indice;
             estadoAtual = "execucao";
             await renderizar("avancar");
           },
-          onFinalizarSessao: async () => {
-            estadoAtual = "relatorio";
-            await renderizar("avancar");
-          },
+          onFinalizarSessao: irParaRelatorioOuPerguntarCardio,
           onVoltar: onVoltarParaHoje,
           onPular: modoPreview ? null : async () => {
             await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
@@ -122,10 +146,10 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
           onProximoExercicio: async () => {
             if (indiceExercicioAtual < exerciciosHoje.length - 1) {
               indiceExercicioAtual++;
+              await renderizar("avancar");
             } else {
-              estadoAtual = "relatorio";
+              await irParaRelatorioOuPerguntarCardio();
             }
-            await renderizar("avancar");
           },
           onAbrirHistorico: async (exercicio) => {
             historicoExercicio = exercicio;
@@ -142,6 +166,25 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
         return montarTelaHistorico(db, historicoExercicio, async () => {
           estadoAtual = estadoAntesDoHistorico;
           await renderizar("voltar");
+        });
+      }
+
+      if (estadoAtual === "cardio") {
+        const cardioDeHoje = diaDaFicha.cardio;
+        return montarTelaCardio(db, {
+          hoje,
+          modalidade: cardioDeHoje.modalidade,
+          duracaoMin: cardioDeHoje.duracaoMin,
+          aoVoltar: async () => {
+            // Volta pra fila em vez de forçar o relatório — a pessoa pode
+            // ter desistido de fazer agora, não necessariamente concluído.
+            estadoAtual = "fila";
+            await renderizar("voltar");
+          },
+          aoConcluir: async () => {
+            estadoAtual = "relatorio";
+            await renderizar("avancar");
+          },
         });
       }
 

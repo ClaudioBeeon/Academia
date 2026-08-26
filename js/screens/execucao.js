@@ -6,7 +6,7 @@ import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
-import { montarGuiaCadencia } from "./guiaCadencia.js";
+import { montarTelaSerieCheia } from "./telaSerieCheia.js";
 import { abrirEditorCadencia } from "./editorCadencia.js";
 import { cadenciaDoExercicio, textoDaCadencia } from "../engine/cadencia.js";
 import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from "../data/ajustesCadencia.js";
@@ -196,16 +196,13 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   notaEl.className = "exec-nota";
   main.appendChild(notaEl);
 
-  // Guia de cadência: fica escondido até a série começar — o ritmo só faz
-  // sentido enquanto a repetição está acontecendo.
+  // Guia de cadência: mora no telão de tela cheia, que só existe enquanto a
+  // série está em andamento — construído sob demanda em iniciarTrabalho().
   const ajusteSalvo = await getAjusteCadencia(db, exercicio.id);
   const cadenciaDaFicha = cadenciaDoExercicio(exercicio);
   let cadenciaAtual = cadenciaDoExercicio(exercicio, ajusteSalvo);
   let temAjuste = Boolean(ajusteSalvo);
-
-  const guia = montarGuiaCadencia(cadenciaAtual);
-  guia.elemento.hidden = true;
-  main.appendChild(guia.elemento);
+  let telaCheiaAtual = null;
 
   const ritmoEl = document.createElement("button");
   ritmoEl.type = "button";
@@ -237,8 +234,6 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       cadenciaAtual = cadenciaDoExercicio(exercicio, resultado.cadencia);
       temAjuste = true;
     }
-    // A bolinha passa a andar no tempo novo na hora.
-    guia.definirCadencia(cadenciaAtual);
     renderizarRitmo();
   });
 
@@ -469,8 +464,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       intervalTrabalho = null;
     }
     inicioTrabalhoTs = null;
-    guia.parar();
-    guia.elemento.hidden = true;
+    if (telaCheiaAtual) {
+      telaCheiaAtual.parar();
+      telaCheiaAtual.elemento.remove();
+      telaCheiaAtual = null;
+    }
   }
 
   function pararDescanso({ ocultar = true } = {}) {
@@ -531,8 +529,24 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     mostrarCronometro("trabalho", "Em andamento", "00:00", { comTransicao: descansoVisivel });
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
 
-    guia.elemento.hidden = false;
-    guia.iniciar();
+    telaCheiaAtual = montarTelaSerieCheia({
+      exercicio,
+      cadencia: cadenciaAtual,
+      cargaSelecionada,
+      repsMin: cfg.repsMin,
+      repsMax: cfg.repsMax,
+      rirAlvo: cfg.rirAlvo,
+      totalSeriesAlvo,
+      numeroAtual: numero,
+      aoFechar: () => {
+        telaCheiaAtual.parar();
+        telaCheiaAtual.elemento.remove();
+        telaCheiaAtual = null;
+      },
+      aoTerminar: () => finalizarTrabalhoERegistrar(),
+    });
+    root.appendChild(telaCheiaAtual.elemento);
+    telaCheiaAtual.iniciar();
 
     pedirWakeLock();
 

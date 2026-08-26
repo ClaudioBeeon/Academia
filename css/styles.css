@@ -349,22 +349,6 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-nota { font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); margin-bottom: 4px; }
 .exec-nota b { color: var(--ink); font-family: var(--font-mono); font-weight: 800; }
 
-/* Guia de cadência (js/screens/guiaCadencia.js): senoide cinza rolando com
-   a bolinha lima seguindo o ritmo prescrito. Só aparece com a série em
-   andamento. */
-.guia-cadencia { position: relative; margin: 4px 0 12px; }
-.guia-cadencia[hidden] { display: none; }
-.guia-cadencia svg { width: 100%; height: 150px; display: block; }
-.guia-cadencia::before, .guia-cadencia::after {
-  content: ""; position: absolute; top: 0; bottom: 0; width: 34px; pointer-events: none;
-}
-.guia-cadencia::before { left: 0; background: linear-gradient(90deg, var(--paper), transparent); }
-.guia-cadencia::after { right: 0; background: linear-gradient(-90deg, var(--paper), transparent); }
-.guia-fase {
-  text-align: center; margin-top: 2px; font-size: 0.68rem; font-weight: 800;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
-}
-
 /* Linha "Ritmo" — mostra a cadência em vigor e abre o editor. */
 .exec-ritmo {
   width: 100%; display: flex; align-items: center; gap: 10px;
@@ -476,6 +460,57 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
   .exec-cronometro .carrossel .leitura.carrossel-entrando,
   .exec-cronometro .carrossel .leitura.carrossel-saindo { transition: none; }
 }
+
+/* Telão da série (js/screens/telaSerieCheia.js) — cobre a tela inteira
+   enquanto a repetição está acontecendo: onda em destaque, cronômetro
+   grande embaixo dela, sem nenhum texto "Série X de Y" no cabeçalho (a
+   posição na sessão é lida pela trilha de traços). */
+.serie-cheia {
+  position: fixed; inset: 0; z-index: 20;
+  background: var(--paper); color: var(--ink);
+  display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+}
+.sc-topo { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 0; flex: 0 0 auto; }
+.sc-voltar {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--card-2); color: var(--ink-dim); font-size: 1rem;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sc-voltar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sc-trilho { display: flex; align-items: center; gap: 8px; }
+.sc-trilho-tracos { display: flex; gap: 5px; align-items: center; }
+.sc-trilho-tracos i { width: 18px; height: 4px; border-radius: 2px; background: var(--card-2); display: block; }
+.sc-trilho-tracos i.on { background: var(--accent); }
+.sc-trilho-n { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+.sc-info { padding: 16px 20px 0; flex: 0 0 auto; }
+.sc-nome { font-size: 1.12rem; font-weight: 800; letter-spacing: -0.02em; }
+.sc-sub { font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+.sc-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.sc-tile { background: var(--card); border-radius: 14px; padding: 10px 4px; text-align: center; }
+.sc-tile b { display: block; font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800; }
+.sc-tile span { display: block; font-size: 0.6rem; color: var(--ink-faint); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.sc-corpo { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.sc-onda-box { flex: 1 1 auto; position: relative; min-height: 0; }
+.sc-onda-box svg { width: 100%; height: 100%; display: block; }
+.sc-fase { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+
+.sc-crono-bloco { flex: 0 0 auto; text-align: center; padding: 4px 0 18px; }
+.sc-crono-bloco b {
+  display: block; font-family: var(--font-mono); font-size: 3.2rem; font-weight: 800;
+  letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.sc-crono-bloco span { display: block; font-family: var(--font-mono); font-size: 0.64rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; }
+
+.sc-foot { flex: 0 0 auto; padding: 0 18px 20px; }
+.sc-terminar {
+  width: 100%; min-height: 52px; border: none; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 800;
+  font-size: 0.9rem; font-family: inherit; cursor: pointer;
+}
+.sc-terminar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .tela-execucao main { padding-bottom: 130px; }
 .exec-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line); display: flex; gap: 11px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); z-index: 11; }

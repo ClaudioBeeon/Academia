@@ -504,6 +504,40 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 .sc-crono-bloco span { display: block; font-family: var(--font-mono); font-size: 0.64rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; }
 
+.sc-corpo-trabalho, .sc-corpo-descanso { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* O corpo inteiro é sobreposto — trabalho e descanso dividem o mesmo lugar
+   na tela, sem redimensionar nada ao redor (cabeçalho, trilha, tiles). */
+.sc-corpo { position: relative; }
+.sc-corpo-trabalho, .sc-corpo-descanso { position: absolute; inset: 0; }
+.serie-cheia[data-modo="trabalho"] .sc-corpo-descanso { display: none; }
+.serie-cheia[data-modo="descanso"] .sc-corpo-trabalho { display: none; }
+.serie-cheia[data-modo="descanso"] .sc-foot { display: none; }
+
+/* Anel de descanso — o mesmo cronômetro que antes só existia na caixa
+   flutuante, agora regressivo e grande, no lugar da onda. */
+.sc-corpo-descanso { align-items: center; justify-content: center; gap: 26px; }
+.sc-anel-box { position: relative; width: min(240px, 62vw); aspect-ratio: 1; }
+.sc-anel-box svg { width: 100%; height: 100%; display: block; }
+.sc-anel-box circle { fill: none; stroke-width: 14; }
+.sc-anel-trilha { stroke: var(--card-2); }
+.sc-anel-progresso { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
+.sc-anel-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.sc-anel-centro b {
+  font-family: var(--font-mono); font-size: 2.5rem; font-weight: 800;
+  letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--accent);
+}
+.sc-anel-centro span { font-family: var(--font-mono); font-size: 0.64rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 6px; }
+.sc-anel-ctl { display: flex; gap: 10px; }
+.sc-anel-ctl button {
+  min-width: 64px; min-height: 44px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card-2); color: var(--ink); font-family: inherit; font-weight: 800;
+  font-size: 0.8rem; cursor: pointer;
+}
+.sc-anel-ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .sc-anel-progresso { transition: none; }
+}
+
 .sc-foot { flex: 0 0 auto; padding: 0 18px 20px; }
 .sc-terminar {
   width: 100%; min-height: 52px; border: none; border-radius: 999px;

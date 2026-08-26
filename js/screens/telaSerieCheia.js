@@ -1,22 +1,23 @@
 // js/screens/telaSerieCheia.js
 //
-// Telão da série: cobre a tela inteira enquanto a repetição está
-// acontecendo — nome do exercício, carga/reps/ciclo, a trilha de séries da
-// sessão, e a onda com a bolinha (guia de cadência) em destaque, cronômetro
-// grande logo abaixo. Reaproveita a mesma matemática do guia compacto
-// (js/engine/ondaCadencia.js) — só o tamanho e o layout mudam.
+// Telão da série: cobre a tela inteira do começo da repetição até o fim do
+// descanso — não fecha entre os dois. Tem dois modos, alternados por
+// data-modo no elemento raiz:
+//
+// - "trabalho": nome do exercício, carga/reps/ciclo, a onda com a bolinha
+//   (guia de cadência) em destaque e o cronômetro subindo. Reaproveita a
+//   matemática do guia compacto (js/engine/ondaCadencia.js).
+// - "descanso": o mesmo cabeçalho/trilha, mas o corpo vira um anel
+//   regressivo lima com o tempo restante no centro — quem toca "Terminei"
+//   já vê a contagem do descanso sem sair da tela.
 import { fasesDaCadencia, totalDaRepeticao } from "../engine/cadencia.js";
 import { formaOnda as forma, construirPercursoOnda as construirPercurso } from "../engine/ondaCadencia.js";
 
 const CINZA = "#303030";
 const LIMA = "#C9F241";
 const ONDAS_DESENHADAS = 6;
-
-function svgEl(tag, attrs) {
-  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const chave in attrs) el.setAttribute(chave, attrs[chave]);
-  return el;
-}
+const RAIO_ANEL = 86;
+const CIRCUNFERENCIA_ANEL = 2 * Math.PI * RAIO_ANEL;
 
 function formatarNumero(valor) {
   if (valor == null) return "—";
@@ -30,14 +31,16 @@ function formatarRelogio(segundos) {
 }
 
 /**
- * Monta o telão. Devolve { elemento, iniciar, parar } — quem chama controla
- * o ciclo de vida (a animação e o cronômetro só correm com a série em
+ * Monta o telão. Devolve { elemento, iniciarTrabalho, pararTrabalho,
+ * mostrarDescanso, atualizarDescanso } — quem chama controla o ciclo de
+ * vida (a animação e os cronômetros só correm com a série/descanso em
  * andamento) e decide quando anexar/remover `elemento` do DOM.
  *
  * `aoFechar` é a seta de voltar no cabeçalho (só esconde o telão, não
- * cancela a série). `aoTerminar` é o botão "Terminei — registrar", que
- * decide o que fazer com a série em andamento — o telão não sabe registrar
- * nada sozinho.
+ * cancela a série nem o descanso). `aoTerminar` é o botão
+ * "Terminei — registrar", que decide o que fazer com a série em
+ * andamento — o telão não sabe registrar nada sozinho. `aoAjustarDescanso`
+ * é chamado pelos botões ±30 do anel de descanso.
  */
 export function montarTelaSerieCheia({
   exercicio,
@@ -50,9 +53,11 @@ export function montarTelaSerieCheia({
   numeroAtual,
   aoFechar,
   aoTerminar,
+  aoAjustarDescanso,
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
+  elemento.dataset.modo = "trabalho";
 
   let tracos = "";
   for (let n = 1; n <= totalSeriesAlvo; n++) {
@@ -77,17 +82,35 @@ export function montarTelaSerieCheia({
       </div>
     </div>
     <div class="sc-corpo">
-      <div class="sc-onda-box">
-        <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <g class="onda"><path fill="none" stroke="${CINZA}" stroke-width="24"
-            stroke-linecap="round" stroke-linejoin="round" /></g>
-          <circle class="bolinha" r="10" fill="${LIMA}" cx="200" cy="130" />
-        </svg>
-        <div class="sc-fase" role="status" aria-live="polite"></div>
+      <div class="sc-corpo-trabalho">
+        <div class="sc-onda-box">
+          <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="onda"><path fill="none" stroke="${CINZA}" stroke-width="24"
+              stroke-linecap="round" stroke-linejoin="round" /></g>
+            <circle class="bolinha" r="10" fill="${LIMA}" cx="200" cy="130" />
+          </svg>
+          <div class="sc-fase" role="status" aria-live="polite"></div>
+        </div>
+        <div class="sc-crono-bloco">
+          <b class="sc-crono">00:00</b>
+          <span>tempo do exercício</span>
+        </div>
       </div>
-      <div class="sc-crono-bloco">
-        <b class="sc-crono">00:00</b>
-        <span>tempo do exercício</span>
+      <div class="sc-corpo-descanso">
+        <div class="sc-anel-box">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="sc-anel-trilha" cx="100" cy="100" r="${RAIO_ANEL}" />
+            <circle class="sc-anel-progresso" cx="100" cy="100" r="${RAIO_ANEL}" transform="rotate(-90 100 100)" />
+          </svg>
+          <div class="sc-anel-centro">
+            <b class="sc-anel-t" role="status" aria-live="polite">00:00</b>
+            <span>descanso</span>
+          </div>
+        </div>
+        <div class="sc-anel-ctl">
+          <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
+          <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
+        </div>
       </div>
     </div>
     <div class="sc-foot"><button type="button" class="sc-terminar">Terminei — registrar</button></div>
@@ -99,11 +122,17 @@ export function montarTelaSerieCheia({
 
   const tiles = elemento.querySelectorAll(".sc-tile b");
   tiles[0].textContent = `${formatarNumero(cargaSelecionada)}`;
-  tiles[1].textContent = repsMin === repsMax ? formatarNumero(repsMax) : `${formatarNumero(repsMin)}–${formatarNumero(repsMax)}`;
+  const tileRepsEl = tiles[1];
   tiles[2].textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
 
   elemento.querySelector(".sc-voltar").addEventListener("click", () => { if (aoFechar) aoFechar(); });
   elemento.querySelector(".sc-terminar").addEventListener("click", () => { if (aoTerminar) aoTerminar(); });
+
+  const anelProgresso = elemento.querySelector(".sc-anel-progresso");
+  anelProgresso.style.strokeDasharray = String(CIRCUNFERENCIA_ANEL);
+  anelProgresso.style.strokeDashoffset = "0";
+  elemento.querySelector('.sc-anel-ctl [data-action="menos"]').addEventListener("click", () => { if (aoAjustarDescanso) aoAjustarDescanso(-30); });
+  elemento.querySelector('.sc-anel-ctl [data-action="mais"]').addEventListener("click", () => { if (aoAjustarDescanso) aoAjustarDescanso(30); });
 
   const AMP = 78;
   const CY = 130;
@@ -113,6 +142,7 @@ export function montarTelaSerieCheia({
   const bolinha = elemento.querySelector(".bolinha");
   const faseEl = elemento.querySelector(".sc-fase");
   const cronoEl = elemento.querySelector(".sc-crono");
+  const anelTextoEl = elemento.querySelector(".sc-anel-t");
 
   let d = "";
   const PASSOS = 80;
@@ -139,12 +169,21 @@ export function montarTelaSerieCheia({
   let quadroId = null;
   let inicioOndaTs = null;
   let rotuloAtual = null;
+  let repAtual = 1;
   let inicioTrabalhoTs = Date.now();
   let intervaloCrono = null;
 
+  // A repetição contada é derivada direto do relógio da onda (quantos
+  // ciclos completos já se passaram) — não existe um contador separado
+  // que possa dessincronizar da bolinha.
+  function atualizarTileReps() {
+    tileRepsEl.textContent = `${repAtual}/${formatarNumero(repsMax)}`;
+  }
+
   function quadro(ts) {
     if (inicioOndaTs == null) inicioOndaTs = ts;
-    const msNoCiclo = (ts - inicioOndaTs) % cicloMs;
+    const decorrido = ts - inicioOndaTs;
+    const msNoCiclo = decorrido % cicloMs;
     const s = percurso(msNoCiclo / cicloMs);
 
     grupoOnda.setAttribute("transform", `translate(${(200 - (2 + s) * LARGURA_ONDA).toFixed(2)},0)`);
@@ -156,6 +195,12 @@ export function montarTelaSerieCheia({
       faseEl.textContent = rotulo;
     }
 
+    const novoRep = Math.min(repsMax, Math.floor(decorrido / cicloMs) + 1);
+    if (novoRep !== repAtual) {
+      repAtual = novoRep;
+      atualizarTileReps();
+    }
+
     quadroId = requestAnimationFrame(quadro);
   }
 
@@ -164,21 +209,37 @@ export function montarTelaSerieCheia({
     cronoEl.textContent = formatarRelogio(segundos);
   }
 
-  function iniciar() {
+  function iniciarTrabalho() {
+    elemento.dataset.modo = "trabalho";
     if (quadroId != null) return;
     inicioOndaTs = null;
     rotuloAtual = null;
+    repAtual = 1;
+    atualizarTileReps();
     inicioTrabalhoTs = Date.now();
     atualizarCrono();
     intervaloCrono = setInterval(atualizarCrono, 1000);
     quadroId = requestAnimationFrame(quadro);
   }
 
-  function parar() {
+  function pararTrabalho() {
     if (quadroId != null) cancelAnimationFrame(quadroId);
     quadroId = null;
     if (intervaloCrono) { clearInterval(intervaloCrono); intervaloCrono = null; }
   }
 
-  return { elemento, iniciar, parar };
+  // Troca o corpo do telão pro anel regressivo — chamado quando a série
+  // termina e o descanso começa, sem fechar o telão nem trocar de tela.
+  function mostrarDescanso(duracaoInicialSegundos) {
+    elemento.dataset.modo = "descanso";
+    atualizarDescanso(duracaoInicialSegundos, duracaoInicialSegundos);
+  }
+
+  function atualizarDescanso(restante, duracaoTotal) {
+    const fracao = duracaoTotal > 0 ? Math.max(0, Math.min(1, restante / duracaoTotal)) : 0;
+    anelProgresso.style.strokeDashoffset = String(CIRCUNFERENCIA_ANEL * (1 - fracao));
+    anelTextoEl.textContent = formatarRelogio(Math.max(0, restante));
+  }
+
+  return { elemento, iniciarTrabalho, pararTrabalho, mostrarDescanso, atualizarDescanso };
 }

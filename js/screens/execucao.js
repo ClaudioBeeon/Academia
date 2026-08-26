@@ -458,14 +458,21 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     });
   });
 
-  function pararTrabalho() {
+  // Só para a animação de trabalho (onda + cronômetro subindo) — usada na
+  // transição pro descanso, que continua no MESMO telão em vez de fechar e
+  // reabrir. Quem precisa fechar o telão de vez chama fecharTelaCheia().
+  function pararAnimacaoTrabalho() {
     if (intervalTrabalho) {
       clearInterval(intervalTrabalho);
       intervalTrabalho = null;
     }
     inicioTrabalhoTs = null;
+    if (telaCheiaAtual) telaCheiaAtual.pararTrabalho();
+  }
+
+  function fecharTelaCheia() {
+    pararAnimacaoTrabalho();
     if (telaCheiaAtual) {
-      telaCheiaAtual.parar();
       telaCheiaAtual.elemento.remove();
       telaCheiaAtual = null;
     }
@@ -491,7 +498,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   function pararTudo() {
     pararDescanso();
-    pararTrabalho();
+    fecharTelaCheia();
     if (wakeLockAtivo) {
       wakeLockAtivo.release().catch(() => {});
       wakeLockAtivo = null;
@@ -538,15 +545,12 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       rirAlvo: cfg.rirAlvo,
       totalSeriesAlvo,
       numeroAtual: numero,
-      aoFechar: () => {
-        telaCheiaAtual.parar();
-        telaCheiaAtual.elemento.remove();
-        telaCheiaAtual = null;
-      },
+      aoFechar: fecharTelaCheia,
       aoTerminar: () => finalizarTrabalhoERegistrar(),
+      aoAjustarDescanso: (delta) => { if (cronometroAtivo) cronometroAtivo.ajustar(delta); },
     });
     root.appendChild(telaCheiaAtual.elemento);
-    telaCheiaAtual.iniciar();
+    telaCheiaAtual.iniciarTrabalho();
 
     pedirWakeLock();
 
@@ -555,7 +559,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   async function finalizarTrabalhoERegistrar() {
     const numero = numeroEmAndamento;
-    pararTrabalho();
+    pararAnimacaoTrabalho();
     numeroEmAndamento = null;
     campoAtivo = "carga";
     await registrarSerieAtual(numero);
@@ -575,12 +579,20 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     // cima, a nova entra subindo de baixo.
     mostrarCronometro("descanso", "Descanso", formatarRelogio(descansoSegundos), { comTransicao: true });
 
+    // O telão não fecha ao terminar a série — o corpo vira o anel
+    // regressivo, no mesmo lugar da onda, sem trocar de tela.
+    if (telaCheiaAtual) telaCheiaAtual.mostrarDescanso(descansoSegundos);
+
     const cronometro = criarCronometro({
       duracaoInicialSegundos: descansoSegundos,
-      aoAtualizar: (restante) => { cronoTEl.textContent = formatarRelogio(restante); },
+      aoAtualizar: (restante) => {
+        cronoTEl.textContent = formatarRelogio(restante);
+        if (telaCheiaAtual) telaCheiaAtual.atualizarDescanso(restante, descansoSegundos);
+      },
       aoFinalizar: () => {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         cronometroPillEl.classList.add("exec-cronometro-oculto");
+        fecharTelaCheia();
       },
     });
 

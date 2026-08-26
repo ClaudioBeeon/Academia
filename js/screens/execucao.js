@@ -2,7 +2,6 @@
 import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirCarga } from "../engine/cargas.js";
-import { avaliarProgressao } from "../engine/progressao.js";
 import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
@@ -193,15 +192,47 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   notaEl.className = "exec-nota";
   main.appendChild(notaEl);
 
-  const cronoTrabalhoEl = document.createElement("div");
-  cronoTrabalhoEl.className = "exec-crono-trabalho exec-crono-trabalho-oculto";
-  cronoTrabalhoEl.innerHTML = `<div class="txt">Em andamento</div><div class="t">00:00</div>`;
-  root.appendChild(cronoTrabalhoEl);
+  // Uma única caixa flutuante pro cronômetro, compartilhada entre trabalho
+  // (contando pra cima, preta) e descanso (contando pra baixo, lima) — troca
+  // de estado é a mesma caixa recolorindo e trocando o texto de dentro, não
+  // duas caixas se revezando em slide.
+  const cronometroPillEl = document.createElement("div");
+  cronometroPillEl.className = "exec-cronometro exec-cronometro-oculto";
+  cronometroPillEl.innerHTML = `
+    <div class="leitura">
+      <div class="txt"></div>
+      <div class="t">00:00</div>
+    </div>
+    <div class="ctl" hidden>
+      <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
+      <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
+    </div>
+  `;
+  root.appendChild(cronometroPillEl);
+  const leituraEl = cronometroPillEl.querySelector(".leitura");
+  const cronoTxtEl = cronometroPillEl.querySelector(".txt");
+  const cronoTEl = cronometroPillEl.querySelector(".t");
+  const cronoCtlEl = cronometroPillEl.querySelector(".ctl");
 
-  const progressaoHint = document.createElement("div");
-  progressaoHint.className = "prev-hint";
-  progressaoHint.style.cssText = "padding:16px 0 0; display:none;";
-  main.appendChild(progressaoHint);
+  function mostrarCronometro(estado, rotulo, valorTexto, { comTransicao = false } = {}) {
+    const jaVisivel = !cronometroPillEl.classList.contains("exec-cronometro-oculto");
+    const aplicar = () => {
+      cronometroPillEl.dataset.estado = estado;
+      cronometroPillEl.classList.remove("exec-cronometro-oculto");
+      cronoTxtEl.textContent = rotulo;
+      cronoTEl.textContent = valorTexto;
+      cronoCtlEl.hidden = estado !== "descanso";
+    };
+    if (comTransicao && jaVisivel) {
+      leituraEl.classList.add("trocando");
+      setTimeout(() => {
+        aplicar();
+        requestAnimationFrame(() => leituraEl.classList.remove("trocando"));
+      }, 160);
+    } else {
+      aplicar();
+    }
+  }
 
   const prescricao = exercicio.prescricao;
 
@@ -230,40 +261,6 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     }
     main.appendChild(explicacao);
   }
-
-  // Descanso: barra fixa presa acima do rodapé (não rola com o resto da
-  // tela — era o motivo de o relógio sumir de vista com 5 séries acima
-  // dele), com controle de tempo e saída explícita.
-  const descansoEl = document.createElement("div");
-  descansoEl.className = "exec-descanso exec-descanso-oculto";
-  descansoEl.innerHTML = `
-    <div class="txt">Descanso</div>
-    <div class="rel">00:00</div>
-    <div class="ctl">
-      <button type="button" data-action="menos" aria-label="Menos 30 segundos">−30</button>
-      <button type="button" data-action="mais" aria-label="Mais 30 segundos">+30</button>
-    </div>
-  `;
-  root.appendChild(descansoEl);
-
-  const atualizarProgressao = () => {
-    const avaliacao = avaliarProgressao({
-      faixaMin: cfg.repsMin,
-      faixaMax: cfg.repsMax,
-      rirAlvo: cfg.rirAlvo,
-      sessaoAtual: seriesHoje,
-      sessaoAnterior: sessaoAnteriorCompleta,
-    });
-    if (avaliacao.acao === "aumentar_carga") {
-      progressaoHint.textContent = `📈 ${avaliacao.motivo}`;
-      progressaoHint.style.display = "";
-    } else if (avaliacao.acao === "reduzir_carga") {
-      progressaoHint.textContent = `📉 ${avaliacao.motivo}`;
-      progressaoHint.style.display = "";
-    } else {
-      progressaoHint.style.display = "none";
-    }
-  };
 
   function numeroPendenteAtual() {
     for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
@@ -341,8 +338,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       notaEl.style.display = "";
       notaEl.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${cfg.rirAlvo}</b> sobrando. Anda de ${formatarNumero(incrementoCarga)} em ${formatarNumero(incrementoCarga)} kg.`;
     } else {
-      notaEl.style.display = "";
-      notaEl.textContent = "Ajuste reps e RIR enquanto respira — o botão de terminar grava o que estiver na tela.";
+      notaEl.style.display = "none";
     }
   }
 
@@ -360,7 +356,6 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   function renderizarTudo() {
     renderizarLinhaTempo();
     renderizarTrioEControle();
-    atualizarProgressao();
     renderizarFooter();
   }
 
@@ -394,7 +389,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       cronometroAtivo.parar();
       cronometroAtivo = null;
     }
-    descansoEl.classList.add("exec-descanso-oculto");
+    cronometroPillEl.classList.add("exec-cronometro-oculto");
   }
 
   // O navegador solta o Wake Lock sozinho assim que a aba sai de foco e não
@@ -424,7 +419,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     const segundos = Math.max(0, Math.floor((Date.now() - inicioTrabalhoTs) / 1000));
     const min = String(Math.floor(segundos / 60)).padStart(2, "0");
     const seg = String(segundos % 60).padStart(2, "0");
-    cronoTrabalhoEl.querySelector(".t").textContent = `${min}:${seg}`;
+    cronoTEl.textContent = `${min}:${seg}`;
   }
 
   function iniciarTrabalho(numero) {
@@ -441,8 +436,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     campoAtivo = "reps";
 
     inicioTrabalhoTs = Date.now();
-    cronoTrabalhoEl.classList.remove("exec-crono-trabalho-oculto", "concluido", "saindo");
-    atualizarCronoTrabalho();
+    mostrarCronometro("trabalho", "Em andamento", "00:00");
     intervalTrabalho = setInterval(atualizarCronoTrabalho, 1000);
 
     pedirWakeLock();
@@ -455,36 +449,29 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     pararTrabalho();
     numeroEmAndamento = null;
     campoAtivo = "carga";
-
-    // Feedback de "série registrada": o pill preto pisca verde, desliza pra
-    // fora, e só então o pill de descanso (já verde, mesma posição) entra —
-    // dá a sensação de um pill virando o outro, não de dois cronômetros
-    // desconectados.
-    cronoTrabalhoEl.classList.add("concluido");
-    await esperar(220);
-    cronoTrabalhoEl.classList.add("saindo");
-    await esperar(260);
-    cronoTrabalhoEl.classList.add("exec-crono-trabalho-oculto");
-    cronoTrabalhoEl.classList.remove("concluido", "saindo");
-
     await registrarSerieAtual(numero);
   }
 
+  function formatarRelogio(segundos) {
+    const min = String(Math.floor(segundos / 60)).padStart(2, "0");
+    const seg = String(segundos % 60).padStart(2, "0");
+    return `${min}:${seg}`;
+  }
+
   function iniciarDescanso(descansoSegundos) {
-    pararDescanso();
-    descansoEl.classList.remove("exec-descanso-oculto");
-    const relEl = descansoEl.querySelector(".rel");
+    if (cronometroAtivo) cronometroAtivo.parar();
+
+    // A mesma caixa que mostrava o trabalho vira descanso: recolore de preto
+    // pra lima e troca o texto de dentro, com um cross-fade rápido do
+    // conteúdo — não duas caixas se revezando em slide.
+    mostrarCronometro("descanso", "Descanso", formatarRelogio(descansoSegundos), { comTransicao: true });
 
     const cronometro = criarCronometro({
       duracaoInicialSegundos: descansoSegundos,
-      aoAtualizar: (restante) => {
-        const min = String(Math.floor(restante / 60)).padStart(2, "0");
-        const seg = String(restante % 60).padStart(2, "0");
-        relEl.textContent = `${min}:${seg}`;
-      },
+      aoAtualizar: (restante) => { cronoTEl.textContent = formatarRelogio(restante); },
       aoFinalizar: () => {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        descansoEl.classList.add("exec-descanso-oculto");
+        cronometroPillEl.classList.add("exec-cronometro-oculto");
       },
     });
 
@@ -510,8 +497,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   window.addEventListener("focus", aoVoltarAoPrimeiroPlano);
   window.addEventListener("online", aoVoltarAoPrimeiroPlano);
 
-  descansoEl.querySelector('[data-action="menos"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(-30));
-  descansoEl.querySelector('[data-action="mais"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(30));
+  cronoCtlEl.querySelector('[data-action="menos"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(-30));
+  cronoCtlEl.querySelector('[data-action="mais"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(30));
 
   async function registrarSerieAtual(numero) {
     const carga = cargaSelecionada;

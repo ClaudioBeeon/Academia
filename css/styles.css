@@ -336,41 +336,38 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-nota { font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); margin-bottom: 4px; }
 .exec-nota b { color: var(--ink); font-family: var(--font-mono); font-weight: 800; }
 
-/* Pill flutuante do cronômetro de trabalho (série em andamento) — mesma
-   posição/tamanho/sombra do pill de descanso logo abaixo, mas em preto, pra
-   ficar claro que é um estado diferente (contando pra cima, não pra baixo).
-   Ao terminar a série, ele pisca verde (.concluido) e desliza pra fora
-   (.saindo) antes do pill de descanso (que já é verde) tomar o mesmo lugar —
-   ver finalizarTrabalhoERegistrar em execucao.js. */
-.exec-crono-trabalho {
+/* Caixa flutuante única do cronômetro — compartilhada entre trabalho
+   (contando pra cima, preta) e descanso (contando pra baixo, lima).
+   Trocar de estado recolore a MESMA caixa (transition no background) e
+   troca só o conteúdo de dentro (.leitura cross-fade) — nunca desliza a
+   caixa inteira nem monta uma segunda por cima. Ver mostrarCronometro()
+   em execucao.js. */
+.exec-cronometro {
   position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom));
   z-index: 12; max-width: 406px; margin: 0 auto;
   background: #000; color: #fff; border-radius: 22px;
   padding: 14px 16px; display: flex; align-items: center; gap: 12px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
-  transition: background-color 0.22s ease, color 0.22s ease, transform 0.26s ease, opacity 0.26s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
-.exec-crono-trabalho.exec-crono-trabalho-oculto { display: none; }
-.exec-crono-trabalho .txt { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.68; }
-.exec-crono-trabalho .t { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; margin-left: auto; }
-.exec-crono-trabalho.concluido { background: var(--accent); color: var(--accent-ink); }
-.exec-crono-trabalho.saindo { transform: translateY(-16px); opacity: 0; }
+.exec-cronometro.exec-cronometro-oculto { display: none; }
+.exec-cronometro[data-estado="descanso"] { background: var(--accent); color: var(--accent-ink); }
+.exec-cronometro .leitura {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
+  transition: opacity 0.16s ease;
+}
+.exec-cronometro .leitura.trocando { opacity: 0; }
+.exec-cronometro[data-estado="trabalho"] .leitura .t { margin-left: auto; }
+.exec-cronometro .txt { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.68; }
+.exec-cronometro .t { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; }
+.exec-cronometro .ctl { margin-left: auto; display: flex; gap: 6px; flex: 0 0 auto; }
+.exec-cronometro .ctl[hidden] { display: none; }
+.exec-cronometro .ctl button { min-width: 50px; min-height: 44px; border-radius: 999px; border: none; background: rgba(20, 20, 20, 0.14); color: var(--accent-ink); font-family: inherit; font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 0 11px; }
+.exec-cronometro .ctl button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
 
-/* Fixa acima do rodapé — não some com o scroll, ao contrário do cartão
-   antigo, que ficava inline na lista e saía de vista com 5 séries acima. */
-.exec-descanso {
-  position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom));
-  z-index: 12; max-width: 406px; margin: 0 auto;
-  background: var(--accent); color: var(--accent-ink); border-radius: 22px;
-  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+@media (prefers-reduced-motion: reduce) {
+  .exec-cronometro, .exec-cronometro .leitura { transition: none; }
 }
-.exec-descanso.exec-descanso-oculto { display: none; }
-.exec-descanso .txt { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.68; }
-.exec-descanso .rel { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1; margin-top: 2px; }
-.exec-descanso .ctl { margin-left: auto; display: flex; gap: 6px; flex: 0 0 auto; }
-.exec-descanso .ctl button { min-width: 50px; min-height: 44px; border-radius: 999px; border: none; background: rgba(20, 20, 20, 0.14); color: var(--accent-ink); font-family: inherit; font-weight: 800; font-size: 0.8rem; cursor: pointer; padding: 0 11px; }
-.exec-descanso .ctl button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
 
 .tela-execucao main { padding-bottom: 130px; }
 .exec-footer { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line); display: flex; gap: 11px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); z-index: 11; }

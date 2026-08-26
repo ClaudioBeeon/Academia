@@ -54,15 +54,18 @@ export function montarTelaSerieCheia({
   exercicio,
   cadencia,
   cargaSelecionada,
-  repsMin,
   repsMax,
   rirAlvo,
+  repsAtual,
+  rirAtual,
+  incrementoCarga = 1,
   totalSeriesAlvo,
   numeroAtual,
   aoFechar,
   aoTerminar,
   aoAjustarDescanso,
   aoPularDescanso,
+  aoAjustar,
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
@@ -83,10 +86,23 @@ export function montarTelaSerieCheia({
     <div class="sc-info">
       <div class="sc-nome"></div>
       <div class="sc-sub"></div>
-      <div class="sc-tiles">
-        <div class="sc-tile"><b></b><span>kg</span></div>
-        <div class="sc-tile"><b></b><span>reps</span></div>
-        <div class="sc-tile"><b></b><span>ciclo</span></div>
+      <!-- Ajuste sempre à mão, em qualquer modo (onda, descanso, contagem)
+           — fica em .sc-info, que nunca troca. Antes só dava pra mudar
+           carga/reps/RIR voltando pra tela normal por trás do telão.
+           Substitui as tiles de carga/reps de antes (eram só leitura) —
+           "ciclo" continua como info pura, não é algo que se ajuste aqui. -->
+      <div class="sc-ajuste">
+        <div class="sc-ajuste-campos">
+          <button type="button" class="sc-ajuste-campo" data-campo="carga"><b></b><span>kg</span></button>
+          <button type="button" class="sc-ajuste-campo" data-campo="reps"><b></b><span>reps</span></button>
+          <button type="button" class="sc-ajuste-campo" data-campo="rir"><b></b><span>RIR</span></button>
+          <div class="sc-tile sc-tile-ciclo"><b></b><span>ciclo</span></div>
+        </div>
+        <div class="sc-ajuste-ctl">
+          <span class="sc-ajuste-rot">Ajustando <b></b></span>
+          <button type="button" class="sc-ajuste-menos" aria-label="Diminuir">−</button>
+          <button type="button" class="sc-ajuste-mais" aria-label="Aumentar">+</button>
+        </div>
       </div>
     </div>
     <div class="sc-corpo">
@@ -133,12 +149,53 @@ export function montarTelaSerieCheia({
   const musculo = exercicio.musculoPrimario ? exercicio.musculoPrimario : "";
   elemento.querySelector(".sc-sub").textContent = [musculo, `RIR ${formatarNumero(rirAlvo)}`].filter(Boolean).join(" · ");
 
-  const tiles = elemento.querySelectorAll(".sc-tile b");
-  tiles[0].textContent = `${formatarNumero(cargaSelecionada)}`;
-  const tileRepsEl = tiles[1];
-  const textoFaixaReps = repsMin === repsMax ? formatarNumero(repsMax) : `${formatarNumero(repsMin)}–${formatarNumero(repsMax)}`;
-  tileRepsEl.textContent = textoFaixaReps;
-  tiles[2].textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
+  elemento.querySelector(".sc-tile-ciclo b").textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
+
+  // Controle de carga/reps/RIR — mesma ideia do trio da tela normal
+  // (um campo "ativo" por vez, um −/+ compartilhado embaixo), só que
+  // compacto e sempre visível aqui dentro do telão, em qualquer modo.
+  const valoresAjuste = { carga: cargaSelecionada, reps: repsAtual, rir: rirAtual };
+  let campoAjusteAtivo = "reps";
+  const botoesCampo = elemento.querySelectorAll(".sc-ajuste-campo");
+  const rotAjusteEl = elemento.querySelector(".sc-ajuste-rot b");
+  const ROTULOS_AJUSTE = { carga: "carga", reps: "reps", rir: "RIR" };
+
+  function redesenharAjuste() {
+    for (const botao of botoesCampo) {
+      const campo = botao.dataset.campo;
+      botao.querySelector("b").textContent = formatarNumero(valoresAjuste[campo]);
+      botao.classList.toggle("ativo", campo === campoAjusteAtivo);
+    }
+    rotAjusteEl.textContent = ROTULOS_AJUSTE[campoAjusteAtivo];
+  }
+  redesenharAjuste();
+
+  for (const botao of botoesCampo) {
+    botao.addEventListener("click", () => {
+      campoAjusteAtivo = botao.dataset.campo;
+      redesenharAjuste();
+    });
+  }
+
+  function ajustar(delta) {
+    if (campoAjusteAtivo === "carga") valoresAjuste.carga = Math.max(incrementoCarga, valoresAjuste.carga + delta * incrementoCarga);
+    else if (campoAjusteAtivo === "reps") valoresAjuste.reps = Math.max(0, valoresAjuste.reps + delta);
+    else valoresAjuste.rir = Math.max(0, valoresAjuste.rir + delta);
+    redesenharAjuste();
+    if (aoAjustar) aoAjustar(campoAjusteAtivo, delta);
+  }
+  elemento.querySelector(".sc-ajuste-menos").addEventListener("click", () => ajustar(-1));
+  elemento.querySelector(".sc-ajuste-mais").addEventListener("click", () => ajustar(1));
+
+  // Chamado pela tela normal quando ela mesma altera um valor (o trio de
+  // lá continua existindo e editável por trás) — mantém os dois em sincronia
+  // nos dois sentidos, sem que um dependa do outro pra funcionar sozinho.
+  function atualizarValores({ carga, reps, rir }) {
+    if (carga != null) valoresAjuste.carga = carga;
+    if (reps != null) valoresAjuste.reps = reps;
+    if (rir != null) valoresAjuste.rir = rir;
+    redesenharAjuste();
+  }
 
   elemento.querySelector(".sc-voltar").addEventListener("click", () => { if (aoFechar) aoFechar(); });
   const terminarBtn = elemento.querySelector(".sc-terminar");
@@ -222,9 +279,12 @@ export function montarTelaSerieCheia({
 
   // A repetição contada é derivada direto do relógio da onda (quantos
   // ciclos completos já se passaram) — não existe um contador separado
-  // que possa dessincronizar da bolinha.
-  function atualizarTileReps() {
-    tileRepsEl.textContent = `${repAtual}/${formatarNumero(repsMax)}`;
+  // que possa dessincronizar da bolinha. Mora junto do rótulo de fase
+  // (não numa tile própria) desde que as tiles de carga/reps viraram o
+  // controle editável .sc-ajuste, que já mostra o valor que vai ser
+  // registrado — este aqui é só "em qual repetição a bolinha está".
+  function atualizarFaseTexto() {
+    faseEl.textContent = `${rotuloAtual} · rep ${repAtual}/${formatarNumero(repsMax)}`;
   }
 
   function quadro(ts) {
@@ -237,15 +297,11 @@ export function montarTelaSerieCheia({
     bolinha.setAttribute("cy", (CY - forma(s) * AMP).toFixed(2));
 
     const rotulo = rotuloNoInstante(msNoCiclo);
-    if (rotulo !== rotuloAtual) {
-      rotuloAtual = rotulo;
-      faseEl.textContent = rotulo;
-    }
-
     const novoRep = Math.min(repsMax, Math.floor(decorrido / cicloMs) + 1);
-    if (novoRep !== repAtual) {
+    if (rotulo !== rotuloAtual || novoRep !== repAtual) {
+      rotuloAtual = rotulo;
       repAtual = novoRep;
-      atualizarTileReps();
+      atualizarFaseTexto();
     }
 
     quadroId = requestAnimationFrame(quadro);
@@ -262,7 +318,6 @@ export function montarTelaSerieCheia({
     inicioOndaTs = null;
     rotuloAtual = null;
     repAtual = 1;
-    atualizarTileReps();
     inicioTrabalhoTs = Date.now();
     atualizarCrono();
     intervaloCrono = setInterval(atualizarCrono, 1000);
@@ -298,9 +353,6 @@ export function montarTelaSerieCheia({
     if (contagemIntervalId != null) { clearInterval(contagemIntervalId); contagemIntervalId = null; }
     mostrarModo("contagem");
     contagemRotuloEl.textContent = rotulo;
-    // Volta a tile de reps pra faixa-alvo enquanto ainda não começou a
-    // contar repetição — evita mostrar o número da série anterior.
-    tileRepsEl.textContent = textoFaixaReps;
 
     let restante = segundosTotais;
     contagemNumeroEl.textContent = String(restante);
@@ -334,5 +386,6 @@ export function montarTelaSerieCheia({
     atualizarDescanso,
     mostrarContagem,
     atualizarSerieAtual,
+    atualizarValores,
   };
 }

@@ -12,6 +12,7 @@ import { cadenciaDoExercicio, textoDaCadencia } from "../engine/cadencia.js";
 import { getAjusteCadencia, salvarAjusteCadencia, limparAjusteCadencia } from "../data/ajustesCadencia.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
 import { abrirSubstituirExercicio } from "./substituirExercicio.js";
+import { montarTelaHistorico } from "./historico.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -59,7 +60,7 @@ function esperar(ms) {
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
   const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
-  const { onFechar, onProximoExercicio, onAbrirHistorico, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado } = callbacks;
+  const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
@@ -463,8 +464,14 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     rir: (delta) => { rirAtual = Math.max(0, rirAtual + delta); },
   };
 
-  controleEl.querySelector(".menos").addEventListener("click", () => { AJUSTES[campoAtivo](-1); renderizarTrioEControle(); });
-  controleEl.querySelector(".mais").addEventListener("click", () => { AJUSTES[campoAtivo](1); renderizarTrioEControle(); });
+  // O telão (se estiver aberto) espelha qualquer ajuste feito por aqui —
+  // os dois controles editam as mesmas variáveis, só a exibição é dupla.
+  function sincronizarTelaCheia() {
+    if (telaCheiaAtual) telaCheiaAtual.atualizarValores({ carga: cargaSelecionada, reps: repsAtual, rir: rirAtual });
+  }
+
+  controleEl.querySelector(".menos").addEventListener("click", () => { AJUSTES[campoAtivo](-1); renderizarTrioEControle(); sincronizarTelaCheia(); });
+  controleEl.querySelector(".mais").addEventListener("click", () => { AJUSTES[campoAtivo](1); renderizarTrioEControle(); sincronizarTelaCheia(); });
 
   trioEl.querySelectorAll(".exec-campo").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -571,9 +578,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       exercicio,
       cadencia: cadenciaAtual,
       cargaSelecionada,
-      repsMin: cfg.repsMin,
       repsMax: cfg.repsMax,
       rirAlvo: cfg.rirAlvo,
+      repsAtual,
+      rirAtual,
+      incrementoCarga,
       totalSeriesAlvo,
       numeroAtual: numero,
       aoFechar: fecharTelaCheia,
@@ -583,6 +592,14 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       // "−30" levado até o fim, que já dispara aoFinalizar corretamente e
       // (com o telão aberto) já emenda direto na próxima série.
       aoPularDescanso: () => { if (cronometroAtivo) cronometroAtivo.ajustar(-cronometroAtivo.obterRestante()); },
+      // Carga/reps/RIR continuam editáveis com o telão aberto — mesma
+      // lógica de ajuste (AJUSTES) do trio da tela normal, só disparada
+      // daqui. Reaproveitar a mesma função é o que garante que os dois
+      // nunca desincronizam.
+      aoAjustar: (campo, delta) => {
+        AJUSTES[campo](delta);
+        renderizarTrioEControle();
+      },
     });
     root.appendChild(telaCheiaAtual.elemento);
     pedirWakeLock();
@@ -730,8 +747,16 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     <button type="button" class="exec-footer-sq historico-btn" aria-label="Histórico">${ICONE_RELOGIO}</button>
     <button type="button" class="exec-footer-primary primario-btn"></button>
   `;
-  rodape.querySelector(".historico-btn").addEventListener("click", () => {
-    if (onAbrirHistorico) onAbrirHistorico(exercicio);
+  // Abre por cima, sem trocar de tela — histórico é informativo, não pode
+  // derrubar a série/descanso em andamento por baixo (a execução inteira
+  // era desmontada nessa troca antes, matando o cronômetro sem chance de
+  // voltar pra ele depois).
+  rodape.querySelector(".historico-btn").addEventListener("click", async () => {
+    const overlayHistorico = document.createElement("div");
+    overlayHistorico.className = "historico-overlay";
+    const conteudo = await montarTelaHistorico(db, exercicio, () => overlayHistorico.remove());
+    overlayHistorico.appendChild(conteudo);
+    document.body.appendChild(overlayHistorico);
   });
   const primarioBtn = rodape.querySelector(".primario-btn");
   primarioBtn.addEventListener("click", async () => {

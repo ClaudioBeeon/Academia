@@ -11,7 +11,6 @@ import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
-import { montarTelaHistorico } from "./historico.js";
 import { montarTelaCardio } from "./cardioTimer.js";
 import { abrirPromptCardio } from "./cardioPrompt.js";
 import { getCardioDoDia } from "../data/cardio.js";
@@ -76,11 +75,9 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
 
   const root = document.createElement("div");
   let estadoAtual = "fila";
-  let estadoAntesDoHistorico = "fila";
   let indiceExercicioAtual = 0;
   let explicacaoJaMostrada = false;
   let telaAtual = null;
-  let historicoExercicio = null;
   const prsDaSessao = [];
   // Sessão de verdade (não preview): o cronômetro da fila conta a partir
   // daqui e continua atravessando exercícios e cardio até o relatório.
@@ -187,21 +184,8 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
             if (indiceExercicioAtual >= exerciciosHoje.length) indiceExercicioAtual = Math.max(0, exerciciosHoje.length - 1);
             await renderizar("avancar");
           },
-          onAbrirHistorico: async (exercicio) => {
-            historicoExercicio = exercicio;
-            estadoAntesDoHistorico = estadoAtual;
-            estadoAtual = "historico";
-            await renderizar("avancar");
-          },
           onSerieRegistrada: persistirDiaSeNecessario,
           onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
-        });
-      }
-
-      if (estadoAtual === "historico") {
-        return montarTelaHistorico(db, historicoExercicio, async () => {
-          estadoAtual = estadoAntesDoHistorico;
-          await renderizar("voltar");
         });
       }
 

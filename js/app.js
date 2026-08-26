@@ -19,6 +19,9 @@ import { montarTelaDivisao } from "./screens/divisao.js";
 import { montarTelaDieta } from "./screens/dieta.js";
 import { montarTelaCardio } from "./screens/cardioTimer.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
+import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
+import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
+import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
 
 function criarMensagem(texto) {
   const div = document.createElement("div");
@@ -108,6 +111,34 @@ function renderShell(db) {
   const content = document.getElementById("tab-content");
   const tabs = document.querySelectorAll("#tab-bar button");
 
+  if (!document.querySelector(".widget-flutuante")) {
+    document.body.appendChild(montarWidgetFlutuante());
+  }
+
+  // Abre a tela de cardio já preparada pra minimizar: se a pessoa fechar
+  // com o cronômetro rodando, ele não para — vira a bolha flutuante
+  // (js/lib/timerFlutuante.js), que sobrevive a qualquer troca de aba
+  // porque mora fora de #tab-content. Tocar na bolha reabre esta mesma
+  // tela de onde parou, contando pelo relógio de parede (não perde tempo
+  // por causa do quanto demorou pra tocar de volta).
+  function abrirTelaCardio(opcoes) {
+    return trocarConteudo(content, () => montarTelaCardio(db, {
+      ...opcoes,
+      aoMinimizar: ({ rotulo, alvoTimestamp, duracaoTotalSegundos }) => {
+        definirCronometroFlutuante({
+          rotulo,
+          alvoTimestamp,
+          duracaoTotalSegundos,
+          aoExpandir: () => {
+            limparCronometroFlutuante();
+            const restanteInicialSegundos = Math.max(0, Math.round((alvoTimestamp - Date.now()) / 1000));
+            abrirTelaCardio({ ...opcoes, restanteInicialSegundos });
+          },
+        });
+      },
+    }), { direcao: "avancar" });
+  }
+
   const renderTab = async (tabName, direcao = "trocarAba") => {
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
@@ -132,24 +163,24 @@ function renderShell(db) {
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),
           onAtividadeAdicionada: () => renderTab("hoje"),
-          onIniciarCardio: (cardio) => trocarConteudo(content, () => montarTelaCardio(db, {
+          onIniciarCardio: (cardio) => abrirTelaCardio({
             hoje: obterDataLocal(),
             modalidade: cardio.modalidade,
             duracaoMin: cardio.duracaoMin,
             aoVoltar: () => renderTab("hoje", "voltar"),
             aoConcluir: () => renderTab("hoje", "voltar"),
-          }), { direcao: "avancar" }),
+          }),
           // "Começar agora" na folha de nova atividade — mesma tela de
           // cronômetro do cardio prescrito, só que com mesmoDiaDeTreino:
           // false (é uma atividade avulsa, não o cardio do dia de treino).
-          onIniciarAtividadeAgora: (atividade) => trocarConteudo(content, () => montarTelaCardio(db, {
+          onIniciarAtividadeAgora: (atividade) => abrirTelaCardio({
             hoje: obterDataLocal(),
             modalidade: atividade.modalidade,
             duracaoMin: atividade.duracaoMinutos,
             mesmoDiaDeTreino: false,
             aoVoltar: () => renderTab("hoje", "voltar"),
             aoConcluir: () => renderTab("hoje", "voltar"),
-          }), { direcao: "avancar" }),
+          }),
         }), { direcao });
         return;
       }
@@ -189,6 +220,37 @@ function renderShell(db) {
   tabs.forEach((button) => {
     button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
+
+  // Recupera um cardio que ficou rodando quando o app fechou de verdade
+  // (não só trocou de tela) — sem isso, o progresso salvo em
+  // js/data/cardioEmAndamento.js nunca voltava a virar bolha flutuante, e
+  // o minuto já feito ficava preso no banco sem ninguém saber que existia.
+  (async () => {
+    const emAndamento = await getCardioEmAndamento(db).catch(() => null);
+    if (!emAndamento) return;
+    if (emAndamento.hoje !== obterDataLocal()) {
+      await limparCardioEmAndamento(db).catch(() => {});
+      return;
+    }
+    const restanteInicialSegundos = Math.max(0, Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000));
+    definirCronometroFlutuante({
+      rotulo: emAndamento.rotulo,
+      alvoTimestamp: emAndamento.alvoTimestamp,
+      duracaoTotalSegundos: emAndamento.duracaoTotalSegundos,
+      aoExpandir: () => {
+        limparCronometroFlutuante();
+        abrirTelaCardio({
+          hoje: emAndamento.hoje,
+          modalidade: emAndamento.modalidade,
+          duracaoMin: emAndamento.duracaoMin,
+          mesmoDiaDeTreino: emAndamento.mesmoDiaDeTreino,
+          restanteInicialSegundos,
+          aoVoltar: () => renderTab("hoje", "voltar"),
+          aoConcluir: () => renderTab("hoje", "voltar"),
+        });
+      },
+    });
+  })();
 
   renderTab("hoje");
 }

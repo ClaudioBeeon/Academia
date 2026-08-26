@@ -63,6 +63,27 @@ body {
 #tab-bar button { transition: transform 0.15s var(--ease-out); }
 #tab-bar button:active { transform: scale(0.97); }
 
+/* Bolha do cronômetro minimizado (js/screens/widgetFlutuante.js) — fica
+   fora de #tab-content, então sobrevive a qualquer troca de aba/tela.
+   Some sozinha quando não há nenhum cronômetro ativo. */
+.widget-flutuante {
+  position: fixed; right: 16px; bottom: calc(90px + env(safe-area-inset-bottom));
+  z-index: 40; display: flex; align-items: center; gap: 10px;
+  background: #000; color: #fff; border: none; border-radius: 999px;
+  padding: 6px 16px 6px 6px; cursor: pointer; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  font-family: inherit;
+}
+.wf-anel { width: 36px; height: 36px; flex: 0 0 auto; }
+.wf-anel svg { width: 100%; height: 100%; }
+.wf-trilha { stroke: rgba(255, 255, 255, 0.18); }
+.wf-progresso { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset var(--duration-standard) linear; }
+.wf-texto { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.wf-rot { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+.wf-t { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+  .wf-progresso { transition: none; }
+}
+
 /* Feedback de toque (estilo iOS: escala levemente ao pressionar) em todo
    elemento tocável do app — cartões, pills, botões, chips. */
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,

@@ -13,6 +13,8 @@
 // que funcionam enquanto a tela está ligada.
 import { criarCronometro } from "./timer.js";
 import { registrarCardio } from "../data/cardio.js";
+import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
+import { salvarCardioEmAndamento, limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
 
 const NOME_MODALIDADE = {
   bicicleta: "Bicicleta", eliptico: "Elíptico", escada: "Escada",
@@ -60,7 +62,7 @@ function tocarAlarme() {
   }
 }
 
-export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, aoConcluir, mesmoDiaDeTreino = true, registroExistente = null } = {}) {
+export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, aoConcluir, mesmoDiaDeTreino = true, registroExistente = null, restanteInicialSegundos = null, aoMinimizar = null } = {}) {
   const totalSegundos = Math.max(1, Math.round((duracaoMin ?? 20) * 60));
   const nome = NOME_MODALIDADE[modalidade] ?? modalidade ?? "Cardio";
 
@@ -128,12 +130,13 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
   }
 
   const cronometro = criarCronometro({
-    duracaoInicialSegundos: totalSegundos,
+    duracaoInicialSegundos: restanteInicialSegundos ?? totalSegundos,
     aoAtualizar: pintar,
     aoFinalizar: () => {
       rodando = false;
       terminou = true;
       liberarWakeLock();
+      limparCronometroFlutuante();
       if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 300]);
       tocarAlarme();
       root.classList.add("cardio-fim");
@@ -143,6 +146,24 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       mostrarIntensidade();
     },
   });
+
+  // Salva de verdade no IndexedDB, não só na memória desta tela — é o que
+  // permite recuperar o cardio se o app fechar de fato (aba/PWA encerrada
+  // pelo sistema), não só trocar de tela dentro dele. Chamado ao começar,
+  // ajustar o tempo, e sempre que a aba vai pra segundo plano (é o momento
+  // mais provável de o sistema matar o processo, em celular).
+  function persistirProgresso() {
+    if (!rodando) return;
+    salvarCardioEmAndamento(db, {
+      hoje,
+      modalidade,
+      mesmoDiaDeTreino,
+      rotulo: nome,
+      duracaoMin,
+      duracaoTotalSegundos: duracaoAlvo,
+      alvoTimestamp: Date.now() + cronometro.obterRestante() * 1000,
+    }).catch(() => {});
+  }
 
   async function pedirWakeLock() {
     if (!("wakeLock" in navigator)) return;
@@ -165,11 +186,13 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       cronometro.parar();
       rodando = false;
       liberarWakeLock();
+      limparCardioEmAndamento(db).catch(() => {});
       notaEl.textContent = "Pausado.";
     } else {
       cronometro.iniciar();
       rodando = true;
       pedirWakeLock();
+      persistirProgresso();
       notaEl.textContent = "A tela fica acesa enquanto o cardio roda.";
     }
     atualizarPlay();
@@ -185,6 +208,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       duracaoAlvo = Math.max(1, duracaoAlvo + delta);
       subEl.textContent = `de ${formatarRelogio(duracaoAlvo)}`;
       pintar(cronometro.obterRestante());
+      persistirProgresso();
     });
   }
 
@@ -227,6 +251,8 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       cronometro.parar();
       rodando = false;
       liberarWakeLock();
+      limparCronometroFlutuante();
+      await limparCardioEmAndamento(db);
 
       await registrarCardio(db, {
         data: hoje,
@@ -242,6 +268,20 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
   }
 
   root.querySelector('[aria-label="Fechar"]').addEventListener("click", () => {
+    // Rodando: minimiza em vez de parar — sem isso, sair da tela pra mexer
+    // em outra coisa do app matava o cronômetro sem chance de retomar.
+    if (rodando && aoMinimizar) {
+      const alvoTimestamp = Date.now() + cronometro.obterRestante() * 1000;
+      cronometro.parar();
+      liberarWakeLock();
+      // Continua persistido no IndexedDB mesmo minimizado — a bolha
+      // flutuante cobre "troquei de tela dentro do app", isto aqui cobre
+      // "o app fechou de verdade nesse meio-tempo".
+      aoMinimizar({ rotulo: nome, alvoTimestamp, duracaoTotalSegundos: duracaoAlvo });
+      if (aoVoltar) aoVoltar();
+      return;
+    }
+    if (!rodando && !terminou) limparCardioEmAndamento(db).catch(() => {});
     limpar();
     if (aoVoltar) aoVoltar();
   });
@@ -256,14 +296,25 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       pedirWakeLock(); // o Wake Lock cai sozinho quando a aba sai de foco
     }
   }
+  // O momento em que o app vai pra segundo plano é o mais provável do
+  // sistema encerrar o processo em seguida (celular fechando app em
+  // background pra liberar memória) — é aqui, não só ao começar/ajustar,
+  // que o progresso PRECISA estar salvo no IndexedDB.
+  function aoIrParaSegundoPlano() {
+    if (document.visibilityState === "hidden") persistirProgresso();
+  }
   document.addEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+  document.addEventListener("visibilitychange", aoIrParaSegundoPlano);
   window.addEventListener("focus", aoVoltarAoPrimeiroPlano);
+  window.addEventListener("pagehide", persistirProgresso);
 
   function limpar() {
     cronometro.parar();
     liberarWakeLock();
     document.removeEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
+    document.removeEventListener("visibilitychange", aoIrParaSegundoPlano);
     window.removeEventListener("focus", aoVoltarAoPrimeiroPlano);
+    window.removeEventListener("pagehide", persistirProgresso);
   }
 
   // "Ver mais" num cardio já registrado hoje: mostra o que foi feito em vez
@@ -291,6 +342,28 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       limpar();
       if (aoVoltar) aoVoltar();
     });
+  } else if (restanteInicialSegundos != null && restanteInicialSegundos <= 0) {
+    // Foi minimizado e o tempo zerou enquanto só a bolha flutuante estava
+    // de olho nele — não existe alarme de verdade com a tela apagada
+    // (mesma limitação de PWA sem push documentada em js/lib/notificacoes.js),
+    // então ao reabrir já mostra concluído em vez de tentar contar do zero.
+    pintar(0);
+    terminou = true;
+    root.classList.add("cardio-fim");
+    atualizarPlay();
+    notaEl.textContent = "Tempo concluído enquanto estava minimizado. Registre a intensidade abaixo.";
+    controlesEl.style.display = "none";
+    mostrarIntensidade();
+  } else if (restanteInicialSegundos != null) {
+    // Retomando de onde a bolha flutuante deixou — já volta rodando, sem
+    // esperar um novo toque em "Iniciar".
+    pintar(restanteInicialSegundos);
+    rodando = true;
+    cronometro.iniciar();
+    pedirWakeLock();
+    persistirProgresso();
+    atualizarPlay();
+    notaEl.textContent = "A tela fica acesa enquanto o cardio roda.";
   } else {
     pintar(totalSegundos);
     atualizarPlay();

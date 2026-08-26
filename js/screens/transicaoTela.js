@@ -26,8 +26,23 @@ export async function trocarConteudo(container, montarNovaTela, { direcao = "tro
   if (atual) {
     const containerEstiloOriginal = container.style.position;
     if (!containerEstiloOriginal) container.style.position = "relative";
+
+    // Mede a posição/tamanho ANTES de anexar a tela nova — algumas telas
+    // (fila/execução/cardio) mudam o padding do container e escondem a
+    // barra de abas assim que entram no DOM, via `body:has()`, e isso
+    // acontece na hora, antes de qualquer animação começar. Se a tela que
+    // está saindo continuasse presa com `inset:0` (relativo ao container),
+    // esse padding mudando por baixo dela faria ela pular de tamanho no
+    // mesmo instante — o "pisca antes de deslizar" que se via na troca pra
+    // fila. Fixar a caixa em pixels, medida antes da mudança, deixa a tela
+    // que está saindo imune ao que acontece com o container depois dela.
+    const retangulo = atual.getBoundingClientRect();
+    const retanguloContainer = container.getBoundingClientRect();
     atual.style.position = "absolute";
-    atual.style.inset = "0";
+    atual.style.top = `${retangulo.top - retanguloContainer.top}px`;
+    atual.style.left = `${retangulo.left - retanguloContainer.left}px`;
+    atual.style.width = `${retangulo.width}px`;
+    atual.style.height = `${retangulo.height}px`;
     atual.style.pointerEvents = "none";
     animarSpring(atual, { x: 0, opacity: 1 }, { x: saidaX, opacity: 0 }, { rigidez: 420, amortecimento: 38 }).finalizado.then(() => {
       atual.remove();

@@ -633,8 +633,29 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-footer-primary { flex: 1; min-height: 52px; border: none; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-family: inherit; font-weight: 800; font-size: 1rem; cursor: pointer; }
 .exec-footer-primary:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 
-body:has(.tela-execucao) #tab-bar, body:has(.tela-fila) #tab-bar, body:has(.tela-cardio) #tab-bar { display: none; }
+/* A barra de abas some e o padding de baixo do conteúdo encolhe quando uma
+   tela em tela cheia (fila/execução/cardio) entra — antes os dois eram um
+   corte instantâneo (display:none + padding:0 na hora), disparado no
+   exato instante em que a tela nova entra no DOM, ainda antes dela
+   terminar de deslizar. A tela que estava saindo agora tem sua caixa
+   fixada em pixels antes disso acontecer (ver transicaoTela.js), então já
+   não pula de tamanho — mas a barra em si e o padding ainda merecem
+   suavizar, em vez de cortar, pra não ficarem como um segundo evento
+   competindo com o slide. */
+#tab-bar {
+  opacity: 1; visibility: visible;
+  transition: opacity var(--duration-standard) var(--ease-out), visibility 0s;
+}
+#tab-content { transition: padding-bottom var(--duration-standard) var(--ease-out); }
+body:has(.tela-execucao) #tab-bar, body:has(.tela-fila) #tab-bar, body:has(.tela-cardio) #tab-bar {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease-out), visibility 0s var(--duration-standard);
+}
 body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:has(.tela-cardio) #tab-content { padding-bottom: 0; }
+@media (prefers-reduced-motion: reduce) {
+  #tab-bar { transition: opacity var(--duration-fast) ease; }
+  #tab-content { transition: none; }
+}
 
 /* Cronômetro do cardio do dia (js/screens/cardioTimer.js) */
 .tela-cardio main { align-items: center; padding-top: 26px; }

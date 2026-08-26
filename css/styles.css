@@ -724,6 +724,18 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .atividade-estimativa { min-height: 1.1em; font-size: 0.8rem; color: var(--ink-dim); text-align: center; }
 .atividade-estimativa b { color: var(--accent); font-family: var(--font-mono); font-weight: 800; }
 
+/* "Começar agora" é a ação principal (cronômetro ao vivo, igual ao cardio
+   prescrito) — "Só registrar" fica secundário, por isso perde o
+   preenchimento cor de destaque que .carga-sheet-confirmar usa em toda
+   outra folha do app. */
+.atividade-iniciar-agora {
+  width: 100%; min-height: 50px; border: none; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 800;
+  font-size: 0.9rem; font-family: inherit; cursor: pointer;
+}
+.atividade-modo-nota { margin: 2px 0 0; font-size: 0.72rem; line-height: 1.4; color: var(--ink-faint); text-align: center; }
+.atividade-sheet .carga-sheet-confirmar { background: var(--card-2); color: var(--ink-dim); }
+
 /* Popup de perguntas diárias — mesma folha do seletor de carga, conteúdo próprio */
 .perguntas-sheet { padding-top: 18px; align-items: stretch; }
 .perguntas-sheet .carga-sheet-handle { align-self: center; }

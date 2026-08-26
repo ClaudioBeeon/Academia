@@ -114,7 +114,16 @@ function renderShell(db) {
     try {
       if (tabName === "hoje") {
         await trocarConteudo(content, () => montarTelaTreino(db, {
-          onIrParaCardio: () => renderTab("divisao"),
+          // "Ver mais" num cardio já registrado hoje: mostra o que foi
+          // feito (tela de cardio em modo concluído), não a aba de treinos
+          // — ir pra "divisao" era um resquício de quando essa tela ainda
+          // não existia.
+          onIrParaCardio: (cardioLogado) => trocarConteudo(content, () => montarTelaCardio(db, {
+            hoje: obterDataLocal(),
+            modalidade: cardioLogado.modalidade,
+            registroExistente: cardioLogado,
+            aoVoltar: () => renderTab("hoje", "voltar"),
+          }), { direcao: "avancar" }),
           onComecarTreino: () => trocarConteudo(content, () => montarFluxoSessao(db, {
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),
@@ -127,6 +136,17 @@ function renderShell(db) {
             hoje: obterDataLocal(),
             modalidade: cardio.modalidade,
             duracaoMin: cardio.duracaoMin,
+            aoVoltar: () => renderTab("hoje", "voltar"),
+            aoConcluir: () => renderTab("hoje", "voltar"),
+          }), { direcao: "avancar" }),
+          // "Começar agora" na folha de nova atividade — mesma tela de
+          // cronômetro do cardio prescrito, só que com mesmoDiaDeTreino:
+          // false (é uma atividade avulsa, não o cardio do dia de treino).
+          onIniciarAtividadeAgora: (atividade) => trocarConteudo(content, () => montarTelaCardio(db, {
+            hoje: obterDataLocal(),
+            modalidade: atividade.modalidade,
+            duracaoMin: atividade.duracaoMinutos,
+            mesmoDiaDeTreino: false,
             aoVoltar: () => renderTab("hoje", "voltar"),
             aoConcluir: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),

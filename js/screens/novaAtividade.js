@@ -44,7 +44,7 @@ export function abrirNovaAtividade(pesoKg) {
               <label>Duração (min)</label>
               <input type="number" name="duracaoMinutos" placeholder="30" inputmode="numeric" min="1" required />
             </div>
-            <div class="set-field">
+            <div class="set-field atividade-intensidade-campo">
               <label>Intensidade</label>
               <select name="intensidadePercebida">
                 <option value="1">Muito leve</option>
@@ -56,9 +56,11 @@ export function abrirNovaAtividade(pesoKg) {
             </div>
           </div>
           <div class="atividade-estimativa"></div>
-          <div class="carga-sheet-acoes">
+          <button type="submit" class="atividade-iniciar-agora" data-modo="iniciar">Começar agora, com cronômetro</button>
+          <p class="atividade-modo-nota"></p>
+          <div class="carga-sheet-acoes atividade-acoes-secundarias">
             <button type="button" class="carga-sheet-cancelar">Cancelar</button>
-            <button type="submit" class="carga-sheet-confirmar">Registrar</button>
+            <button type="submit" class="carga-sheet-confirmar" data-modo="registrar">Só registrar</button>
           </div>
         </form>
       </div>
@@ -105,6 +107,9 @@ export function abrirNovaAtividade(pesoKg) {
     cancelarBtn.addEventListener("click", () => fechar(null));
     overlay.addEventListener("click", (event) => { if (event.target === overlay) fechar(null); });
 
+    overlay.querySelector(".atividade-modo-nota").textContent =
+      "Começar agora abre um cronômetro — a intensidade é perguntada só no final, quando encerrar.";
+
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const modalidadeEscolhida = form.modalidade.value;
@@ -113,7 +118,8 @@ export function abrirNovaAtividade(pesoKg) {
         : modalidadeEscolhida;
       const duracaoMinutos = Number(form.duracaoMinutos.value) || undefined;
       const intensidadePercebida = Number(form.intensidadePercebida.value);
-      fechar({ modalidade, duracaoMinutos, intensidadePercebida });
+      const iniciarAgora = event.submitter?.dataset.modo === "iniciar";
+      fechar({ modalidade, duracaoMinutos, intensidadePercebida, iniciarAgora });
     });
   });
 }

@@ -60,7 +60,7 @@ function tocarAlarme() {
   }
 }
 
-export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, aoConcluir } = {}) {
+export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, aoConcluir, mesmoDiaDeTreino = true, registroExistente = null } = {}) {
   const totalSegundos = Math.max(1, Math.round((duracaoMin ?? 20) * 60));
   const nome = NOME_MODALIDADE[modalidade] ?? modalidade ?? "Cardio";
 
@@ -217,27 +217,29 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     root.querySelector("main").appendChild(bloco);
   }
 
-  encerrarBtn.addEventListener("click", async () => {
-    const selecionada = root.querySelector(".cardio-intensidade .selecionada");
-    if (!terminou && !selecionada) mostrarIntensidade();
+  if (!registroExistente) {
+    encerrarBtn.addEventListener("click", async () => {
+      const selecionada = root.querySelector(".cardio-intensidade .selecionada");
+      if (!terminou && !selecionada) mostrarIntensidade();
 
-    const intensidadePercebida = Number(selecionada?.dataset.valor ?? 3);
-    encerrarBtn.disabled = true;
-    cronometro.parar();
-    rodando = false;
-    liberarWakeLock();
+      const intensidadePercebida = Number(selecionada?.dataset.valor ?? 3);
+      encerrarBtn.disabled = true;
+      cronometro.parar();
+      rodando = false;
+      liberarWakeLock();
 
-    await registrarCardio(db, {
-      data: hoje,
-      modalidade,
-      duracaoMinutos: minutosFeitos(),
-      intensidadePercebida,
-      mesmoDiaDeTreino: true,
+      await registrarCardio(db, {
+        data: hoje,
+        modalidade,
+        duracaoMinutos: minutosFeitos(),
+        intensidadePercebida,
+        mesmoDiaDeTreino,
+      });
+
+      limpar();
+      if (aoConcluir) aoConcluir();
     });
-
-    limpar();
-    if (aoConcluir) aoConcluir();
-  });
+  }
 
   root.querySelector('[aria-label="Fechar"]').addEventListener("click", () => {
     limpar();
@@ -264,9 +266,36 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     window.removeEventListener("focus", aoVoltarAoPrimeiroPlano);
   }
 
-  pintar(totalSegundos);
-  atualizarPlay();
-  notaEl.textContent = `Prescrito pra hoje: ${duracaoMin ?? "—"} min.`;
+  // "Ver mais" num cardio já registrado hoje: mostra o que foi feito em vez
+  // de abrir um cronômetro novo do zero — o anel nasce cheio, os controles
+  // de tocar/pausar/ajustar somem (não tem o que rodar), e a intensidade
+  // aparece marcada (mas travada — reabrir esta tela não é editar o
+  // registro, só olhar).
+  if (registroExistente) {
+    terminou = true;
+    root.classList.add("cardio-fim");
+    const minutosFeito = registroExistente.duracaoMinutos ?? duracaoMin ?? 0;
+    relEl.textContent = `${minutosFeito} min`;
+    subEl.textContent = "concluído hoje";
+    progressoEl.style.strokeDashoffset = "0";
+    controlesEl.style.display = "none";
+    notaEl.textContent = "Cardio já registrado hoje.";
+    mostrarIntensidade();
+    const intensidadeRegistrada = registroExistente.intensidadePercebida ?? 3;
+    for (const botao of root.querySelectorAll(".cardio-intensidade button")) {
+      botao.classList.toggle("selecionada", Number(botao.dataset.valor) === intensidadeRegistrada);
+      botao.disabled = true;
+    }
+    encerrarBtn.textContent = "Fechar";
+    encerrarBtn.addEventListener("click", () => {
+      limpar();
+      if (aoVoltar) aoVoltar();
+    });
+  } else {
+    pintar(totalSegundos);
+    atualizarPlay();
+    notaEl.textContent = `Prescrito pra hoje: ${duracaoMin ?? "—"} min.`;
+  }
 
   return root;
 }

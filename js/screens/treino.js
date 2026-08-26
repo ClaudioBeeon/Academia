@@ -45,7 +45,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
+export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, onIniciarAtividadeAgora, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -98,13 +98,23 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     sinoBtn.querySelector(".badge-dot")?.remove();
   });
 
-  const addBtn = header.querySelector('[aria-label="Nova atividade"]');
-  addBtn.addEventListener("click", async () => {
+  // Compartilhado entre o "+" do cabeçalho e o card de cardio quando não há
+  // nada prescrito nem registrado hoje (botão "Registrar") — os dois abrem
+  // a mesma folha e reagem igual à escolha de "começar agora" vs "só registrar".
+  async function abrirFluxoNovaAtividade() {
     const resultado = await abrirNovaAtividade(perfil?.dadosBasicos?.peso_kg);
     if (!resultado) return;
-    await registrarCardio(db, { data: hoje, ...resultado, mesmoDiaDeTreino: false });
+    const { iniciarAgora, ...dadosAtividade } = resultado;
+    if (iniciarAgora && onIniciarAtividadeAgora) {
+      onIniciarAtividadeAgora(dadosAtividade);
+      return;
+    }
+    await registrarCardio(db, { data: hoje, ...dadosAtividade, mesmoDiaDeTreino: false });
     if (onAtividadeAdicionada) onAtividadeAdicionada();
-  });
+  }
+
+  const addBtn = header.querySelector('[aria-label="Nova atividade"]');
+  addBtn.addEventListener("click", abrirFluxoNovaAtividade);
 
   const main = document.createElement("main");
   root.appendChild(main);
@@ -137,7 +147,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
-  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio));
+  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio, abrirFluxoNovaAtividade));
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
@@ -434,7 +444,7 @@ const NOME_MODALIDADE_CARDIO = {
   beach_tenis: "Beach tênis",
 };
 
-function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onIniciarCardio) {
+function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onIniciarCardio, onRegistrarSemPrescricao) {
   const card = document.createElement("section");
   card.className = "plano-hero";
 
@@ -485,7 +495,8 @@ function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onInic
   botao.textContent = cardioLogadoHoje ? "Ver mais" : podeIniciar ? "Iniciar" : "Registrar";
   botao.addEventListener("click", () => {
     if (podeIniciar && onIniciarCardio) onIniciarCardio(cardioDeHoje);
-    else if (onIrParaCardio) onIrParaCardio();
+    else if (cardioLogadoHoje && onIrParaCardio) onIrParaCardio(cardioLogadoHoje);
+    else if (!cardioLogadoHoje && !cardioDeHoje && onRegistrarSemPrescricao) onRegistrarSemPrescricao();
   });
   card.appendChild(botao);
 

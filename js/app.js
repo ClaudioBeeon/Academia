@@ -139,6 +139,45 @@ function renderShell(db) {
     }), { direcao: "avancar" });
   }
 
+  // Minimizar uma sessão de treino não reconstrói nada — só desanexa a raiz
+  // dela do #tab-content (o timer/cronômetro dentro continua rodando
+  // normalmente, presos ao closure de sessao.js/execucao.js, que nunca é
+  // desmontado) e guarda a referência. Reanexar é literalmente devolver o
+  // mesmo elemento pro lugar, exatamente como estava. Diferente do cardio,
+  // isso não sobrevive o app fechar de verdade — só troca de aba dentro
+  // dele, que já é o pedido original ("não consigo sair da tela").
+  function abrirSessao(opcoes) {
+    // Guarda a referência exata do nó devolvido por trocarConteudo — nunca
+    // `content.firstElementChild`, que durante a animação de saída de uma
+    // troca anterior pode ainda apontar pra tela velha (ela só sai do DOM
+    // quando a spring termina).
+    let rootSessaoRef = null;
+    const promessa = trocarConteudo(content, () => montarFluxoSessao(db, {
+      ...opcoes,
+      onMinimizar: (infoTempo) => {
+        if (!rootSessaoRef) return;
+        rootSessaoRef.remove();
+        definirCronometroFlutuante({
+          rotulo: infoTempo.rotulo,
+          alvoTimestamp: infoTempo.alvoTimestamp,
+          inicioTimestamp: infoTempo.inicioTimestamp,
+          duracaoTotalSegundos: infoTempo.duracaoTotalSegundos,
+          aoExpandir: () => {
+            limparCronometroFlutuante();
+            content.replaceChildren(rootSessaoRef);
+            tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === "hoje"));
+          },
+        });
+        // Sem isso #tab-content ficava vazio atrás da bolha — minimizar
+        // devolve pra Início, que é o pedido original (poder mexer no
+        // resto do app com o cronômetro rodando).
+        renderTab("hoje");
+      },
+    }), { direcao: "avancar" });
+    promessa.then((elemento) => { rootSessaoRef = elemento; });
+    return promessa;
+  }
+
   const renderTab = async (tabName, direcao = "trocarAba") => {
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
@@ -155,13 +194,13 @@ function renderShell(db) {
             registroExistente: cardioLogado,
             aoVoltar: () => renderTab("hoje", "voltar"),
           }), { direcao: "avancar" }),
-          onComecarTreino: () => trocarConteudo(content, () => montarFluxoSessao(db, {
+          onComecarTreino: () => abrirSessao({
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
-          }), { direcao: "avancar" }),
-          onAbrirDia: (numero) => trocarConteudo(content, () => montarFluxoSessao(db, {
+          }),
+          onAbrirDia: (numero) => abrirSessao({
             diaForcado: numero,
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
-          }), { direcao: "avancar" }),
+          }),
           onAtividadeAdicionada: () => renderTab("hoje"),
           onIniciarCardio: (cardio) => abrirTelaCardio({
             hoje: obterDataLocal(),

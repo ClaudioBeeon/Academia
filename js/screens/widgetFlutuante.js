@@ -47,12 +47,23 @@ export function montarWidgetFlutuante() {
     el.hidden = false;
     rotEl.textContent = atual.rotulo;
 
-    const restante = Math.max(0, (atual.alvoTimestamp - Date.now()) / 1000);
-    tEl.textContent = formatarRelogio(restante);
-    if (atual.duracaoTotalSegundos > 0) {
-      const fracaoFeita = 1 - Math.min(1, restante / atual.duracaoTotalSegundos);
-      progressoEl.style.strokeDashoffset = String(PERIMETRO * (1 - fracaoFeita));
+    // Dois jeitos de contar: regressivo (cardio, descanso — tem um alvo no
+    // futuro) ou progressivo (trabalho de uma série — só sabe quando
+    // começou, não quando termina). O anel de progresso só faz sentido
+    // pro primeiro; no segundo ele fica parado numa volta completa, só de
+    // enfeite, já que não há "total" pra medir fração.
+    let segundosMostrados;
+    if (atual.alvoTimestamp != null) {
+      segundosMostrados = Math.max(0, (atual.alvoTimestamp - Date.now()) / 1000);
+      if (atual.duracaoTotalSegundos > 0) {
+        const fracaoFeita = 1 - Math.min(1, segundosMostrados / atual.duracaoTotalSegundos);
+        progressoEl.style.strokeDashoffset = String(PERIMETRO * (1 - fracaoFeita));
+      }
+    } else {
+      segundosMostrados = Math.max(0, (Date.now() - atual.inicioTimestamp) / 1000);
+      progressoEl.style.strokeDashoffset = "0";
     }
+    tEl.textContent = formatarRelogio(segundosMostrados);
 
     if (!intervalId) intervalId = setInterval(atualizar, 1000);
   }

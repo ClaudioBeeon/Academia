@@ -66,6 +66,7 @@ export function montarTelaSerieCheia({
   aoAjustarDescanso,
   aoPularDescanso,
   aoAjustar,
+  aoMinimizar,
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
@@ -82,6 +83,7 @@ export function montarTelaSerieCheia({
         <div class="sc-trilho-tracos">${tracos}</div>
         <span class="sc-trilho-n">${numeroAtual}/${totalSeriesAlvo}</span>
       </div>
+      <button type="button" class="sc-minimizar" aria-label="Minimizar">⌄</button>
     </div>
     <div class="sc-info">
       <div class="sc-nome"></div>
@@ -198,6 +200,29 @@ export function montarTelaSerieCheia({
   }
 
   elemento.querySelector(".sc-voltar").addEventListener("click", () => { if (aoFechar) aoFechar(); });
+
+  // Minimizar: some da tela, mas a sessão inteira (com este telão dentro)
+  // continua rodando escondida — quem decide o que fazer com isso é quem
+  // chamou (execucao.js repassa pra sessao.js, que repassa pro app.js, o
+  // único lugar que sabe como desanexar/reanexar a sessão do #tab-content
+  // sem destruir nada). Aqui só informa em que ponto do tempo ela está.
+  elemento.querySelector(".sc-minimizar").addEventListener("click", () => {
+    if (!aoMinimizar) return;
+    if (elemento.dataset.modo === "descanso" && descansoRestanteAtual != null) {
+      aoMinimizar({
+        modo: "descanso",
+        rotulo: `Descanso · ${exercicio.nome}`,
+        alvoTimestamp: Date.now() + descansoRestanteAtual * 1000,
+        duracaoTotalSegundos: descansoDuracaoTotalAtual,
+      });
+    } else {
+      aoMinimizar({
+        modo: "trabalho",
+        rotulo: exercicio.nome,
+        inicioTimestamp: inicioTrabalhoTs,
+      });
+    }
+  });
   const terminarBtn = elemento.querySelector(".sc-terminar");
   terminarBtn.addEventListener("click", () => {
     // O aperto de confirmação toca junto com o crossfade pro descanso — o
@@ -276,6 +301,8 @@ export function montarTelaSerieCheia({
   let inicioTrabalhoTs = Date.now();
   let intervaloCrono = null;
   let contagemIntervalId = null;
+  let descansoRestanteAtual = null;
+  let descansoDuracaoTotalAtual = null;
 
   // A repetição contada é derivada direto do relógio da onda (quantos
   // ciclos completos já se passaram) — não existe um contador separado
@@ -339,6 +366,8 @@ export function montarTelaSerieCheia({
   }
 
   function atualizarDescanso(restante, duracaoTotal) {
+    descansoRestanteAtual = restante;
+    descansoDuracaoTotalAtual = duracaoTotal;
     const fracao = duracaoTotal > 0 ? Math.max(0, Math.min(1, restante / duracaoTotal)) : 0;
     anelProgresso.style.strokeDashoffset = String(CIRCUNFERENCIA_ANEL * (1 - fracao));
     anelTextoEl.textContent = formatarRelogio(Math.max(0, restante));

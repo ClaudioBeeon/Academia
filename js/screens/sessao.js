@@ -24,7 +24,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {}) {
+export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, diaForcado } = {}) {
   const hoje = obterDataLocal();
   const modoPreview = diaForcado != null;
   const todosExercicios = await getAll(db, "exercicios");
@@ -186,6 +186,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, diaForcado } = {
           },
           onSerieRegistrada: persistirDiaSeNecessario,
           onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
+          onMinimizarSessao: onMinimizar,
         });
       }
 

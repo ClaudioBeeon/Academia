@@ -60,7 +60,7 @@ function esperar(ms) {
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
   const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
-  const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado } = callbacks;
+  const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onMinimizarSessao } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
@@ -600,6 +600,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         AJUSTES[campo](delta);
         renderizarTrioEControle();
       },
+      aoMinimizar: (infoTempo) => { if (onMinimizarSessao) onMinimizarSessao(infoTempo); },
     });
     root.appendChild(telaCheiaAtual.elemento);
     pedirWakeLock();

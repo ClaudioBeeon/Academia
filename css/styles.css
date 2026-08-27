@@ -237,7 +237,9 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .set-field label { font-size: 0.66rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; margin-bottom: 5px; }
 .set-field input, .set-field select {
   background: var(--paper); border: 1px solid var(--card-2); color: var(--ink); border-radius: 9px;
-  padding: 7px 10px; min-height: 44px; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700;
+  /* 16px é o piso pra iOS Safari não dar zoom automático ao focar o campo —
+     abaixo disso, cada toque num input "clicava rápido" e a tela pulava. */
+  padding: 7px 10px; min-height: 44px; font-family: var(--font-mono); font-size: 16px; font-weight: 700;
   width: 100%; font-variant-numeric: tabular-nums; appearance: none;
 }
 .set-field select {
@@ -247,7 +249,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 .set-field textarea {
   background: var(--paper); border: 1px solid var(--card-2); color: var(--ink); border-radius: 9px;
-  padding: 9px 10px; font-family: inherit; font-size: 0.88rem; font-weight: 400; line-height: 1.5; width: 100%;
+  padding: 9px 10px; font-family: inherit; font-size: 16px; font-weight: 400; line-height: 1.5; width: 100%;
 }
 .set-field input:focus-visible, .set-field select:focus-visible, .set-field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .set-field input:disabled { opacity: 0.7; }
@@ -256,7 +258,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
    precisar embrulhar num .set-field só por causa do estilo). */
 .campo-textarea {
   background: var(--paper); border: 1px solid var(--card-2); color: var(--ink); border-radius: 9px;
-  padding: 9px 10px; font-family: inherit; font-size: 0.88rem; font-weight: 400; line-height: 1.5; width: 100%;
+  padding: 9px 10px; font-family: inherit; font-size: 16px; font-weight: 400; line-height: 1.5; width: 100%;
 }
 .campo-textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
@@ -857,7 +859,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .atividade-form { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 .atividade-form select, .atividade-form input[type="text"], .atividade-form input[type="number"] {
   width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 12px; padding: 11px 12px; font-family: var(--font-display); font-size: 0.9rem;
+  border-radius: 12px; padding: 11px 12px; font-family: var(--font-display); font-size: 16px;
 }
 .atividade-form input[type="number"] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .atividade-form select:focus-visible, .atividade-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -1061,7 +1063,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .historico-serie-form .campo { flex: 1; min-width: 64px; }
 .historico-serie-form .campo-exercicio { flex-basis: 100%; }
 .historico-serie-form label { display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin-bottom: 4px; }
-.historico-serie-form input, .historico-serie-form select { width: 100%; min-height: 44px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); border-radius: 9px; padding: 7px 8px; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.historico-serie-form input, .historico-serie-form select { width: 100%; min-height: 44px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); border-radius: 9px; padding: 7px 8px; font-family: var(--font-mono); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .historico-serie-form select { font-family: inherit; font-weight: 500; }
 .historico-serie-form input:focus-visible, .historico-serie-form select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .historico-serie-form-acoes { display: flex; gap: 6px; flex: 0 0 auto; }
@@ -1130,7 +1132,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .cpia-titulo { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
 .cpia-linha { display: flex; align-items: flex-end; gap: 8px; }
 .cpia-input { flex: 1; min-width: 0; resize: none; background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 0.85rem; max-height: 100px; }
+  border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 16px; max-height: 100px; }
 .cpia-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cpia-enviar { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--accent);
   color: var(--accent-ink); font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }

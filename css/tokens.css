@@ -8,10 +8,13 @@
   --accent: #C9F241;
   --accent-ink: #141414;
   --line: #262626;
+  --aviso: #E0B04A;
+  --erro: #E2765B;
   --radius: 26px;
   --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --duration-fast: 0.2s;
   --duration-standard: 0.3s;
 }

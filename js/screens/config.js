@@ -8,6 +8,7 @@ import {
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
 } from "../data/supabaseClient.js";
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
+import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas } from "../engine/lembretes.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
@@ -115,18 +116,17 @@ async function criarSecaoSupabase(db) {
         <summary>Usar outro projeto Supabase (avançado)</summary>
         <form class="creds-form" style="display:grid; gap:10px; margin-top:10px;">
           <div class="set-field">
-            <label>URL do projeto Supabase</label>
-            <input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+            <label>URL do projeto Supabase<input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
           </div>
           <div class="set-field">
-            <label>Chave anon (pública) do projeto</label>
-            <input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+            <label>Chave anon (pública) do projeto<input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
           </div>
           <button type="submit" class="swap-pill">Salvar credenciais</button>
         </form>
       </details>
 
       <div class="auth-secao"></div>
+      <div class="escolha-perfil-secao"></div>
 
       <div class="prev-hint sync-status"></div>
       <button type="button" class="swap-pill sync-agora-btn">Sincronizar agora</button>
@@ -138,8 +138,51 @@ async function criarSecaoSupabase(db) {
   formCreds.anonKey.value = getAnonKey();
 
   const authSecao = card.querySelector(".auth-secao");
+  const escolhaPerfilSecao = card.querySelector(".escolha-perfil-secao");
   const status = card.querySelector(".sync-status");
   const botaoSync = card.querySelector(".sync-agora-btn");
+
+  // Seletor de perfil "estilo Netflix": aparece só quando a conta que acabou
+  // de logar não trouxe nada do servidor (recebidos === 0) — sinal de que é
+  // a primeira vez que essa conta é usada. Escolher troca perfil/protocolo/
+  // ficha/dietaBase pelos arquivos do perfil escolhido (data/perfis.json) e
+  // sobe isso pra nuvem, sem precisar exportar/importar backup manualmente.
+  async function montarEscolhaDePerfil() {
+    let perfis;
+    try {
+      perfis = await listarPerfisDisponiveis();
+    } catch (err) {
+      console.error("Falha ao listar perfis disponíveis:", err);
+      return;
+    }
+    escolhaPerfilSecao.innerHTML = `
+      <div class="prev-hint">Conta nova — qual perfil de treino é este aparelho?</div>
+      <div class="escolha-perfil-botoes" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    `;
+    const botoesEl = escolhaPerfilSecao.querySelector(".escolha-perfil-botoes");
+    perfis.forEach((perfil) => {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "swap-pill";
+      botao.textContent = perfil.nome;
+      botao.addEventListener("click", async () => {
+        botao.disabled = true;
+        status.textContent = `Aplicando o perfil de ${perfil.nome}...`;
+        try {
+          await semearPerfilNomeado(db, perfil.id);
+          await flushSyncQueue(db);
+          escolhaPerfilSecao.innerHTML = "";
+        } catch (err) {
+          console.error("Falha ao aplicar o perfil escolhido:", err);
+          status.textContent = "Não foi possível aplicar este perfil. Tente novamente.";
+          botao.disabled = false;
+          return;
+        }
+        await atualizarStatus();
+      });
+      botoesEl.appendChild(botao);
+    });
+  }
 
   async function atualizarStatus() {
     if (!isConfigured()) {
@@ -165,12 +208,10 @@ async function criarSecaoSupabase(db) {
       <div class="prev-hint" style="text-align:center; margin:8px 0;">ou com e-mail e senha</div>
       <form class="auth-form" style="display:grid; gap:10px;">
         <div class="set-field">
-          <label>E-mail</label>
-          <input name="email" type="email" autocomplete="username" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+          <label>E-mail<input name="email" type="email" autocomplete="username" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
         </div>
         <div class="set-field">
-          <label>Senha</label>
-          <input name="senha" type="password" autocomplete="current-password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+          <label>Senha<input name="senha" type="password" autocomplete="current-password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
         </div>
         <div style="display:flex; gap:8px;">
           <button type="submit" class="swap-pill entrar-btn" style="flex:1;">Entrar</button>
@@ -241,11 +282,15 @@ async function criarSecaoSupabase(db) {
   // "apagar tudo" pro servidor por engano.
   async function aposLogin() {
     status.textContent = "Trazendo dados do servidor...";
-    await pullFromSupabase(db);
+    const { recebidos } = await pullFromSupabase(db);
     initAutoSync(db);
     await flushSyncQueue(db);
     const usuario = await getUsuario();
     if (usuario) montarBotaoSair(usuario);
+    // recebidos === 0 é o sinal de conta nova: nada nesta conta foi
+    // sincronizado antes, então o que está local ainda é só o perfil
+    // padrão auto-semeado — a pessoa escolhe o dela em vez de ficar com ele.
+    if (recebidos === 0) await montarEscolhaDePerfil();
     await atualizarStatus();
   }
 
@@ -280,12 +325,10 @@ function criarSecaoGemini() {
     <div class="exercise-head"><div class="exercise-name">Chave de IA (Gemini)</div></div>
     <form class="sets gemini-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar</label>
-        <input name="chave" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar<input name="chave" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
       </div>
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)</label>
-        <input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)<input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
       <div class="prev-hint gemini-status" style="grid-column:1/-1;"></div>
@@ -386,8 +429,7 @@ async function criarSecaoSugestoes(db) {
     reavaliacaoForm.style.cssText = "display:contents;";
     reavaliacaoForm.innerHTML = `
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Data de reavaliação da fase "${perfil.fase.atual}" (sugestão: 6-8 semanas do início)</label>
-        <input name="dataReavaliacao" type="date" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+        <label>Data de reavaliação da fase "${perfil.fase.atual}" (sugestão: 6-8 semanas do início)<input name="dataReavaliacao" type="date" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar data</button>
       <div class="prev-hint reavaliacao-status" style="grid-column:1/-1;"></div>
@@ -468,12 +510,10 @@ async function criarSecaoEquipamento(db) {
   form.style.padding = "0 18px 18px";
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Peso da barra (kg)</label>
-      <input name="pesoBarra" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      <label>Peso da barra (kg)<input name="pesoBarra" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
     </div>
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Anilhas disponíveis (kg, separadas por vírgula)</label>
-      <input name="anilhas" type="text" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+      <label>Anilhas disponíveis (kg, separadas por vírgula)<input name="anilhas" type="text" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
     </div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
     <div class="prev-hint equipamento-status" style="grid-column:1/-1;"></div>

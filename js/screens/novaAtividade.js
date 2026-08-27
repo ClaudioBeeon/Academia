@@ -30,29 +30,29 @@ export function abrirNovaAtividade(pesoKg) {
         <h3>Nova atividade</h3>
         <form class="atividade-form">
           <div class="set-field">
-            <label>O que você fez?</label>
-            <select name="modalidade">
-              ${ATIVIDADES.map(([valor, rotulo]) => `<option value="${valor}">${rotulo}</option>`).join("")}
-            </select>
+            <label>O que você fez?
+              <select name="modalidade">
+                ${ATIVIDADES.map(([valor, rotulo]) => `<option value="${valor}">${rotulo}</option>`).join("")}
+              </select>
+            </label>
           </div>
           <div class="set-field atividade-outra" hidden>
-            <label>Qual atividade?</label>
-            <input type="text" name="outraAtividade" placeholder="ex.: cardio na esteira" />
+            <label>Qual atividade?<input type="text" name="outraAtividade" placeholder="ex.: cardio na esteira" /></label>
           </div>
           <div class="atividade-linha">
             <div class="set-field">
-              <label>Duração (min)</label>
-              <input type="number" name="duracaoMinutos" placeholder="30" inputmode="numeric" min="1" required />
+              <label>Duração (min)<input type="number" name="duracaoMinutos" placeholder="30" inputmode="numeric" min="1" required /></label>
             </div>
             <div class="set-field atividade-intensidade-campo">
-              <label>Intensidade</label>
-              <select name="intensidadePercebida">
-                <option value="1">Muito leve</option>
-                <option value="2">Leve</option>
-                <option value="3" selected>Moderada</option>
-                <option value="4">Forte</option>
-                <option value="5">Muito forte</option>
-              </select>
+              <label>Intensidade
+                <select name="intensidadePercebida">
+                  <option value="1">Muito leve</option>
+                  <option value="2">Leve</option>
+                  <option value="3" selected>Moderada</option>
+                  <option value="4">Forte</option>
+                  <option value="5">Muito forte</option>
+                </select>
+              </label>
             </div>
           </div>
           <div class="atividade-estimativa"></div>

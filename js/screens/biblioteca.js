@@ -62,13 +62,11 @@ function criarLinhaExercicio(db, exercicio) {
   obsForm.style.display = "none";
   obsForm.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Imagem do exercício</label>
-      <input name="imagem" type="file" accept="image/*" style="width:100%;" />
+      <label>Imagem do exercício<input name="imagem" type="file" accept="image/*" style="width:100%;" /></label>
       <div class="prev-hint imagem-status" style="margin-top:4px;"></div>
     </div>
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Observações de execução</label>
-      <textarea name="obs" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
+      <label>Observações de execução<textarea name="obs" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea></label>
     </div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
   `;
@@ -117,9 +115,9 @@ function criarFormNovoExercicio(db, main) {
   const form = document.createElement("form");
   form.className = "sets";
   form.innerHTML = `
-    <div class="set-field" style="grid-column:1/-1;"><label>Nome</label><input name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></div>
-    <div class="set-field"><label>Músculo primário</label><input name="musculo" required placeholder="peito" style="width:100%;" /></div>
-    <div class="set-field"><label>Tipo</label><input name="tipo" required placeholder="isolador" style="width:100%;" /></div>
+    <div class="set-field" style="grid-column:1/-1;"><label>Nome<input name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label></div>
+    <div class="set-field"><label>Músculo primário<input name="musculo" required placeholder="peito" style="width:100%;" /></label></div>
+    <div class="set-field"><label>Tipo<input name="tipo" required placeholder="isolador" style="width:100%;" /></label></div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Adicionar</button>
   `;
   card.appendChild(form);

@@ -15,6 +15,7 @@ import { abrirSubstituirExercicio } from "./substituirExercicio.js";
 import { montarTelaHistorico } from "./historico.js";
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 import { responderPerguntaExercicio } from "../ai/gemini.js";
+import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/perguntasIA.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -146,8 +147,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     main.appendChild(ferramentasPill);
 
     const painelFerramentas = document.createElement("div");
-    painelFerramentas.className = "sets ferramentas-painel";
-    painelFerramentas.style.padding = "0 0 12px";
+    painelFerramentas.className = "ferramentas-painel";
     main.appendChild(painelFerramentas);
 
     ferramentasPill.addEventListener("click", () => {
@@ -165,11 +165,13 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
           .join(" → ");
 
         painelFerramentas.innerHTML = `
-          <div class="prev-hint" style="grid-column:1/-1;">
-            <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
-          </div>
-          <div class="prev-hint" style="grid-column:1/-1;">
-            <b>Aquecimento:</b> ${textoAquecimento || "—"}
+          <div class="ferramentas-painel-corpo">
+            <div class="prev-hint">
+              <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
+            </div>
+            <div class="prev-hint">
+              <b>Aquecimento:</b> ${textoAquecimento || "—"}
+            </div>
           </div>
         `;
       }
@@ -328,7 +330,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     transicaoTimeoutId = setTimeout(() => {
       concluirTransicaoCarrossel(entrando);
       cronoCtlEl.hidden = estado !== "descanso";
-    }, 340);
+    }, 300);
   }
 
   const prescricao = exercicio.prescricao;
@@ -369,6 +371,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     titulo: "Dúvidas sobre este exercício?",
     placeholder: "ex: sinto isso mais no ombro que no peito, é normal?",
     perguntar: (pergunta) => responderPerguntaExercicio(exercicio, pergunta),
+    carregar: () => getPerguntaIAExercicio(db, hoje, exercicio.id),
+    salvar: (pergunta, resposta) => salvarPerguntaIAExercicio(db, hoje, exercicio.id, { pergunta, resposta }),
   }));
 
   function numeroPendenteAtual() {

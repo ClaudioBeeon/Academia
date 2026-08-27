@@ -5,7 +5,12 @@
 // Só monta o elemento e chama `perguntar(texto)` — quem instancia decide o
 // prompt/contexto; esta caixa só cuida do estado de UI (digitando, carregando,
 // resposta, erro).
-export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Pergunte algo...", perguntar }) {
+//
+// `carregar`/`salvar` são opcionais: quando presentes, a última pergunta e
+// resposta sobrevivem a trocar de tela ou fechar o app (js/data/perguntasIA.js)
+// — sem isso, a resposta desaparecia assim que a pessoa saía da tela, mesmo
+// já tendo custado uma chamada de API.
+export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Pergunte algo...", perguntar, carregar, salvar }) {
   const wrap = document.createElement("div");
   wrap.className = "caixa-pergunta-ia";
   wrap.innerHTML = `
@@ -15,18 +20,21 @@ export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Per
       <button type="button" class="cpia-enviar" aria-label="Perguntar">↑</button>
     </div>
     <div class="cpia-status prev-hint"></div>
+    <div class="cpia-pergunta-salva"></div>
     <div class="cpia-resposta"></div>
   `;
 
   const input = wrap.querySelector(".cpia-input");
   const enviarBtn = wrap.querySelector(".cpia-enviar");
   const status = wrap.querySelector(".cpia-status");
+  const perguntaSalvaEl = wrap.querySelector(".cpia-pergunta-salva");
   const resposta = wrap.querySelector(".cpia-resposta");
 
   async function enviar() {
     const pergunta = input.value.trim();
     if (!pergunta) return;
     status.textContent = "Perguntando à IA...";
+    perguntaSalvaEl.textContent = "";
     resposta.textContent = "";
     enviarBtn.disabled = true;
     input.disabled = true;
@@ -47,8 +55,11 @@ export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Per
     }
 
     status.textContent = "";
-    resposta.textContent = resultado.texto.trim();
+    const textoResposta = resultado.texto.trim();
+    perguntaSalvaEl.textContent = pergunta;
+    resposta.textContent = textoResposta;
     input.value = "";
+    if (salvar) await salvar(pergunta, textoResposta);
   }
 
   enviarBtn.addEventListener("click", enviar);
@@ -58,6 +69,14 @@ export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Per
       enviar();
     }
   });
+
+  if (carregar) {
+    Promise.resolve(carregar()).then((salvo) => {
+      if (!salvo) return;
+      perguntaSalvaEl.textContent = salvo.pergunta;
+      resposta.textContent = salvo.resposta;
+    });
+  }
 
   return wrap;
 }

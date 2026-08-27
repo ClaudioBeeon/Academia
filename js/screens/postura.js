@@ -12,6 +12,7 @@ import {
   primeiraEUltima,
   diasAteProximaFoto,
 } from "../data/postura.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 
 const COMO_TIRAR = [
   "De perfil (de lado), corpo inteiro ou da cintura pra cima.",
@@ -145,7 +146,8 @@ export async function montarCardPostura(db, hoje, aoAtualizar) {
     apagar.textContent = "Apagar a foto mais recente";
     apagar.addEventListener("click", async () => {
       const alvo = fotos[fotos.length - 1];
-      if (!confirm(`Apagar a foto de ${formatarData(alvo.data)}?`)) return;
+      const confirmou = await confirmarAcao({ titulo: "Apagar esta foto?", mensagem: `A foto de ${formatarData(alvo.data)} some do acompanhamento.`, textoConfirmar: "Apagar", destrutivo: true });
+      if (!confirmou) return;
       await excluirFotoPostura(db, alvo.id);
       if (aoAtualizar) await aoAtualizar();
     });

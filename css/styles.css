@@ -89,7 +89,7 @@ body {
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
 .set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha {
-  transition: transform 0.15s var(--ease-out), opacity 0.15s ease-out;
+  transition: transform 0.15s var(--ease-out), opacity 0.15s var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
@@ -168,8 +168,11 @@ button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:ac
 .carrossel-plano::-webkit-scrollbar { display: none; }
 .carrossel-plano .plano-hero { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; margin-bottom: 0; }
 .carrossel-dots { display: flex; justify-content: center; gap: 5px; margin-bottom: 22px; }
-.carrossel-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--card-2); transition: width var(--duration-fast) ease, background var(--duration-fast) ease; }
-.carrossel-dots i.on { width: 15px; border-radius: 3px; background: var(--accent); }
+.carrossel-dots i {
+  width: 15px; height: 5px; border-radius: 999px; background: var(--card-2);
+  transform: scaleX(0.3333); transition: transform var(--duration-fast) ease, background var(--duration-fast) ease;
+}
+.carrossel-dots i.on { transform: scaleX(1); background: var(--accent); }
 .atividade-secao { margin-bottom: 20px; }
 .shead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .shead h4 { margin: 0; font-size: 1rem; font-weight: 800; letter-spacing: -0.01em; }
@@ -198,19 +201,28 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .adiar-pill { color: var(--ink-faint); }
 
 .sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+/* Técnica grid-template-rows: 0fr → 1fr — não precisa de um teto de altura
+   arbitrário (o max-height antigo de 240px raramente batia com o conteúdo
+   real, então a transição visualmente "terminava" antes do tempo). O padding
+   mora no filho (.ferramentas-painel-corpo), nunca no container que colapsa
+   — padding no próprio elemento com grid-template-rows:0fr não some. */
 .ferramentas-painel {
-  overflow: hidden;
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
-  transition: max-height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+  transition: grid-template-rows var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
 }
-.ferramentas-painel.aberto { max-height: 240px; opacity: 1; }
+.ferramentas-painel-corpo { overflow: hidden; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px; }
+.ferramentas-painel.aberto { grid-template-rows: 1fr; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .ferramentas-painel { transition: opacity var(--duration-fast) ease; }
 }
 .set-row { display: grid; grid-template-columns: 34px 1fr 1fr 1fr; align-items: center; gap: 9px; padding: 9px; border-radius: 16px; background: var(--card-2); }
 .set-row.done { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.set-ring { width: 30px; height: 30px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--ink-dim); border: none; padding: 0; margin: 0; appearance: none; cursor: pointer; }
+.set-ring { position: relative; width: 30px; height: 30px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--ink-dim); border: none; padding: 0; margin: 0; appearance: none; cursor: pointer; }
+/* Alvo de toque visual (30px) fica menor que o mínimo de 44px recomendado —
+   a bolinha não cresce, mas a área clicável ao redor dela sim. */
+.set-ring::after { content: ""; position: absolute; inset: -7px; }
 .set-ring:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .set-row.done .set-ring { background: var(--accent); color: var(--accent-ink); }
 .set-field label { font-size: 0.56rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; margin-bottom: 3px; }
@@ -327,10 +339,14 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .bloco-apoio-item-check.feito .bloco-apoio-item-corpo { opacity: 0.55; }
 .bloco-apoio-item-check.feito h5 { text-decoration: line-through; text-decoration-color: var(--ink-faint); }
 .bloco-apoio-check {
+  position: relative;
   flex: 0 0 auto; width: 28px; height: 28px; margin-top: 1px; border-radius: 50%;
   border: none; background: var(--card-2); color: transparent; cursor: pointer;
   display: flex; align-items: center; justify-content: center; padding: 0;
 }
+/* Mesmo raciocínio do .set-ring — visual fica pequeno (28px, ou 26px na
+   variante do aquecimento), a área de toque não. */
+.bloco-apoio-check::after { content: ""; position: absolute; inset: -9px; }
 .bloco-apoio-check svg { width: 16px; height: 16px; }
 .bloco-apoio-check.feito { background: var(--accent); color: var(--accent-ink); }
 
@@ -352,9 +368,9 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
   height: 8px; background: var(--card); border-radius: 999px;
   overflow: hidden; margin-top: 8px;
 }
-.meta-barra-preenchida { height: 100%; border-radius: 999px; transition: width var(--duration-standard) ease; }
+.meta-barra-preenchida { width: 100%; height: 100%; border-radius: 999px; transform-origin: left; transition: transform var(--duration-standard) ease; }
 .meta-barra-preenchida.ok { background: var(--accent); }
-.meta-barra-preenchida.abaixo { background: #e0b04a; }
+.meta-barra-preenchida.abaixo { background: var(--aviso); }
 .meta-barra-nota { margin-top: 7px; font-size: 0.76rem; line-height: 1.45; color: var(--ink-dim); }
 
 /* Comparação de fotos de postura */
@@ -457,9 +473,9 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .cadencia-resumo .total b { display: block; font-family: var(--font-mono); font-size: 1.35rem; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
 .cadencia-resumo .total span { display: block; font-size: 0.6rem; color: var(--ink-faint); margin-top: 1px; }
 .cadencia-resumo .prosa { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-dim); line-height: 1.45; }
-.cadencia-resumo.estourado .total b { color: #E2765B; }
+.cadencia-resumo.estourado .total b { color: var(--erro); }
 
-.cadencia-erro { margin: 10px 0 0; font-size: 0.76rem; line-height: 1.45; color: #E2765B; display: none; }
+.cadencia-erro { margin: 10px 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--erro); display: none; }
 .cadencia-erro.visivel { display: block; }
 .cadencia-restaurar {
   display: block; margin: 14px auto 0; background: none; border: none;
@@ -508,7 +524,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-cronometro .carrossel .leitura.carrossel-entrando,
 .exec-cronometro .carrossel .leitura.carrossel-saindo {
   position: absolute; top: 0; left: 0; right: 0;
-  transition: transform 0.32s cubic-bezier(0.32, 0, 0.2, 1);
+  transition: transform 0.28s var(--ease-in-out);
 }
 .exec-cronometro .carrossel .leitura.carrossel-entrando { transform: translateY(100%); }
 .exec-cronometro .carrossel .leitura.carrossel-saindo { transform: translateY(-100%); }
@@ -795,6 +811,13 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .carga-sheet-acoes button { flex: 1; min-height: 48px; border-radius: 999px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
 .carga-sheet-cancelar { background: var(--card-2); color: var(--ink-dim); }
 .carga-sheet-confirmar { background: var(--accent); color: var(--accent-ink); }
+.carga-sheet-confirmar.destrutivo { background: var(--erro); color: #FFFFFF; }
+
+/* Folha "Confirmar ação" (js/screens/confirmarAcao.js) — substitui o
+   confirm() nativo do navegador nas ações de remover/excluir. */
+.confirmar-sheet { align-items: stretch; padding-top: 18px; }
+.confirmar-sheet h3 { font-size: 1.05rem; font-weight: 800; text-transform: none; color: var(--ink); margin: 0 0 8px; }
+.confirmar-sheet-msg { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--ink-dim); }
 
 /* Folha "Nova atividade" (js/screens/novaAtividade.js) — mesmo padrão de
    folha do seletor de carga, com um formulário no lugar do slider. */
@@ -998,7 +1021,8 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .historico-serie-info b { display: block; font-size: 0.85rem; font-weight: 700; font-family: var(--font-mono); }
 .historico-serie-info span { display: block; font-size: 0.72rem; color: var(--ink-faint); margin-top: 3px; }
 .historico-serie-acoes { margin-left: auto; display: flex; gap: 4px; flex: 0 0 auto; }
-.historico-serie-btn { width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; color: var(--ink-faint); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+.historico-serie-btn { position: relative; width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; color: var(--ink-faint); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; }
+.historico-serie-btn::after { content: ""; position: absolute; inset: -4px; }
 .historico-serie-btn:hover { color: var(--accent); background: var(--card); }
 .historico-serie-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .historico-serie.editando { align-items: stretch; }
@@ -1070,4 +1094,6 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
   color: var(--accent-ink); font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .cpia-enviar:disabled { opacity: 0.5; cursor: default; }
 .cpia-status { padding: 8px 0 0; }
+.cpia-pergunta-salva { font-size: 0.78rem; font-weight: 700; color: var(--ink-dim); padding-top: 8px; }
+.cpia-pergunta-salva:not(:empty)::before { content: "Você perguntou: "; font-weight: 500; color: var(--ink-faint); }
 .cpia-resposta { font-size: 0.85rem; line-height: 1.6; color: var(--ink); padding-top: 6px; white-space: pre-wrap; }

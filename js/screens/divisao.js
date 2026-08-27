@@ -431,24 +431,25 @@ function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
   form.style.padding = "0";
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Modalidade</label>
-      <select name="modalidade" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
-        ${MODALIDADES_CARDIO.map((m) => `<option value="${m}">${NOME_MODALIDADE[m]}</option>`).join("")}
-      </select>
+      <label>Modalidade
+        <select name="modalidade" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+          ${MODALIDADES_CARDIO.map((m) => `<option value="${m}">${NOME_MODALIDADE[m]}</option>`).join("")}
+        </select>
+      </label>
     </div>
     <div class="set-field">
-      <label>Duração (min)</label>
-      <input type="number" name="duracaoMinutos" placeholder="30" />
+      <label>Duração (min)<input type="number" name="duracaoMinutos" placeholder="30" /></label>
     </div>
     <div class="set-field">
-      <label>Intensidade (1-5)</label>
-      <select name="intensidadePercebida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
-        <option value="1">1 — muito leve</option>
-        <option value="2">2 — leve</option>
-        <option value="3" selected>3 — moderada</option>
-        <option value="4">4 — forte</option>
-        <option value="5">5 — muito forte</option>
-      </select>
+      <label>Intensidade (1-5)
+        <select name="intensidadePercebida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+          <option value="1">1 — muito leve</option>
+          <option value="2">2 — leve</option>
+          <option value="3" selected>3 — moderada</option>
+          <option value="4">4 — forte</option>
+          <option value="5">5 — muito forte</option>
+        </select>
+      </label>
     </div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Registrar</button>
   `;
@@ -493,14 +494,15 @@ function montarFormExercicio(db, data, exercicios, aoSalvar) {
   form.style.padding = "0";
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Exercício</label>
-      <select name="exercicioId" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
-        ${ordenados.map((e) => `<option value="${e.id}">${e.nome}</option>`).join("")}
-      </select>
+      <label>Exercício
+        <select name="exercicioId" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+          ${ordenados.map((e) => `<option value="${e.id}">${e.nome}</option>`).join("")}
+        </select>
+      </label>
     </div>
-    <div class="set-field"><label>Carga (kg)</label><input type="number" name="carga" step="0.5" required /></div>
-    <div class="set-field"><label>Reps</label><input type="number" name="reps" step="1" required /></div>
-    <div class="set-field"><label>RIR</label><input type="number" name="rir" step="1" required /></div>
+    <div class="set-field"><label>Carga (kg)<input type="number" name="carga" step="0.5" required /></label></div>
+    <div class="set-field"><label>Reps<input type="number" name="reps" step="1" required /></label></div>
+    <div class="set-field"><label>RIR<input type="number" name="rir" step="1" required /></label></div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Adicionar série</button>
   `;
 

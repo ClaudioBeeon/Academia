@@ -6,6 +6,8 @@ import { getCheckin, registrarCheckin } from "../data/checkin.js";
 import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia, pisoGorduraDiaria } from "../engine/nutricao.js";
 import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, responderPerguntaDieta, getApiKey } from "../ai/gemini.js";
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
+import { confirmarAcao } from "./confirmarAcao.js";
+import { getPerguntaIADieta, salvarPerguntaIADieta } from "../data/perguntasIA.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -23,7 +25,7 @@ function montarBarraMeta({ rotulo, valor, meta, percentual, ok, nota }) {
         <b>${valor} <s>/ ${meta}</s></b>
       </div>
       <div class="meta-barra-trilho">
-        <div class="meta-barra-preenchida ${ok ? "ok" : "abaixo"}" style="width:${Math.min(100, Math.max(0, percentual)).toFixed(0)}%"></div>
+        <div class="meta-barra-preenchida ${ok ? "ok" : "abaixo"}" style="transform:scaleX(${(Math.min(100, Math.max(0, percentual)) / 100).toFixed(3)})"></div>
       </div>
       <div class="meta-barra-nota">${nota}</div>
     </div>`;
@@ -165,8 +167,7 @@ export async function montarTelaDieta(db) {
         <div class="sets idade-form" style="padding:0 18px 18px;">
           ${barraProteina}
           <div class="set-field" style="grid-column:1/-1;">
-            <label>Sua idade (necessária pra calcular a meta calórica)</label>
-            <input name="idade" type="number" min="10" max="100" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" />
+            <label>Sua idade (necessária pra calcular a meta calórica)<input name="idade" type="number" min="10" max="100" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
           </div>
           <button type="button" class="swap-pill salvar-idade" style="grid-column:1/-1;">Salvar idade</button>
         </div>
@@ -213,7 +214,7 @@ export async function montarTelaDieta(db) {
         ${barraProteina}
         ${montarBarraGordura(total.gordura_g, perfil.dadosBasicos.peso_kg, alertaGordura)}
         <div class="prev-hint">${metaCalorica.obs}</div>
-        ${alertasInformativos.map((a) => `<div class="prev-hint" style="color:var(--warn, #e0b04a);">⚠ ${a.mensagem}</div>`).join("")}
+        ${alertasInformativos.map((a) => `<div class="prev-hint" style="color:var(--aviso);">⚠ ${a.mensagem}</div>`).join("")}
       </div>
     `;
 
@@ -274,7 +275,8 @@ export async function montarTelaDieta(db) {
         removerOpcaoBtn.style.cssText = "position:absolute; top:-7px; right:-7px; width:18px; height:18px; border-radius:50%; background:var(--card-2); border:1px solid var(--line); color:var(--ink-faint); font-size:0.62rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;";
         removerOpcaoBtn.addEventListener("click", async (event) => {
           event.stopPropagation();
-          if (!confirm(`Remover "${btn.textContent}"?`)) return;
+          const confirmou = await confirmarAcao({ titulo: "Remover esta opção?", mensagem: `"${btn.textContent}" sai desta refeição.`, textoConfirmar: "Remover", destrutivo: true });
+          if (!confirmou) return;
           dietaBase = await removerOpcaoRefeicao(db, chave, opcao.id);
           renderizarRefeicoes();
           await redesenharTotaisEAlertas();
@@ -314,7 +316,13 @@ export async function montarTelaDieta(db) {
       removerRefeicaoLink.textContent = `Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" inteira`;
       removerRefeicaoLink.style.cssText = "background:none; border:none; color:var(--ink-faint); font-size:0.72rem; font-weight:700; cursor:pointer; padding:6px 0 0; display:block; font-family:inherit;";
       removerRefeicaoLink.addEventListener("click", async () => {
-        if (!confirm(`Remover "${REFEICOES_LABELS[chave] ?? refeicao.nome}" da dieta, com todas as suas opções?`)) return;
+        const confirmou = await confirmarAcao({
+          titulo: "Remover esta refeição?",
+          mensagem: `"${REFEICOES_LABELS[chave] ?? refeicao.nome}" sai da dieta, com todas as suas opções.`,
+          textoConfirmar: "Remover",
+          destrutivo: true,
+        });
+        if (!confirmou) return;
         dietaBase = await removerRefeicao(db, chave);
         renderizarRefeicoes();
         await redesenharTotaisEAlertas();
@@ -373,6 +381,8 @@ export async function montarTelaDieta(db) {
       if (!contextoNutricionalAtual) return Promise.resolve({ ok: false, mensagem: "Preencha sua idade acima primeiro — a meta calórica depende dela." });
       return responderPerguntaDieta(contextoNutricionalAtual, pergunta);
     },
+    carregar: () => getPerguntaIADieta(db, dataDeHoje),
+    salvar: (pergunta, resposta) => salvarPerguntaIADieta(db, dataDeHoje, { pergunta, resposta }),
   }));
   main.appendChild(caixaPerguntaDieta);
 
@@ -508,8 +518,7 @@ function criarFormularioOpcao({ aoSalvar }) {
   wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
   wrap.innerHTML = `
     <div class="set-field" style="width:100%;">
-      <label>O que é essa opção?</label>
-      <textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo"></textarea>
+      <label>O que é essa opção?<textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo"></textarea></label>
     </div>
     <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
     <div class="prev-hint status-ia"></div>
@@ -567,12 +576,10 @@ function criarFormularioNovaRefeicao({ aoSalvar }) {
   wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
   wrap.innerHTML = `
     <div class="set-field" style="width:100%;">
-      <label>Nome da refeição</label>
-      <input type="text" name="nome" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" />
+      <label>Nome da refeição<input type="text" name="nome" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" /></label>
     </div>
     <div class="set-field" style="width:100%;">
-      <label>O que você come nessa refeição?</label>
-      <textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo"></textarea>
+      <label>O que você come nessa refeição?<textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo"></textarea></label>
     </div>
     <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
     <div class="prev-hint status-ia"></div>

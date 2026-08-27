@@ -3,6 +3,7 @@ import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 
 // Um traço por exercício do dia. Substitui o anel de 156px que ocupava um
 // terço da primeira tela pra dizer exatamente a mesma coisa que a lista.
@@ -426,13 +427,17 @@ export async function montarTelaFila(db, contexto, callbacks) {
   rodape.className = "foot";
   rodape.style.cssText = "padding:14px 18px 24px; text-align:center;";
   rodape.innerHTML = `<button type="button" class="swap-pill finalizar-btn" style="width:100%; background:var(--accent); color:var(--accent-ink);">Finalizar sessão</button>`;
-  rodape.querySelector(".finalizar-btn").addEventListener("click", () => {
+  rodape.querySelector(".finalizar-btn").addEventListener("click", async () => {
     const pendentes = itensPendentesDaSessao();
     if (pendentes.length > 0) {
       const lista = pendentes.length === 1
         ? pendentes[0]
         : `${pendentes.slice(0, -1).join(", ")} e ${pendentes.at(-1)}`;
-      const confirmou = confirm(`Você ainda não marcou ${lista} de hoje. Finalizar a sessão mesmo assim?`);
+      const confirmou = await confirmarAcao({
+        titulo: "Finalizar mesmo assim?",
+        mensagem: `Você ainda não marcou ${lista} de hoje.`,
+        textoConfirmar: "Finalizar sessão",
+      });
       if (!confirmou) return;
     }
     if (onFinalizarSessao) onFinalizarSessao();
@@ -454,10 +459,14 @@ export async function montarTelaFila(db, contexto, callbacks) {
     reiniciarBtn.className = "pular-treino-btn";
     reiniciarBtn.style.cssText = "margin:12px auto 0; display:block; color:var(--ink-faint);";
     reiniciarBtn.textContent = "Reiniciar este treino";
-    reiniciarBtn.addEventListener("click", () => {
-      if (confirm("Apagar todas as séries de hoje deste treino e começar do zero?")) {
-        onReiniciar();
-      }
+    reiniciarBtn.addEventListener("click", async () => {
+      const confirmou = await confirmarAcao({
+        titulo: "Reiniciar este treino?",
+        mensagem: "Apaga todas as séries de hoje deste treino e começa do zero.",
+        textoConfirmar: "Apagar e reiniciar",
+        destrutivo: true,
+      });
+      if (confirmou) onReiniciar();
     });
     rodape.appendChild(reiniciarBtn);
   }

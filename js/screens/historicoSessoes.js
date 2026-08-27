@@ -6,6 +6,7 @@
 // "o que aconteceu em cada treino", acessada de fora da sessão do dia.
 import { getAll } from "../data/db.js";
 import { getSessoesAgrupadasPorDia, atualizarSerie, excluirSerie } from "../data/historico.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 
 function formatarDataLonga(dataIso) {
   const [ano, mes, dia] = dataIso.split("-").map(Number);
@@ -136,9 +137,9 @@ function montarLinhaSerie(db, serie, cardDoDia, sessao) {
     const form = document.createElement("div");
     form.className = "historico-serie-form";
     form.innerHTML = `
-      <div class="campo"><label>Carga</label><input type="number" step="0.5" class="in-carga" /></div>
-      <div class="campo"><label>Reps</label><input type="number" step="1" class="in-reps" /></div>
-      <div class="campo"><label>RIR</label><input type="number" step="1" class="in-rir" /></div>
+      <div class="campo"><label>Carga<input type="number" step="0.5" class="in-carga" /></label></div>
+      <div class="campo"><label>Reps<input type="number" step="1" class="in-reps" /></label></div>
+      <div class="campo"><label>RIR<input type="number" step="1" class="in-rir" /></label></div>
       <div class="historico-serie-form-acoes">
         <button type="button" class="salvar">Salvar</button>
         <button type="button" class="cancelar">Cancelar</button>
@@ -172,7 +173,8 @@ function montarLinhaSerie(db, serie, cardDoDia, sessao) {
   });
 
   excluirBtn.addEventListener("click", async () => {
-    if (!confirm(`Excluir a série de ${serie.carga} kg × ${serie.reps}?`)) return;
+    const confirmou = await confirmarAcao({ titulo: "Excluir esta série?", mensagem: `${serie.carga} kg × ${serie.reps} sai do histórico.`, textoConfirmar: "Excluir", destrutivo: true });
+    if (!confirmou) return;
     await excluirSerie(db, serie.id);
     linha.remove();
     sessao.series = sessao.series.filter((s) => s.id !== serie.id);

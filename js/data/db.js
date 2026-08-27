@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 const STORES = {
   perfil: "versao",
@@ -15,6 +15,7 @@ const STORES = {
   registrosCardio: { keyPath: "id", autoIncrement: true },
   habitos: "data",
   fotosPostura: { keyPath: "id", autoIncrement: true },
+  observacoesTreino: "data",
   // Fila de escritas pendentes de sincronização com o Supabase (js/data/sync.js).
   // Fica no mesmo banco local por simplicidade — não é lida/gravada por
   // nenhuma tela, só pelo módulo de sync.

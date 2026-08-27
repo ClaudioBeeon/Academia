@@ -4,15 +4,17 @@ import { getSeriesDoDia } from "../data/historico.js";
 import { getCardioDoDia } from "../data/cardio.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
+import { getObservacaoTreino, salvarObservacaoTreino } from "../data/observacoesTreino.js";
 
 export async function montarTelaRelatorio(db, contexto, callbacks) {
   const { hoje, prsDaSessao } = contexto;
   const { onConcluir } = callbacks;
 
-  const [seriesDoDia, registrosCardioDoDia, perfil] = await Promise.all([
+  const [seriesDoDia, registrosCardioDoDia, perfil, observacaoExistente] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getCardioDoDia(db, hoje),
     get(db, "perfil", "1.0"),
+    getObservacaoTreino(db, hoje),
   ]);
   const stats = calcularEstatisticasSessao(seriesDoDia);
   const pesoKg = perfil?.dadosBasicos?.peso_kg;
@@ -87,6 +89,30 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
     prsCard.appendChild(lista);
     main.appendChild(prsCard);
   }
+
+  // Observação livre — pra registrar algo que vale revisar depois com mais
+  // calma (dor, sensação, dúvida técnica) sem interromper o treino agora.
+  // Não é respondida na hora (isso é a caixa de pergunta pra IA, dentro da
+  // execução); fica guardada pra exportar em Configurações e revisar fora
+  // do app, com mais contexto do que a IA embutida tem.
+  const obsCard = document.createElement("section");
+  obsCard.className = "exercise-card";
+  obsCard.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Observação sobre o treino</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+      <textarea class="obs-treino-input" rows="3" placeholder="ex: senti dor no ombro direito no supino, na descida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
+      <button type="button" class="swap-pill obs-treino-salvar" style="width:100%;">Salvar observação</button>
+      <div class="prev-hint obs-treino-status"></div>
+    </div>
+  `;
+  const obsInput = obsCard.querySelector(".obs-treino-input");
+  const obsStatus = obsCard.querySelector(".obs-treino-status");
+  obsInput.value = observacaoExistente;
+  obsCard.querySelector(".obs-treino-salvar").addEventListener("click", async () => {
+    await salvarObservacaoTreino(db, hoje, obsInput.value);
+    obsStatus.textContent = obsInput.value.trim() ? "Salva — dá pra exportar em Configurações." : "Removida.";
+  });
+  main.appendChild(obsCard);
 
   const rodape = document.createElement("div");
   rodape.className = "foot";

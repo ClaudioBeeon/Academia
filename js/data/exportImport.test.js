@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, put, getAll, clearStore } from "./db.js";
-import { exportarTudo, importarTudo, historicoParaCsv } from "./exportImport.js";
+import { exportarTudo, importarTudo, historicoParaCsv, observacoesTreinoParaMarkdown } from "./exportImport.js";
 
 test("exportarTudo dumps every user-data store", async () => {
   const db = await openDatabase();
@@ -56,6 +56,21 @@ test("historicoParaCsv gera cabeçalho e uma linha por série", () => {
   assert.equal(linhas[1], "2026-08-01,a,peito,normal,14,10,2,1");
 });
 
+test("observacoesTreinoParaMarkdown avisa quando não há nenhuma observação", () => {
+  const md = observacoesTreinoParaMarkdown([]);
+  assert.match(md, /Nenhuma observação registrada ainda/);
+});
+
+test("observacoesTreinoParaMarkdown gera um título por data, com o texto embaixo", () => {
+  const md = observacoesTreinoParaMarkdown([
+    { data: "2026-08-22", texto: "senti dor no ombro no supino" },
+    { data: "2026-08-20", texto: "consegui subir a carga do agachamento" },
+  ]);
+  assert.match(md, /^# Observações de treino/);
+  assert.match(md, /## 2026-08-22\n\nsenti dor no ombro no supino/);
+  assert.match(md, /## 2026-08-20\n\nconsegui subir a carga do agachamento/);
+});
+
 test("exportarTudo inclui medidasCorporais", async () => {
   const db = await openDatabase();
   await clearStore(db, "medidasCorporais");
@@ -64,5 +79,16 @@ test("exportarTudo inclui medidasCorporais", async () => {
   const backup = await exportarTudo(db);
   assert.equal(backup.dados.medidasCorporais.length, 1);
   assert.equal(backup.dados.medidasCorporais[0].peso_kg, 70);
+  db.close();
+});
+
+test("exportarTudo inclui observacoesTreino", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "observacoesTreino");
+  await put(db, "observacoesTreino", { data: "2026-08-22", texto: "senti dor no ombro" });
+
+  const backup = await exportarTudo(db);
+  assert.equal(backup.dados.observacoesTreino.length, 1);
+  assert.equal(backup.dados.observacoesTreino[0].texto, "senti dor no ombro");
   db.close();
 });

@@ -6,6 +6,7 @@
     "test": "node --test js/**/*.test.js"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "fake-indexeddb": "^6.0.0"
   }
 }

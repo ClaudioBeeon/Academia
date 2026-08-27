@@ -1,8 +1,9 @@
 import { getAll, put, clearStore } from "./db.js";
 
 const STORES_EXPORTAVEIS = [
-  "perfil", "protocolo", "exercicios", "dietaBase",
+  "perfil", "protocolo", "ficha", "exercicios", "dietaBase",
   "historicoSeries", "medidasCorporais", "cargas", "registrosDiarios", "config", "habitos",
+  "observacoesTreino",
 ];
 
 export async function exportarTudo(db) {
@@ -29,6 +30,17 @@ export async function importarTudo(db, backup) {
     }
   }
   return { restaurado: true };
+}
+
+// Formata as observações livres do fim de sessão (js/data/observacoesTreino.js)
+// como um único markdown, mais recente primeiro — pensado pra ser lido fora
+// do app, com mais contexto de pesquisa/protocolo do que a IA embutida tem.
+export function observacoesTreinoParaMarkdown(observacoes) {
+  if (observacoes.length === 0) {
+    return "# Observações de treino\n\nNenhuma observação registrada ainda.\n";
+  }
+  const secoes = observacoes.map((o) => `## ${o.data}\n\n${o.texto}\n`);
+  return `# Observações de treino\n\n${secoes.join("\n")}`;
 }
 
 export function historicoParaCsv(historicoSeries) {

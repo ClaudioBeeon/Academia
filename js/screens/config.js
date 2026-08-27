@@ -1,5 +1,6 @@
 // js/screens/config.js
-import { exportarTudo, importarTudo, historicoParaCsv } from "../data/exportImport.js";
+import { exportarTudo, importarTudo, historicoParaCsv, observacoesTreinoParaMarkdown } from "../data/exportImport.js";
+import { getObservacoesTreino } from "../data/observacoesTreino.js";
 import { getAll, get, put } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 import { getApiKey, salvarApiKey, getModelo, salvarModelo } from "../ai/gemini.js";
@@ -37,6 +38,14 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(criarLinkAcao("Exportar histórico (CSV)", async () => {
     const historicoSeries = await getAll(db, "historicoSeries");
     baixarArquivo(`historico-${dataDeHoje()}.csv`, historicoParaCsv(historicoSeries), "text/csv");
+  }));
+
+  main.appendChild(criarLinkAcao("Exportar observações de treino (.md)", async () => {
+    // Sem data no nome de propósito — é um log corrido (todas as
+    // observações, não só as de hoje), então cada exportação deve
+    // sobrescrever o mesmo arquivo ao salvar na mesma pasta, não acumular.
+    const observacoes = await getObservacoesTreino(db);
+    baixarArquivo("observacoes-treino.md", observacoesTreinoParaMarkdown(observacoes), "text/markdown");
   }));
 
   main.appendChild(await criarSecaoEquipamento(db));

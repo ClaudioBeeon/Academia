@@ -6,6 +6,7 @@ import { registrarCardio } from "../data/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
+import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
 import { getFicha, getInicioDoBloco } from "../data/ficha.js";
@@ -127,17 +128,29 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const diaDaFichaHoje = ficha?.dias?.find((d) => d.numero === diaDaSessao) ?? null;
   const minutosEstimados = diaDaFichaHoje?.duracaoEstimadaMin
     ?? exerciciosHoje.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+
+  // O card de hoje precisa refletir o que já aconteceu — sem isso ele
+  // continuava mostrando "Começar treino" com a contagem prevista mesmo
+  // depois da sessão concluída, como se nada tivesse sido feito ainda.
+  // O sinal de verdade é o mesmo que já é gravado (registrarDiaDaSessao):
+  // sem registro pra hoje = não começado; registro com concluido:false =
+  // começado mas não terminado; concluido:true = terminado.
+  const registroDeHoje = ultimoDiaRegistrado?.data === hoje ? ultimoDiaRegistrado : null;
+  const sessaoConcluidaHoje = registroDeHoje?.concluido === true;
+  const sessaoIniciadaHoje = registroDeHoje != null && !sessaoConcluidaHoje;
+  const statsHoje = calcularEstatisticasSessao(seriesDeHoje);
+
   const planoCard = document.createElement("section");
-  planoCard.className = "plano-hero";
+  planoCard.className = sessaoConcluidaHoje ? "plano-hero alt" : "plano-hero";
   planoCard.innerHTML = `
-    <div class="rotulo">Treino de hoje</div>
+    <div class="rotulo">${sessaoConcluidaHoje ? "✓ Treino de hoje · concluído" : "Treino de hoje"}</div>
     <h2>${diaInfo.titulo}</h2>
     <div class="meta">
-      <span><b>${exerciciosHoje.length}</b> exercícios</span>
-      <span><b>${totalSeriesPrevistas}</b> séries</span>
-      <span>~<b>${minutosEstimados}</b> min</span>
+      ${sessaoConcluidaHoje
+        ? `<span><b>${statsHoje.exerciciosTreinados}</b> exercícios</span><span><b>${statsHoje.totalSeries}</b> séries feitas</span>`
+        : `<span><b>${exerciciosHoje.length}</b> exercícios</span><span><b>${totalSeriesPrevistas}</b> séries</span><span>~<b>${minutosEstimados}</b> min</span>`}
     </div>
-    <button type="button">Começar treino</button>
+    <button type="button">${sessaoConcluidaHoje ? "Ver treino" : sessaoIniciadaHoje ? "Continuar treino" : "Começar treino"}</button>
   `;
   planoCard.classList.add("clicavel");
   planoCard.addEventListener("click", () => {

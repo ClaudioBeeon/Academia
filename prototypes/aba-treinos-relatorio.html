@@ -1,0 +1,262 @@
+<title>Treinos — Relatório (inspirado na referência)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap">
+
+<style>
+:root{
+  --paper:#0E0E0E; --card:#1C1C1C; --card-2:#262626;
+  --ink:#FFFFFF; --ink-dim:#A6A6A6; --ink-faint:#949494;
+  --accent:#C9F241; --accent-ink:#141414; --line:#262626;
+  --font-display:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+
+.pag{max-width:900px;margin:0 auto;padding:52px 22px 96px}
+.rotulo{font-family:var(--font-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-bottom:14px;text-wrap:balance}
+.lede{font-size:16px;line-height:1.62;color:var(--ink-dim);max-width:66ch}
+.lede b{color:var(--ink);font-weight:700}
+.decisoes{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 40px}
+.decisao{font-family:var(--font-mono);font-size:12px;font-weight:700;padding:8px 13px;border-radius:999px;background:var(--card-2);color:var(--ink-dim)}
+.decisao b{color:var(--accent);font-weight:800}
+
+.palco{display:flex;flex-direction:column;gap:12px;align-items:flex-start;margin:0 auto;width:fit-content}
+.dica-rolagem{font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);letter-spacing:.04em}
+.tel{width:390px;max-width:100%;height:812px;background:var(--paper);border:1px solid var(--line);
+  border-radius:30px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.corpo{flex:1;padding:0 20px 90px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin}
+.corpo::-webkit-scrollbar{width:4px}
+.corpo::-webkit-scrollbar-thumb{background:var(--card-2);border-radius:99px}
+.barra-abas{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;padding:10px 8px 14px;z-index:3}
+.barra-abas span{flex:0 1 70px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  font-size:12px;font-weight:700;color:var(--ink-faint)}
+.barra-abas span.ativa{color:var(--accent)}
+.barra-abas i{width:18px;height:18px;border-radius:5px;border:1.6px solid currentColor;font-style:normal;display:block}
+.barra-abas span.ativa i{background:currentColor}
+
+.topo{padding:22px 0 20px}
+.topo .sobre{font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.topo h2{font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-top:5px}
+
+/* ── faixa de dias (referência: círculos 17–23) ── */
+.faixa-dias{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin-bottom:26px;scrollbar-width:none}
+.faixa-dias::-webkit-scrollbar{display:none}
+.fd-dia{flex:0 0 auto;width:42px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.fd-num{width:42px;height:42px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-weight:800;font-size:15px;color:var(--ink-dim);position:relative}
+.fd-dia.treinou .fd-num{color:var(--ink)}
+.fd-dia.treinou .fd-num::after{content:"";position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--paper)}
+.fd-dia.hoje .fd-num{background:var(--accent);color:var(--accent-ink)}
+.fd-dia.futuro .fd-num{color:var(--ink-faint);opacity:.5}
+.fd-rot{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint)}
+.fd-dia.hoje .fd-rot{color:var(--accent)}
+
+/* ── par de cards: relatório + cobertura ── */
+.par{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+.card-relatorio{background:var(--accent);color:var(--accent-ink);border-radius:26px;padding:18px 16px;display:flex;flex-direction:column;min-width:0}
+.card-relatorio .rot{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.68}
+.anel-wrap{position:relative;width:78px;height:78px;margin:10px auto 8px}
+.anel-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.anel-trilha{fill:none;stroke:rgba(20,20,20,.16);stroke-width:9}
+.anel-prog{fill:none;stroke:var(--accent-ink);stroke-width:9;stroke-linecap:round}
+.anel-centro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.anel-centro b{font-family:var(--font-mono);font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.anel-centro span{font-size:9.5px;font-weight:700;margin-top:2px;opacity:.7}
+.card-relatorio .sub{display:flex;justify-content:space-between;gap:6px;margin-top:4px;border-top:1px solid rgba(20,20,20,.14);padding-top:10px}
+.card-relatorio .sub div{text-align:center;flex:1;min-width:0}
+.card-relatorio .sub b{display:block;font-family:var(--font-mono);font-size:13px;font-weight:800;line-height:1}
+.card-relatorio .sub span{display:block;font-size:9.5px;font-weight:700;opacity:.65;margin-top:3px}
+
+.card-cobertura{background:var(--card);border-radius:26px;padding:16px;display:flex;flex-direction:column;min-width:0}
+.card-cobertura .rot{font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.cob-item{margin-top:12px}
+.cob-topo{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-dim);margin-bottom:5px}
+.cob-topo b{color:var(--ink);font-weight:700}
+.cob-trilho{height:6px;border-radius:99px;background:var(--card-2);overflow:hidden}
+.cob-trilho i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.cob-trilho i.abaixo{background:#E0B04A}
+.card-cobertura .vermais{margin-top:auto;padding-top:12px;font-size:11.5px;font-weight:700;color:var(--accent)}
+
+/* ── seção "Sessões" ── */
+.secao-cab{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.secao-cab h3{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.secao-cab span{font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--ink-faint)}
+
+.sessao{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:20px;padding:12px;margin-bottom:10px}
+.sessao-icone{flex:0 0 auto;width:50px;height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center}
+.sessao-icone svg{width:24px;height:24px}
+.sessao-icone.peito{background:color-mix(in srgb,var(--accent) 22%,var(--card-2))}
+.sessao-icone.peito svg{stroke:var(--accent)}
+.sessao-icone.costas{background:color-mix(in srgb,#6FA8FF 22%,var(--card-2))}
+.sessao-icone.costas svg{stroke:#6FA8FF}
+.sessao-icone.perna{background:color-mix(in srgb,#FF9B6A 22%,var(--card-2))}
+.sessao-icone.perna svg{stroke:#FF9B6A}
+.sessao-icone.cardio{background:color-mix(in srgb,#FF6B6B 22%,var(--card-2))}
+.sessao-icone.cardio svg{stroke:#FF6B6B}
+.sessao .meio{flex:1;min-width:0}
+.sessao .meio b{display:block;font-size:14.5px;font-weight:700;line-height:1.25}
+.sessao .meio span{display:block;font-size:12px;color:var(--ink-faint);margin-top:3px}
+.sessao .direita{flex:0 0 auto;text-align:right}
+.sessao .direita b{display:block;font-family:var(--font-mono);font-size:13px;font-weight:800;color:var(--ink)}
+.sessao .direita span{display:block;font-size:10px;color:var(--ink-faint);margin-top:2px}
+.sessao.feito .sessao-check{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center}
+.sessao.feito .sessao-check svg{width:12px;height:12px;stroke:var(--accent-ink)}
+.selo-agora{display:inline-block;font-family:var(--font-mono);font-size:9.5px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);
+  padding:2px 7px;border-radius:999px;margin-top:4px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="pag">
+  <p class="rotulo">Aba Treinos · protótipo de uma direção</p>
+  <h1>"Treinos" no estilo da referência</h1>
+  <p class="lede">Mesma ideia da imagem que você mandou — <b>faixa de dias</b> no topo, um <b>card de relatório com anel</b> ao lado de um card secundário, e a lista de sessões virando <b>linhas com ícone colorido + badge</b> em vez de texto plano. O card de "Alertas" saiu.</p>
+
+  <div class="decisoes">
+    <span class="decisao">Alertas <b>removidos</b></span>
+    <span class="decisao">Peso alvo da referência <b>virou Cobertura muscular</b> (é o dado real que a aba tem)</span>
+    <span class="decisao">Fotos <b>viraram ícones</b> — o app não tem fotos de sessão, cores por grupo muscular fazem o mesmo trabalho visual</span>
+  </div>
+
+  <div class="palco">
+    <p class="dica-rolagem">↓ a tela rola</p>
+    <div class="tel">
+      <div class="corpo">
+        <div class="topo">
+          <div class="sobre">Ciclo de 5 dias</div>
+          <h2>Treinos</h2>
+        </div>
+
+        <div class="faixa-dias">
+          <div class="fd-dia treinou"><div class="fd-num">21</div><div class="fd-rot">seg</div></div>
+          <div class="fd-dia treinou"><div class="fd-num">22</div><div class="fd-rot">ter</div></div>
+          <div class="fd-dia"><div class="fd-num">23</div><div class="fd-rot">qua</div></div>
+          <div class="fd-dia treinou"><div class="fd-num">24</div><div class="fd-rot">qui</div></div>
+          <div class="fd-dia treinou"><div class="fd-num">25</div><div class="fd-rot">sex</div></div>
+          <div class="fd-dia hoje"><div class="fd-num">26</div><div class="fd-rot">hoje</div></div>
+          <div class="fd-dia futuro"><div class="fd-num">27</div><div class="fd-rot">dom</div></div>
+        </div>
+
+        <div class="par">
+          <div class="card-relatorio">
+            <div class="rot">Esta semana</div>
+            <div class="anel-wrap">
+              <svg viewBox="0 0 100 100">
+                <circle class="anel-trilha" cx="50" cy="50" r="42"/>
+                <circle class="anel-prog" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="53"/>
+              </svg>
+              <div class="anel-centro"><b>80%</b><span>da meta</span></div>
+            </div>
+            <div class="sub">
+              <div><b>62</b><span>séries</span></div>
+              <div><b>8.240</b><span>kg volume</span></div>
+            </div>
+          </div>
+
+          <div class="card-cobertura">
+            <div class="rot">Cobertura</div>
+            <div class="cob-item">
+              <div class="cob-topo"><span>Peito</span><b>15/15</b></div>
+              <div class="cob-trilho"><i style="width:100%"></i></div>
+            </div>
+            <div class="cob-item">
+              <div class="cob-topo"><span>Bíceps</span><b>12/18</b></div>
+              <div class="cob-trilho"><i class="abaixo" style="width:67%"></i></div>
+            </div>
+            <div class="cob-item">
+              <div class="cob-topo"><span>Costas</span><b>16/16</b></div>
+              <div class="cob-trilho"><i style="width:100%"></i></div>
+            </div>
+            <div class="vermais">Ver tudo →</div>
+          </div>
+        </div>
+
+        <div class="secao-cab">
+          <h3>Sessões</h3>
+          <span>Ver todas</span>
+        </div>
+
+        <div class="sessao">
+          <div class="sessao-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div class="sessao-icone perna">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>
+          </div>
+          <div class="meio">
+            <b>Pernas</b>
+            <span>7 exercícios · 20 séries</span>
+          </div>
+          <div class="direita">
+            <b>620</b>
+            <span>kcal</span>
+          </div>
+        </div>
+
+        <div class="sessao">
+          <div class="sessao-icone cardio">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s5 5 5 9a5 5 0 0 1-10 0c0-1.5.7-2.8.7-2.8S6 11 6 14a6 6 0 0 0 12 0c0-5-6-12-6-12z"/></svg>
+          </div>
+          <div class="meio">
+            <b>Cardio — Bicicleta</b>
+            <span>Previsto pra hoje · 18 min</span>
+            <span class="selo-agora">Pendente</span>
+          </div>
+          <div class="direita">
+            <b>~140</b>
+            <span>kcal</span>
+          </div>
+        </div>
+
+        <div class="sessao feito">
+          <div class="sessao-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div class="sessao-icone costas">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>
+          </div>
+          <div class="meio">
+            <b>Costas + Bíceps</b>
+            <span>5 exercícios · 15 séries</span>
+          </div>
+          <div class="direita">
+            <b>410</b>
+            <span>kcal</span>
+          </div>
+        </div>
+
+        <div class="sessao feito">
+          <div class="sessao-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div class="sessao-icone peito">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/></svg>
+          </div>
+          <div class="meio">
+            <b>Peito (inclinado) + Costas + Deltoide posterior</b>
+            <span>6 exercícios · 20 séries</span>
+          </div>
+          <div class="direita">
+            <b>590</b>
+            <span>kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="barra-abas">
+        <span><i></i>Hoje</span>
+        <span class="ativa"><i></i>Treinos</span>
+        <span><i></i>Evolução</span>
+        <span><i></i>Dieta</span>
+        <span><i></i>Config</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -97,14 +97,14 @@ body {
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
 .set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha,
-.sessao-linha, .calendario-grade .dia.clicavel {
+.sessao, .calendario-grade .dia.clicavel {
   transition: transform 0.15s var(--ease-out), opacity 0.15s var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
 .plano-hero.clicavel:active, .exec-carga-pill:active:not(:disabled),
 .exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active,
-.fila-linha:active, .sessao-linha:active, .calendario-grade .dia.clicavel:active {
+.fila-linha:active, .sessao:active, .calendario-grade .dia.clicavel:active {
   transform: scale(0.97);
   opacity: 0.88;
 }
@@ -1079,37 +1079,70 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .historico-adicionar-serie:hover { color: var(--accent); border-color: var(--accent); }
 .historico-adicionar-serie[hidden] { display: none; }
 
-/* Aba Treinos (antiga Divisão) — fita do ciclo, dia detalhado, cobertura
-   por músculo, sessões recentes com lançamento retroativo, calendário. */
-.fita-ciclo { display: flex; gap: 7px; margin-bottom: 8px; }
-.fita-dia { flex: 1; min-width: 0; border-radius: 12px; background: var(--card-2); padding: 10px 4px; text-align: center;
-  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--ink-faint); }
-.fita-dia b { display: block; font-size: 0.9rem; font-weight: 800; color: var(--ink-dim); }
-.fita-dia.feito { background: var(--card); color: var(--ink-faint); }
-.fita-dia.feito b { color: var(--accent); }
-.fita-dia.hoje { background: var(--accent); color: var(--accent-ink); }
-.fita-dia.hoje b { color: var(--accent-ink); }
-.fita-legenda { padding: 0 18px 16px; font-size: 0.76rem; color: var(--ink-dim); line-height: 1.5; }
-.fita-legenda b { color: var(--ink); font-weight: 700; }
+/* Aba Treinos — faixa dos últimos 7 dias, relatório da semana + cobertura
+   por músculo lado a lado, sessões recentes, calendário do mês. */
+.faixa-dias { display: flex; gap: 9px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.faixa-dias::-webkit-scrollbar { display: none; }
+.fd-dia { flex: 0 0 auto; width: 42px; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.fd-num { width: 42px; height: 42px; border-radius: 50%; background: var(--card); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; color: var(--ink-dim); position: relative; }
+.fd-dia.treinou .fd-num { color: var(--ink); }
+.fd-dia.treinou .fd-num::after { content: ""; position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--paper); }
+.fd-dia.hoje .fd-num { background: var(--accent); color: var(--accent-ink); }
+.fd-rot { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); }
+.fd-dia.hoje .fd-rot { color: var(--accent); }
 
-.dia-hoje-lista { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0 18px 18px; margin: 0; }
-.dia-hoje-lista li { font-size: 0.82rem; color: var(--ink-dim); display: flex; gap: 8px; }
-.dia-hoje-lista li em { font-style: normal; font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-faint); flex: 0 0 30px; }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card-relatorio { background: var(--accent); color: var(--accent-ink); border-radius: var(--radius); padding: 18px 16px; display: flex; flex-direction: column; min-width: 0; }
+.card-relatorio .rot { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.68; }
+.anel-wrap { position: relative; width: 78px; height: 78px; margin: 10px auto 8px; }
+.anel-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anel-trilha { fill: none; stroke: rgba(20, 20, 20, 0.16); stroke-width: 9; }
+.anel-prog { fill: none; stroke: var(--accent-ink); stroke-width: 9; stroke-linecap: round; }
+.anel-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.anel-centro b { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.anel-centro span { font-size: 0.6rem; font-weight: 700; margin-top: 2px; opacity: 0.7; }
+.card-relatorio .sub { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; border-top: 1px solid rgba(20, 20, 20, 0.14); padding-top: 10px; }
+.card-relatorio .sub div { text-align: center; flex: 1; min-width: 0; }
+.card-relatorio .sub b { display: block; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; line-height: 1; }
+.card-relatorio .sub span { display: block; font-size: 0.6rem; font-weight: 700; opacity: 0.65; margin-top: 3px; }
 
-.sessao-linha { display: flex; align-items: center; gap: 12px; background: var(--card-2); border-radius: 16px; padding: 11px 12px; margin-bottom: 8px; cursor: pointer; }
-.sessao-linha .quando { flex: 0 0 40px; text-align: center; min-width: 0; }
-.sessao-linha .quando b { display: block; font-family: var(--font-mono); font-size: 1rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--ink); }
-.sessao-linha .quando span { display: block; font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-faint); margin-top: 3px; text-transform: uppercase; }
-.sessao-linha .oque { flex: 1; min-width: 0; }
-.sessao-linha .oque b { display: block; font-size: 0.82rem; font-weight: 700; line-height: 1.3; }
-.sessao-linha .oque span { display: block; font-size: 0.74rem; color: var(--ink-faint); margin-top: 3px; font-family: var(--font-mono); }
-.sessao-extra { display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px 64px; margin-top: -4px; font-size: 0.76rem; color: var(--ink-faint); font-family: var(--font-mono); }
-.sessao-extra .selo { background: var(--card); color: var(--ink-dim); border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; }
-.sessao-acoes { display: flex; gap: 8px; padding: 0 18px 4px; }
-.sessao-add-btn { flex: 1; min-height: 44px; border-radius: 12px; border: 1px dashed var(--line); background: transparent;
-  color: var(--ink-faint); font-family: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer; min-width: 0; }
-.sessao-add-btn:hover { color: var(--accent); border-color: var(--accent); }
-.sessao-form-wrap { padding: 0 18px 16px; }
+.card-cobertura { background: var(--card); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; min-width: 0; }
+.card-cobertura .rot { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.cob-item { margin-top: 12px; }
+.cob-topo { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 5px; }
+.cob-topo b { color: var(--ink); font-weight: 700; }
+.cob-trilho { height: 6px; border-radius: 999px; background: var(--card-2); overflow: hidden; }
+.cob-trilho i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+.cob-trilho i.abaixo { background: var(--aviso); }
+
+.secao-cab { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 14px; }
+.secao-cab h3 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+.secao-cab button { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700; color: var(--ink-faint); background: none; border: none; padding: 0; cursor: pointer; }
+
+.sessao { display: flex; align-items: center; gap: 13px; background: var(--card); border-radius: 20px; padding: 12px; margin-bottom: 10px; cursor: pointer; }
+.sessao-icone { flex: 0 0 auto; width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+.sessao-icone svg { width: 24px; height: 24px; }
+.sessao-icone.peito { background: color-mix(in srgb, var(--accent) 22%, var(--card-2)); }
+.sessao-icone.peito svg { stroke: var(--accent); }
+.sessao-icone.costas { background: color-mix(in srgb, #6FA8FF 22%, var(--card-2)); }
+.sessao-icone.costas svg { stroke: #6FA8FF; }
+.sessao-icone.perna { background: color-mix(in srgb, #FF9B6A 22%, var(--card-2)); }
+.sessao-icone.perna svg { stroke: #FF9B6A; }
+.sessao-icone.cardio { background: color-mix(in srgb, #FF6B6B 22%, var(--card-2)); }
+.sessao-icone.cardio svg { stroke: #FF6B6B; }
+.sessao-icone.vazio { background: var(--card-2); }
+.sessao-icone.vazio svg { stroke: var(--ink-faint); }
+.sessao .meio { flex: 1; min-width: 0; }
+.sessao .meio b { display: block; font-size: 0.9rem; font-weight: 700; line-height: 1.25; }
+.sessao .meio span { display: block; font-size: 0.74rem; color: var(--ink-faint); margin-top: 3px; }
+.sessao .direita { flex: 0 0 auto; text-align: right; }
+.sessao .direita b { display: block; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; color: var(--ink); }
+.sessao .direita span { display: block; font-size: 0.6rem; color: var(--ink-faint); margin-top: 2px; }
+.sessao.feito .sessao-check { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; }
+.sessao.feito .sessao-check svg { width: 12px; height: 12px; stroke: var(--accent-ink); }
 
 .calendario-mes { display: flex; align-items: baseline; justify-content: space-between; padding: 0 18px 11px; }
 .calendario-mes b { font-size: 0.9rem; font-weight: 800; }

@@ -652,7 +652,9 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
       <button type="button" class="swap-pill comida-livre-btn">Estimar com IA (texto)</button>
       <button type="button" class="swap-pill comida-livre-foto-btn" style="background:var(--card-2); color:var(--ink); border:1px solid var(--line);">Tirar foto do prato</button>
       <input type="file" class="comida-livre-foto-input" accept="image/*" capture="environment" style="display:none;">
-      <img class="comida-livre-preview" style="display:none; width:100%; max-height:180px; object-fit:cover; border-radius:10px;">
+      <!-- Sem src de propósito: só recebe a foto (via URL.createObjectURL) e
+           fica visível quando o usuário tira uma — até lá é display:none. -->
+      <img class="comida-livre-preview" alt="Prévia da foto do prato" style="display:none; width:100%; max-height:180px; object-fit:cover; border-radius:10px;">
       <div class="prev-hint comida-livre-status"></div>
       <div class="comida-livre-resultado"></div>
     </div>

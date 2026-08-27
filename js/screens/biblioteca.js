@@ -2,6 +2,7 @@
 import { getAll, put } from "../data/db.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { subirImagemExercicio } from "../data/supabaseClient.js";
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
 
 export async function montarTelaBiblioteca(db, { aoVoltar } = {}) {
   const root = document.createElement("div");
@@ -71,10 +72,15 @@ function criarLinhaExercicio(db, exercicio) {
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
   `;
   obsForm.querySelector("textarea").value = exercicio.observacoesExecucao ?? "";
+  const redimensionarObs = ativarAutoResize(obsForm.querySelector("textarea"));
   card.appendChild(obsForm);
 
   head.querySelector(".editar-pill").addEventListener("click", () => {
     obsForm.style.display = obsForm.style.display === "none" ? "flex" : "none";
+    // Enquanto o formulário estava fechado (display:none), a textarea não
+    // tinha layout pra medir — reabrir é a hora de acertar a altura pro
+    // texto que já vem preenchido.
+    if (obsForm.style.display !== "none") redimensionarObs();
   });
 
   const imagemStatus = obsForm.querySelector(".imagem-status");

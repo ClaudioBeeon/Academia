@@ -1169,7 +1169,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .cpia-titulo { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
 .cpia-linha { display: flex; align-items: flex-end; gap: 8px; }
 .cpia-input { flex: 1; min-width: 0; resize: none; background: var(--card-2); border: 1px solid var(--line); color: var(--ink);
-  border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 16px; max-height: 100px; }
+  border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 16px; }
 .cpia-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cpia-enviar { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--accent);
   color: var(--accent-ink); font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }

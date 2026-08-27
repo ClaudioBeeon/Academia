@@ -20,6 +20,7 @@ import { getCardioDoDia, excluirCardio } from "../data/cardio.js";
 import { getObservacaoTreino, salvarObservacaoTreino } from "../data/observacoesTreino.js";
 import { confirmarAcao } from "./confirmarAcao.js";
 import { montarFormCardio } from "./divisao.js";
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
 
 const NOME_MODALIDADE_CARDIO = {
   bicicleta: "Bicicleta", eliptico: "Elíptico", escada: "Escada", caminhada: "Caminhada", corrida: "Corrida",
@@ -451,7 +452,8 @@ function montarBlocoObservacao(db, data) {
   `;
   const input = card.querySelector(".historico-obs-input");
   const status = card.querySelector(".historico-obs-status");
-  getObservacaoTreino(db, data).then((texto) => { input.value = texto; });
+  const redimensionarInput = ativarAutoResize(input);
+  getObservacaoTreino(db, data).then((texto) => { input.value = texto; redimensionarInput(); });
   card.querySelector(".historico-obs-salvar").addEventListener("click", async () => {
     await salvarObservacaoTreino(db, data, input.value);
     status.textContent = input.value.trim() ? "Salva." : "Removida.";

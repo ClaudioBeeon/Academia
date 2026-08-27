@@ -5,6 +5,7 @@ import { getCardioDoDia } from "../data/cardio.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
 import { getObservacaoTreino, salvarObservacaoTreino } from "../data/observacoesTreino.js";
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
 
 export async function montarTelaRelatorio(db, contexto, callbacks) {
   const { hoje, prsDaSessao } = contexto;
@@ -108,6 +109,7 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
   const obsInput = obsCard.querySelector(".obs-treino-input");
   const obsStatus = obsCard.querySelector(".obs-treino-status");
   obsInput.value = observacaoExistente;
+  ativarAutoResize(obsInput);
   obsCard.querySelector(".obs-treino-salvar").addEventListener("click", async () => {
     await salvarObservacaoTreino(db, hoje, obsInput.value);
     obsStatus.textContent = obsInput.value.trim() ? "Salva — dá pra exportar em Configurações." : "Removida.";

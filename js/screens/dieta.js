@@ -8,6 +8,7 @@ import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDi
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 import { confirmarAcao } from "./confirmarAcao.js";
 import { getPerguntaIADieta, salvarPerguntaIADieta } from "../data/perguntasIA.js";
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
 
 function obterDataLocal() {
   const agora = new Date();
@@ -530,9 +531,11 @@ function criarFormularioOpcao({ aoSalvar }) {
   const estimarBtn = wrap.querySelector(".estimar-btn");
   const status = wrap.querySelector(".status-ia");
   const resultado = wrap.querySelector(".resultado-ia");
+  const redimensionarTextarea = ativarAutoResize(textarea);
 
   function limparEFechar() {
     textarea.value = "";
+    redimensionarTextarea();
     status.textContent = "";
     resultado.innerHTML = "";
     wrap.style.display = "none";
@@ -592,10 +595,12 @@ function criarFormularioNovaRefeicao({ aoSalvar }) {
   const estimarBtn = wrap.querySelector(".estimar-btn");
   const status = wrap.querySelector(".status-ia");
   const resultado = wrap.querySelector(".resultado-ia");
+  const redimensionarTextarea = ativarAutoResize(textarea);
 
   function limparEFechar() {
     nomeInput.value = "";
     textarea.value = "";
+    redimensionarTextarea();
     status.textContent = "";
     resultado.innerHTML = "";
     wrap.style.display = "none";
@@ -667,6 +672,7 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
   const preview = card.querySelector(".comida-livre-preview");
   const status = card.querySelector(".comida-livre-status");
   const resultado = card.querySelector(".comida-livre-resultado");
+  const redimensionarInput = ativarAutoResize(input);
 
   function mostrarResultado(alimento) {
     status.textContent = "Confirme antes de salvar:";
@@ -679,6 +685,7 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
       status.textContent = "Salvo — já somado no total estimado do dia acima.";
       resultado.innerHTML = "";
       input.value = "";
+      redimensionarInput();
       preview.style.display = "none";
       preview.src = "";
       fotoInput.value = "";

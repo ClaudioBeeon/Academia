@@ -10,6 +10,8 @@
 // resposta sobrevivem a trocar de tela ou fechar o app (js/data/perguntasIA.js)
 // — sem isso, a resposta desaparecia assim que a pessoa saía da tela, mesmo
 // já tendo custado uma chamada de API.
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
+
 export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Pergunte algo...", perguntar, carregar, salvar }) {
   const wrap = document.createElement("div");
   wrap.className = "caixa-pergunta-ia";
@@ -29,6 +31,7 @@ export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Per
   const status = wrap.querySelector(".cpia-status");
   const perguntaSalvaEl = wrap.querySelector(".cpia-pergunta-salva");
   const resposta = wrap.querySelector(".cpia-resposta");
+  const redimensionarInput = ativarAutoResize(input, { alturaMaxima: 120 });
 
   async function enviar() {
     const pergunta = input.value.trim();
@@ -59,6 +62,7 @@ export function montarCaixaPerguntaIA({ titulo = "Dúvidas?", placeholder = "Per
     perguntaSalvaEl.textContent = pergunta;
     resposta.textContent = textoResposta;
     input.value = "";
+    redimensionarInput();
     if (salvar) await salvar(pergunta, textoResposta);
   }
 

@@ -287,7 +287,12 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   }
   renderizarRitmo();
 
-  ritmoEl.addEventListener("click", async () => {
+  // Reaproveitado pelo botão "Ritmo" da tela compacta E pela tile "ciclo" do
+  // telão de tela cheia — editar o ritmo é o mesmo fluxo nos dois lugares,
+  // só muda de onde foi disparado. Feito assim porque testar um ajuste de
+  // ritmo é mais útil justamente com a série em andamento (o telão aberto),
+  // sem precisar fechar e reabrir a tela cheia pra sentir a mudança.
+  async function abrirEditorDeRitmo() {
     const resultado = await abrirEditorCadencia({
       nomeExercicio: exercicio.nome,
       cadenciaAtual,
@@ -306,7 +311,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       temAjuste = true;
     }
     renderizarRitmo();
-  });
+    if (telaCheiaAtual) telaCheiaAtual.atualizarCadencia(cadenciaAtual);
+  }
+
+  ritmoEl.addEventListener("click", abrirEditorDeRitmo);
 
   // Uma única caixa flutuante pro cronômetro, compartilhada entre trabalho
   // (contando pra cima, preta) e descanso (contando pra baixo, lima). Trocar
@@ -669,6 +677,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         renderizarTrioEControle();
       },
       aoMinimizar: (infoTempo) => { if (onMinimizarSessao) onMinimizarSessao(infoTempo); },
+      aoAbrirRitmo: abrirEditorDeRitmo,
     });
     root.appendChild(telaCheiaAtual.elemento);
     pedirWakeLock();

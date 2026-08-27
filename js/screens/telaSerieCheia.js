@@ -67,6 +67,7 @@ export function montarTelaSerieCheia({
   aoPularDescanso,
   aoAjustar,
   aoMinimizar,
+  aoAbrirRitmo,
 }) {
   const elemento = document.createElement("div");
   elemento.className = "serie-cheia";
@@ -98,7 +99,7 @@ export function montarTelaSerieCheia({
           <button type="button" class="sc-ajuste-campo" data-campo="carga"><b></b><span>kg</span></button>
           <button type="button" class="sc-ajuste-campo" data-campo="reps"><b></b><span>reps</span></button>
           <button type="button" class="sc-ajuste-campo" data-campo="rir"><b></b><span>RIR</span></button>
-          <div class="sc-tile sc-tile-ciclo"><b></b><span>ciclo</span></div>
+          <button type="button" class="sc-tile sc-tile-ciclo"><b></b><span>ciclo</span></button>
         </div>
         <div class="sc-ajuste-ctl">
           <span class="sc-ajuste-rot">Ajustando <b></b></span>
@@ -152,6 +153,11 @@ export function montarTelaSerieCheia({
   elemento.querySelector(".sc-sub").textContent = [musculo, `RIR ${formatarNumero(rirAlvo)}`].filter(Boolean).join(" · ");
 
   elemento.querySelector(".sc-tile-ciclo b").textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
+  // O ritmo (cadência) é editável direto por aqui — sem isso, testar um
+  // ajuste de ritmo obrigava a fechar o telão, editar na tela compacta por
+  // trás, e reabrir a série pra sentir a mudança, que é justamente o pior
+  // momento pra fazer esse teste.
+  elemento.querySelector(".sc-tile-ciclo").addEventListener("click", () => { if (aoAbrirRitmo) aoAbrirRitmo(); });
 
   // Controle de carga/reps/RIR — mesma ideia do trio da tela normal
   // (um campo "ativo" por vez, um −/+ compartilhado embaixo), só que
@@ -286,9 +292,9 @@ export function montarTelaSerieCheia({
   }
   elemento.querySelector(".onda path").setAttribute("d", d);
 
-  const percurso = construirPercurso(cadencia);
-  const cicloMs = totalDaRepeticao(cadencia) * 1000;
-  const fases = fasesDaCadencia(cadencia);
+  let percurso = construirPercurso(cadencia);
+  let cicloMs = totalDaRepeticao(cadencia) * 1000;
+  let fases = fasesDaCadencia(cadencia);
 
   function rotuloNoInstante(msNoCiclo) {
     let acumulado = 0;
@@ -412,6 +418,20 @@ export function montarTelaSerieCheia({
     trilhoNumeroEl.textContent = `${numero}/${totalSeriesAlvo}`;
   }
 
+  // Chamado por execucao.js depois de salvar um ritmo novo no editor aberto
+  // pela tile "ciclo" — recalcula a onda pro novo tempo por repetição. Pode
+  // rodar com a onda em andamento (rep no meio do ciclo antigo); o próximo
+  // quadro já usa os valores novos, com uma pequena descontinuidade visual
+  // na volta em andamento, que é aceitável — o alvo é sentir o ritmo novo,
+  // não uma transição perfeita a meio de uma repetição já em curso.
+  function atualizarCadencia(novaCadencia) {
+    cadencia = novaCadencia;
+    percurso = construirPercurso(cadencia);
+    cicloMs = totalDaRepeticao(cadencia) * 1000;
+    fases = fasesDaCadencia(cadencia);
+    elemento.querySelector(".sc-tile-ciclo b").textContent = `${formatarNumero(totalDaRepeticao(cadencia))}s`;
+  }
+
   return {
     elemento,
     iniciarTrabalho,
@@ -421,6 +441,7 @@ export function montarTelaSerieCheia({
     mostrarContagem,
     atualizarSerieAtual,
     atualizarValores,
+    atualizarCadencia,
     minimizar,
   };
 }

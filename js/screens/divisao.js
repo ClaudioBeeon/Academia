@@ -22,6 +22,7 @@ import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
+import { abrirDetalheDia } from "./historicoSessoes.js";
 
 const MODALIDADES_CARDIO = ["bicicleta", "eliptico", "escada", "caminhada", "corrida"];
 const NOME_MODALIDADE = {
@@ -152,8 +153,28 @@ export async function montarTelaDivisao(db, { onAbrirHistoricoTreinos } = {}) {
   const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias, definicaoFase });
   if (cobertura.length > 0) main.appendChild(montarCardCobertura(cobertura));
 
-  main.appendChild(montarCardSessoes(db, sessoesAgrupadas, cardioTodos, exercicios, perfil?.dadosBasicos?.peso_kg, diaInfo, hoje, onAbrirHistoricoTreinos));
-  main.appendChild(montarCardCalendario(todasAsSeries, cardioTodos, hoje));
+  // Editar um dia no detalhe (js/screens/historicoSessoes.js, aberto daqui
+  // pelo calendário e pela lista de sessões) pode mudar séries e cardio de
+  // qualquer data — mais simples e confiável recarregar os dois cards que
+  // mostram isso diretamente do zero do que tentar remendar cada linha.
+  let cardSessoesAtual = montarCardSessoes(db, sessoesAgrupadas, cardioTodos, exercicios, perfil?.dadosBasicos?.peso_kg, diaInfo, hoje, onAbrirHistoricoTreinos, recarregarSessoesECalendario);
+  let cardCalendarioAtual = montarCardCalendario(db, todasAsSeries, cardioTodos, hoje, recarregarSessoesECalendario);
+  main.appendChild(cardSessoesAtual);
+  main.appendChild(cardCalendarioAtual);
+
+  async function recarregarSessoesECalendario() {
+    const [todasAsSeriesNovas, cardioTodosNovo, sessoesAgrupadasNovas] = await Promise.all([
+      getAll(db, "historicoSeries"),
+      getAll(db, "registrosCardio"),
+      getSessoesAgrupadasPorDia(db, 12),
+    ]);
+    const cardSessoesNovo = montarCardSessoes(db, sessoesAgrupadasNovas, cardioTodosNovo, exercicios, perfil?.dadosBasicos?.peso_kg, diaInfo, hoje, onAbrirHistoricoTreinos, recarregarSessoesECalendario);
+    const cardCalendarioNovo = montarCardCalendario(db, todasAsSeriesNovas, cardioTodosNovo, hoje, recarregarSessoesECalendario);
+    cardSessoesAtual.replaceWith(cardSessoesNovo);
+    cardCalendarioAtual.replaceWith(cardCalendarioNovo);
+    cardSessoesAtual = cardSessoesNovo;
+    cardCalendarioAtual = cardCalendarioNovo;
+  }
 
   return root;
 }
@@ -295,7 +316,7 @@ function montarCardCobertura(cobertura) {
 }
 
 // ═══════════════ Sessões recentes + lançamento retroativo ═══════════════
-function montarCardSessoes(db, sessoesAgrupadas, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje, onAbrirHistoricoTreinos) {
+function montarCardSessoes(db, sessoesAgrupadas, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje, onAbrirHistoricoTreinos, recarregarTudo) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   const cabecalho = document.createElement("div");
@@ -324,13 +345,13 @@ function montarCardSessoes(db, sessoesAgrupadas, cardioTodos, exercicios, pesoKg
     : [{ data: hoje, series: [] }, ...sessoesAgrupadas];
 
   for (const sessao of sessoes) {
-    corpo.appendChild(montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje));
+    corpo.appendChild(montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje, recarregarTudo));
   }
 
   return card;
 }
 
-function montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje) {
+function montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoHoje, hoje, recarregarTudo) {
   const wrap = document.createElement("div");
   const { data, series } = sessao;
   const validas = series.filter((s) => s.tipoSerie !== "aquecimento");
@@ -363,6 +384,9 @@ function montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoH
       `${exs} exercício${exs === 1 ? "" : "s"} · ${validas.length} série${validas.length === 1 ? "" : "s"}${pesoKg > 0 ? ` · ${kcal} kcal` : ""}`;
   };
   atualizarLinhaTexto();
+  linha.addEventListener("click", () => {
+    abrirDetalheDia(db, data, { aoFechar: recarregarTudo });
+  });
   wrap.appendChild(linha);
 
   const extrasWrap = document.createElement("div");
@@ -528,7 +552,7 @@ function montarFormExercicio(db, data, exercicios, aoSalvar) {
 }
 
 // ═══════════════ Calendário do mês ═══════════════
-function montarCardCalendario(todasAsSeries, cardioTodos, hoje) {
+function montarCardCalendario(db, todasAsSeries, cardioTodos, hoje, recarregarTudo) {
   const card = document.createElement("section");
   card.className = "exercise-card";
 
@@ -572,6 +596,14 @@ function montarCardCalendario(todasAsSeries, cardioTodos, hoje) {
     if (datasComAtividade.has(dataIso)) el.classList.add("treinou");
     if (dataIso === hoje) el.classList.add("hoje");
     el.textContent = dia;
+    // Dia futuro não tem o que abrir — não faz sentido editar um treino que
+    // ainda não aconteceu. Passado e hoje abrem o detalhe (js/screens/
+    // historicoSessoes.js), mesmo sem nada registrado ainda: é dali que dá
+    // pra lançar um dia esquecido, não só corrigir um já existente.
+    if (dataIso <= hoje) {
+      el.classList.add("clicavel");
+      el.addEventListener("click", () => abrirDetalheDia(db, dataIso, { aoFechar: recarregarTudo }));
+    }
     grade.appendChild(el);
   }
   card.appendChild(grade);

@@ -32,12 +32,16 @@ export const QUESTOES_DIARIAS = [
   {
     id: "hidratacao",
     campo: "hidratacao",
-    pergunta: "Como está a cor da sua urina hoje?",
+    pergunta: "Como está a cor da sua urina agora?",
     opcoes: [
       { valor: "clara", rotulo: "Clara" },
       { valor: "media", rotulo: "Amarela" },
       { valor: "escura", rotulo: "Escura" },
     ],
+    // Diferente das outras (um fato do dia, respondido uma vez), hidratação
+    // muda ao longo do dia — faz sentido perguntar de novo periodicamente,
+    // não só na primeira abertura do app.
+    recorrenciaHoras: 3,
   },
   {
     id: "alcool",
@@ -50,11 +54,24 @@ export const QUESTOES_DIARIAS = [
   },
 ];
 
-// Uma pergunta está pendente quando o campo correspondente nunca foi
+// Uma pergunta comum está pendente quando o campo correspondente nunca foi
 // respondido hoje (undefined/null) — false e "" já são respostas válidas
 // (ex.: "ainda não tomei creatina"), então não contam como pendentes.
-export function obterPerguntasPendentes(habitoHoje, questoes = QUESTOES_DIARIAS) {
-  return questoes.filter((q) => (habitoHoje?.[q.campo] ?? null) === null);
+//
+// Uma pergunta com `recorrenciaHoras` (hidratação) usa outro critério: fica
+// pendente de novo depois que aquele tanto de horas passa desde a última
+// resposta, gravada em `${campo}RespondidaEm` (epoch ms) — não daria pra
+// usar o valor em si porque "clara" respondido há 6 horas não é diferente,
+// pro filtro, de "clara" respondido agora.
+export function obterPerguntasPendentes(habitoHoje, questoes = QUESTOES_DIARIAS, agora = Date.now()) {
+  return questoes.filter((q) => {
+    if (q.recorrenciaHoras) {
+      const respondidaEm = habitoHoje?.[`${q.campo}RespondidaEm`];
+      if (!respondidaEm) return true;
+      return agora - respondidaEm >= q.recorrenciaHoras * 60 * 60 * 1000;
+    }
+    return (habitoHoje?.[q.campo] ?? null) === null;
+  });
 }
 
 // Perguntas do check-in de sessão (antes em card próprio na tela inicial,
@@ -98,10 +115,14 @@ export const QUESTOES_CHECKIN = [
   },
 ];
 
-// O check-in é preenchido de uma vez só (as 4 perguntas em sequência), então
-// a pendência é tudo-ou-nada: se a nota geral (qualidadePercebida) ainda não
-// foi respondida hoje, as 4 entram na fila; se já foi, nenhuma entra —
-// mesmo critério que o card antigo usava pra decidir "já respondido".
-export function obterPerguntasCheckinPendentes(checkinHoje) {
+// O check-in é sobre a sessão de treino de hoje — perguntar antes de treinar
+// não faz sentido (ex.: "como foi o treino de hoje" pra quem só treina à
+// noite, ainda de manhã) e nunca tem resposta de verdade. `treinouHoje` é a
+// mesma checagem usada em outros lugares do app: existe ao menos uma série
+// registrada hoje. Sem isso, as 4 perguntas só entram na fila depois que a
+// pessoa já treinou; a pendência continua tudo-ou-nada entre elas (mesmo
+// critério de antes: se a nota geral já foi respondida hoje, nenhuma volta).
+export function obterPerguntasCheckinPendentes(checkinHoje, treinouHoje = true) {
+  if (!treinouHoje) return [];
   return checkinHoje?.qualidadePercebida !== undefined ? [] : QUESTOES_CHECKIN;
 }

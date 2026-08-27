@@ -116,19 +116,38 @@ function montarLinhaDia(db, sessao, exerciciosOrdenados, nomePorExercicio, exerc
       <span>${exerciciosNoDia} exercício${exerciciosNoDia === 1 ? "" : "s"} · ${series.length} série${series.length === 1 ? "" : "s"}</span>
     </div>
   `;
-  linha.addEventListener("click", async () => {
-    const overlay = document.createElement("div");
-    overlay.className = "historico-overlay";
-    const fechar = async () => {
-      overlay.remove();
-      await recarregarLista();
-    };
-    const conteudo = await montarTelaDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, fechar);
-    overlay.appendChild(conteudo);
-    document.body.appendChild(overlay);
+  linha.addEventListener("click", () => {
+    abrirOverlayDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, recarregarLista);
   });
 
   return linha;
+}
+
+function abrirOverlayDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, aoFechar) {
+  const overlay = document.createElement("div");
+  overlay.className = "historico-overlay";
+  const fechar = async () => {
+    overlay.remove();
+    if (aoFechar) await aoFechar();
+  };
+  montarTelaDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, fechar).then((conteudo) => {
+    overlay.appendChild(conteudo);
+    document.body.appendChild(overlay);
+  });
+}
+
+// Ponto de entrada reaproveitável por qualquer outra tela (calendário e
+// lista de sessões da aba Treinos, js/screens/divisao.js) que precise abrir
+// o detalhe editável de um dia sem já ter a lista de exercícios em mãos —
+// busca sozinho o que precisa, ao contrário de abrirOverlayDetalheDia
+// (privada), que espera os dados já prontos pra não refazer a busca a cada
+// linha da lista de histórico.
+export async function abrirDetalheDia(db, data, { aoFechar } = {}) {
+  const exercicios = await getAll(db, "exercicios");
+  const exerciciosOrdenados = [...exercicios].sort((a, b) => a.nome.localeCompare(b.nome));
+  const nomePorExercicio = new Map(exercicios.map((e) => [e.id, e.nome]));
+  const exercicioPorId = new Map(exercicios.map((e) => [e.id, e]));
+  abrirOverlayDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, aoFechar);
 }
 
 async function montarTelaDetalheDia(db, data, exerciciosOrdenados, nomePorExercicio, exercicioPorId, aoVoltar) {

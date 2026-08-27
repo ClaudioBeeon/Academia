@@ -88,14 +88,15 @@ body {
    elemento tocável do app — cartões, pills, botões, chips. */
 button, .swap-pill, .icon-btn, .fila-item, .plano-hero.clicavel,
 .exec-carga-pill, .exec-footer-primary, .exec-footer-sq, .exec-serie-chk,
-.set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha {
+.set-ring, .carga-sheet-acoes button, .habito-chip, .fila-linha,
+.sessao-linha, .calendario-grade .dia.clicavel {
   transition: transform 0.15s var(--ease-out), opacity 0.15s var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 button:active:not(:disabled), .swap-pill:active, .icon-btn:active, .fila-item:active,
 .plano-hero.clicavel:active, .exec-carga-pill:active:not(:disabled),
 .exec-footer-primary:active, .exec-footer-sq:active, .habito-chip:active,
-.fila-linha:active {
+.fila-linha:active, .sessao-linha:active, .calendario-grade .dia.clicavel:active {
   transform: scale(0.97);
   opacity: 0.88;
 }
@@ -1089,6 +1090,7 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .calendario-grade .dia.treinou { background: var(--accent); color: var(--accent-ink); font-weight: 800; }
 .calendario-grade .dia.hoje { border: 1.5px solid var(--ink); }
 .calendario-grade .dia.fora { visibility: hidden; }
+.calendario-grade .dia.clicavel { cursor: pointer; }
 .calendario-legenda { display: flex; gap: 14px; padding: 0 18px 18px; font-size: 0.74rem; color: var(--ink-faint); flex-wrap: wrap; }
 .calendario-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--accent); margin-right: 5px; vertical-align: -1px; font-style: normal; }
 .calendario-legenda i.vazio { background: var(--card-2); }

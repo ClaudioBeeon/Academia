@@ -54,11 +54,13 @@ export function montarWidgetFlutuante() {
     // enfeite, já que não há "total" pra medir fração.
     let segundosMostrados;
     if (atual.alvoTimestamp != null) {
-      segundosMostrados = Math.max(0, (atual.alvoTimestamp - Date.now()) / 1000);
+      segundosMostrados = (atual.alvoTimestamp - Date.now()) / 1000;
       // Contagem regressiva chegou a zero sozinha (minimizada, sem ninguém
       // tocar de volta) — sem isso a bolha ficava travada em 00:00 pra
-      // sempre, em qualquer tela, até alguém tocar nela.
-      if (segundosMostrados <= 0) {
+      // sempre, em qualquer tela, até alguém tocar nela. `!(segundosMostrados > 0)`
+      // em vez de `<= 0` cobre também NaN/timestamp inválido (NaN <= 0 é
+      // falso, deixaria passar; NaN > 0 também é falso, então a negação pega).
+      if (!(segundosMostrados > 0)) {
         limparCronometroFlutuante();
         return;
       }
@@ -67,6 +69,12 @@ export function montarWidgetFlutuante() {
         progressoEl.style.strokeDashoffset = String(PERIMETRO * (1 - fracaoFeita));
       }
     } else {
+      // Modo progressivo (trabalho de uma série) não tem "fim" natural, mas
+      // um início inválido/ausente não deve travar a bolha num estado quebrado.
+      if (!(atual.inicioTimestamp > 0)) {
+        limparCronometroFlutuante();
+        return;
+      }
       segundosMostrados = Math.max(0, (Date.now() - atual.inicioTimestamp) / 1000);
       progressoEl.style.strokeDashoffset = "0";
     }

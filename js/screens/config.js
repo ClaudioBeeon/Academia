@@ -13,6 +13,8 @@ import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas } from "../engine/lembretes.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
+import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
+import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -48,6 +50,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
     baixarArquivo("observacoes-treino.md", observacoesTreinoParaMarkdown(observacoes), "text/markdown");
   }));
 
+  main.appendChild(criarSecaoBolhaFlutuante(db));
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini());
@@ -81,6 +84,30 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(importCard);
 
   return root;
+}
+
+// Botão de emergência: limpa a bolha do cronômetro flutuante (o estado em
+// memória e o registro de cardio persistido) na hora, independente de
+// qual seja a causa dela estar travada. Existe pra dar um jeito imediato
+// de sair do problema sem depender de reinstalar o app ou esperar uma
+// correção — ver commit "Corrige bolha travada em 00:00".
+function criarSecaoBolhaFlutuante(db) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Bolha do cronômetro travada?</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+      <button type="button" class="swap-pill limpar-bolha-btn" style="width:100%;">Limpar bolha flutuante</button>
+      <div class="prev-hint limpar-bolha-status"></div>
+    </div>
+  `;
+  const status = card.querySelector(".limpar-bolha-status");
+  card.querySelector(".limpar-bolha-btn").addEventListener("click", async () => {
+    limparCronometroFlutuante();
+    await limparCardioEmAndamento(db).catch(() => {});
+    status.textContent = "Limpo — a bolha deve sumir agora.";
+  });
+  return card;
 }
 
 function criarLinkAcao(texto, aoClicar) {

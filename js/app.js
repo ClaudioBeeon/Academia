@@ -273,11 +273,13 @@ function renderShell(db) {
       await limparCardioEmAndamento(db).catch(() => {});
       return;
     }
-    const restanteInicialSegundos = Math.max(0, Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000));
+    const restanteInicialSegundos = Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000);
     // Cronômetro já tinha zerado enquanto o app estava fechado — não é mais
     // "rodando", não faz sentido a bolha reaparecer travada em 00:00 toda
     // vez que o app abre. Limpa o registro em vez de ressuscitar a bolha.
-    if (restanteInicialSegundos <= 0) {
+    // `!(x > 0)` em vez de `x <= 0` também cobre alvoTimestamp inválido/NaN
+    // (um registro corrompido não pode deixar a bolha travada pra sempre).
+    if (!(restanteInicialSegundos > 0)) {
       await limparCardioEmAndamento(db).catch(() => {});
       return;
     }

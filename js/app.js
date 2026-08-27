@@ -272,6 +272,13 @@ function renderShell(db) {
       return;
     }
     const restanteInicialSegundos = Math.max(0, Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000));
+    // Cronômetro já tinha zerado enquanto o app estava fechado — não é mais
+    // "rodando", não faz sentido a bolha reaparecer travada em 00:00 toda
+    // vez que o app abre. Limpa o registro em vez de ressuscitar a bolha.
+    if (restanteInicialSegundos <= 0) {
+      await limparCardioEmAndamento(db).catch(() => {});
+      return;
+    }
     definirCronometroFlutuante({
       rotulo: emAndamento.rotulo,
       alvoTimestamp: emAndamento.alvoTimestamp,

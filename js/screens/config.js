@@ -15,6 +15,8 @@ import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarF
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
 import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
+import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
+import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -51,6 +53,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   }));
 
   main.appendChild(criarSecaoBolhaFlutuante(db));
+  main.appendChild(await criarSecaoDiaDoCiclo(db));
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini());
@@ -106,6 +109,45 @@ function criarSecaoBolhaFlutuante(db) {
     limparCronometroFlutuante();
     await limparCardioEmAndamento(db).catch(() => {});
     status.textContent = "Limpo — a bolha deve sumir agora.";
+  });
+  return card;
+}
+
+// "Qual dia do ciclo estou" fica só localmente (js/data/sequenciaSemanal.js
+// → store "config") — de propósito nunca sincroniza (mesmo lugar guarda a
+// chave da IA). Isso significa que reinstalar o app (ex.: pra forçar uma
+// atualização no iOS) apaga esse ponteiro específico mesmo com o resto do
+// progresso voltando certinho do Supabase — sem um jeito manual de corrigir,
+// a pessoa fica presa no dia 1 até destravar sozinha treinando de novo.
+async function criarSecaoDiaDoCiclo(db) {
+  const hoje = dataDeHoje();
+  const ultimoRegistro = await getUltimoDiaRegistrado(db);
+  const diaAtual = determinarDiaDaSessao(ultimoRegistro, hoje);
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Dia do ciclo</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+      <div class="prev-hint" style="padding:0;">O app está te mostrando como "hoje" o <b>dia ${diaAtual}</b> — ${obterDiaPorNumero(diaAtual).titulo}. Se estiver errado (ex.: depois de reinstalar o app), corrija abaixo.</div>
+      <div class="set-field">
+        <label>Dia correto do ciclo
+          <select class="dia-ciclo-select">
+            ${DIAS_SEQUENCIA.map((d) => `<option value="${d.numero}"${d.numero === diaAtual ? " selected" : ""}>Dia ${d.numero} — ${d.titulo}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <button type="button" class="swap-pill dia-ciclo-salvar" style="width:100%;">Corrigir</button>
+      <div class="prev-hint dia-ciclo-status" style="padding:0;"></div>
+    </div>
+  `;
+  const status = card.querySelector(".dia-ciclo-status");
+  card.querySelector(".dia-ciclo-salvar").addEventListener("click", async () => {
+    const novoDia = Number(card.querySelector(".dia-ciclo-select").value);
+    // concluido:false — corrige só qual dia é "hoje", não finge que a
+    // sessão de hoje já foi feita.
+    await registrarDiaDaSessao(db, novoDia, hoje, false);
+    status.textContent = `Corrigido — "hoje" agora é o dia ${novoDia}.`;
   });
   return card;
 }

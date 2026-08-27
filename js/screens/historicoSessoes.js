@@ -418,7 +418,7 @@ function montarBlocoCardio(db, data, cardioDoDia, recarregar) {
 
   const adicionarBtn = document.createElement("button");
   adicionarBtn.type = "button";
-  adicionarBtn.className = "swap-pill";
+  adicionarBtn.className = "historico-adicionar-serie";
   adicionarBtn.style.marginTop = "10px";
   adicionarBtn.textContent = "+ Adicionar cardio";
   corpo.appendChild(adicionarBtn);
@@ -444,8 +444,8 @@ function montarBlocoObservacao(db, data) {
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Observação do dia</div></div>
     <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
-      <textarea class="historico-obs-input" rows="3" placeholder="ex: senti dor no ombro direito no supino, na descida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
-      <button type="button" class="swap-pill historico-obs-salvar" style="width:100%;">Salvar observação</button>
+      <textarea class="historico-obs-input campo-textarea" rows="3" placeholder="ex: senti dor no ombro direito no supino, na descida"></textarea>
+      <button type="button" class="swap-pill historico-obs-salvar" style="width:100%; background:var(--accent); color:var(--accent-ink);">Salvar observação</button>
       <div class="prev-hint historico-obs-status"></div>
     </div>
   `;

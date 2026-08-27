@@ -66,7 +66,7 @@ function criarLinhaExercicio(db, exercicio) {
       <div class="prev-hint imagem-status" style="margin-top:4px;"></div>
     </div>
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Observações de execução<textarea name="obs" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea></label>
+      <label>Observações de execução<textarea name="obs" rows="2"></textarea></label>
     </div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
   `;
@@ -115,7 +115,7 @@ function criarFormNovoExercicio(db, main) {
   const form = document.createElement("form");
   form.className = "sets";
   form.innerHTML = `
-    <div class="set-field" style="grid-column:1/-1;"><label>Nome<input name="nome" required style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label></div>
+    <div class="set-field" style="grid-column:1/-1;"><label>Nome<input name="nome" required /></label></div>
     <div class="set-field"><label>Músculo primário<input name="musculo" required placeholder="peito" style="width:100%;" /></label></div>
     <div class="set-field"><label>Tipo<input name="tipo" required placeholder="isolador" style="width:100%;" /></label></div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Adicionar</button>

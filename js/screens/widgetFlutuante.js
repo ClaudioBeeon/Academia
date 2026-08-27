@@ -3,7 +3,7 @@
 // Bolha flutuante do cronômetro minimizado — fica montada uma única vez,
 // fora de #tab-content (sobrevive a qualquer troca de aba/tela), e só
 // aparece quando existe um cronômetro ativo em js/lib/timerFlutuante.js.
-import { obterCronometroFlutuante, aoMudarCronometroFlutuante } from "../lib/timerFlutuante.js";
+import { obterCronometroFlutuante, aoMudarCronometroFlutuante, limparCronometroFlutuante } from "../lib/timerFlutuante.js";
 
 function formatarRelogio(segundosTotais) {
   const segundos = Math.max(0, Math.round(segundosTotais));
@@ -55,6 +55,13 @@ export function montarWidgetFlutuante() {
     let segundosMostrados;
     if (atual.alvoTimestamp != null) {
       segundosMostrados = Math.max(0, (atual.alvoTimestamp - Date.now()) / 1000);
+      // Contagem regressiva chegou a zero sozinha (minimizada, sem ninguém
+      // tocar de volta) — sem isso a bolha ficava travada em 00:00 pra
+      // sempre, em qualquer tela, até alguém tocar nela.
+      if (segundosMostrados <= 0) {
+        limparCronometroFlutuante();
+        return;
+      }
       if (atual.duracaoTotalSegundos > 0) {
         const fracaoFeita = 1 - Math.min(1, segundosMostrados / atual.duracaoTotalSegundos);
         progressoEl.style.strokeDashoffset = String(PERIMETRO * (1 - fracaoFeita));

@@ -83,7 +83,7 @@ function montarSecaoCarga(main, exercicios, todasAsSeries) {
     <div class="sets" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
         <label>Exercício
-          <select class="select-exercicio" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></select>
+          <select class="select-exercicio"></select>
         </label>
       </div>
       <div class="grafico-1rm" style="grid-column:1/-1;"></div>
@@ -265,16 +265,16 @@ function montarSecaoMedidas(main, db, linhasIniciais) {
     <div class="exercise-head"><div class="exercise-name">Medidas corporais</div></div>
     <form class="sets medidas-form" style="padding:0 18px 18px;">
       <div class="set-field">
-        <label>Data<input name="data" type="date" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Data<input name="data" type="date" /></label>
       </div>
       <div class="set-field">
-        <label>Peso (kg)<input name="peso_kg" type="number" step="0.1" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Peso (kg)<input name="peso_kg" type="number" step="0.1" /></label>
       </div>
       <div class="set-field">
-        <label>Cintura (cm)<input name="cintura_cm" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Cintura (cm)<input name="cintura_cm" type="number" step="0.5" /></label>
       </div>
       <div class="set-field">
-        <label>% Gordura<input name="percentualGordura" type="number" step="0.1" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>% Gordura<input name="percentualGordura" type="number" step="0.1" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Registrar</button>
       <div class="prev-hint medidas-status" style="grid-column:1/-1;"></div>

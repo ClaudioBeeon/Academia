@@ -456,7 +456,7 @@ export function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
       <label>Modalidade
-        <select name="modalidade" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+        <select name="modalidade">
           ${MODALIDADES_CARDIO.map((m) => `<option value="${m}">${NOME_MODALIDADE[m]}</option>`).join("")}
         </select>
       </label>
@@ -466,7 +466,7 @@ export function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
     </div>
     <div class="set-field">
       <label>Intensidade (1-5)
-        <select name="intensidadePercebida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+        <select name="intensidadePercebida">
           <option value="1">1 — muito leve</option>
           <option value="2">2 — leve</option>
           <option value="3" selected>3 — moderada</option>
@@ -475,7 +475,7 @@ export function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
         </select>
       </label>
     </div>
-    <button type="submit" class="swap-pill" style="grid-column:1/-1;">Registrar</button>
+    <button type="submit" class="swap-pill" style="grid-column:1/-1; background:var(--accent); color:var(--accent-ink);">Registrar</button>
   `;
   const avisoEl = document.createElement("div");
   avisoEl.className = "prev-hint";
@@ -519,7 +519,7 @@ function montarFormExercicio(db, data, exercicios, aoSalvar) {
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
       <label>Exercício
-        <select name="exercicioId" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;">
+        <select name="exercicioId">
           ${ordenados.map((e) => `<option value="${e.id}">${e.nome}</option>`).join("")}
         </select>
       </label>

@@ -167,7 +167,7 @@ export async function montarTelaDieta(db) {
         <div class="sets idade-form" style="padding:0 18px 18px;">
           ${barraProteina}
           <div class="set-field" style="grid-column:1/-1;">
-            <label>Sua idade (necessária pra calcular a meta calórica)<input name="idade" type="number" min="10" max="100" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+            <label>Sua idade (necessária pra calcular a meta calórica)<input name="idade" type="number" min="10" max="100" /></label>
           </div>
           <button type="button" class="swap-pill salvar-idade" style="grid-column:1/-1;">Salvar idade</button>
         </div>
@@ -518,7 +518,7 @@ function criarFormularioOpcao({ aoSalvar }) {
   wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
   wrap.innerHTML = `
     <div class="set-field" style="width:100%;">
-      <label>O que é essa opção?<textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 ovos mexidos com queijo"></textarea></label>
+      <label>O que é essa opção?<textarea name="descricao" rows="2" placeholder="ex: 2 ovos mexidos com queijo"></textarea></label>
     </div>
     <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
     <div class="prev-hint status-ia"></div>
@@ -576,10 +576,10 @@ function criarFormularioNovaRefeicao({ aoSalvar }) {
   wrap.style.cssText = "flex-direction:column; gap:8px; width:100%; padding:10px 0 4px;";
   wrap.innerHTML = `
     <div class="set-field" style="width:100%;">
-      <label>Nome da refeição<input type="text" name="nome" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: Lanche da noite" /></label>
+      <label>Nome da refeição<input type="text" name="nome" placeholder="ex: Lanche da noite" /></label>
     </div>
     <div class="set-field" style="width:100%;">
-      <label>O que você come nessa refeição?<textarea name="descricao" rows="2" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" placeholder="ex: 2 fatias de pão integral com queijo"></textarea></label>
+      <label>O que você come nessa refeição?<textarea name="descricao" rows="2" placeholder="ex: 2 fatias de pão integral com queijo"></textarea></label>
     </div>
     <button type="button" class="swap-pill estimar-btn" style="width:100%;">Estimar com IA</button>
     <div class="prev-hint status-ia"></div>
@@ -648,7 +648,7 @@ function criarCardComidaLivre(db, obterDataDeHoje, aoSalvar) {
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Comeu algo fora da dieta base?</div></div>
     <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
-      <textarea class="comida-livre-input" rows="2" placeholder="Descreva o que comeu (ex.: 1 fatia de pizza de calabresa) ou tire uma foto abaixo" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
+      <textarea class="comida-livre-input campo-textarea" rows="2" placeholder="Descreva o que comeu (ex.: 1 fatia de pizza de calabresa) ou tire uma foto abaixo"></textarea>
       <button type="button" class="swap-pill comida-livre-btn">Estimar com IA (texto)</button>
       <button type="button" class="swap-pill comida-livre-foto-btn" style="background:var(--card-2); color:var(--ink); border:1px solid var(--line);">Tirar foto do prato</button>
       <input type="file" class="comida-livre-foto-input" accept="image/*" capture="environment" style="display:none;">

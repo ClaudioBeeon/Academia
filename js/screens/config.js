@@ -125,10 +125,10 @@ async function criarSecaoSupabase(db) {
         <summary>Usar outro projeto Supabase (avançado)</summary>
         <form class="creds-form" style="display:grid; gap:10px; margin-top:10px;">
           <div class="set-field">
-            <label>URL do projeto Supabase<input name="url" type="text" placeholder="https://xxxx.supabase.co" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+            <label>URL do projeto Supabase<input name="url" type="text" placeholder="https://xxxx.supabase.co" /></label>
           </div>
           <div class="set-field">
-            <label>Chave anon (pública) do projeto<input name="anonKey" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+            <label>Chave anon (pública) do projeto<input name="anonKey" type="password" /></label>
           </div>
           <button type="submit" class="swap-pill">Salvar credenciais</button>
         </form>
@@ -217,10 +217,10 @@ async function criarSecaoSupabase(db) {
       <div class="prev-hint" style="text-align:center; margin:8px 0;">ou com e-mail e senha</div>
       <form class="auth-form" style="display:grid; gap:10px;">
         <div class="set-field">
-          <label>E-mail<input name="email" type="email" autocomplete="username" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+          <label>E-mail<input name="email" type="email" autocomplete="username" /></label>
         </div>
         <div class="set-field">
-          <label>Senha<input name="senha" type="password" autocomplete="current-password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+          <label>Senha<input name="senha" type="password" autocomplete="current-password" /></label>
         </div>
         <div style="display:flex; gap:8px;">
           <button type="submit" class="swap-pill entrar-btn" style="flex:1;">Entrar</button>
@@ -334,10 +334,10 @@ function criarSecaoGemini() {
     <div class="exercise-head"><div class="exercise-name">Chave de IA (Gemini)</div></div>
     <form class="sets gemini-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar<input name="chave" type="password" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar<input name="chave" type="password" /></label>
       </div>
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)<input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)<input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
       <div class="prev-hint gemini-status" style="grid-column:1/-1;"></div>
@@ -438,7 +438,7 @@ async function criarSecaoSugestoes(db) {
     reavaliacaoForm.style.cssText = "display:contents;";
     reavaliacaoForm.innerHTML = `
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Data de reavaliação da fase "${perfil.fase.atual}" (sugestão: 6-8 semanas do início)<input name="dataReavaliacao" type="date" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+        <label>Data de reavaliação da fase "${perfil.fase.atual}" (sugestão: 6-8 semanas do início)<input name="dataReavaliacao" type="date" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar data</button>
       <div class="prev-hint reavaliacao-status" style="grid-column:1/-1;"></div>
@@ -519,10 +519,10 @@ async function criarSecaoEquipamento(db) {
   form.style.padding = "0 18px 18px";
   form.innerHTML = `
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Peso da barra (kg)<input name="pesoBarra" type="number" step="0.5" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+      <label>Peso da barra (kg)<input name="pesoBarra" type="number" step="0.5" /></label>
     </div>
     <div class="set-field" style="grid-column:1/-1;">
-      <label>Anilhas disponíveis (kg, separadas por vírgula)<input name="anilhas" type="text" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;" /></label>
+      <label>Anilhas disponíveis (kg, separadas por vírgula)<input name="anilhas" type="text" /></label>
     </div>
     <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
     <div class="prev-hint equipamento-status" style="grid-column:1/-1;"></div>

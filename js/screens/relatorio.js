@@ -100,8 +100,8 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
   obsCard.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Observação sobre o treino</div></div>
     <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
-      <textarea class="obs-treino-input" rows="3" placeholder="ex: senti dor no ombro direito no supino, na descida" style="width:100%; background:var(--card-2); border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:8px; font:inherit;"></textarea>
-      <button type="button" class="swap-pill obs-treino-salvar" style="width:100%;">Salvar observação</button>
+      <textarea class="obs-treino-input campo-textarea" rows="3" placeholder="ex: senti dor no ombro direito no supino, na descida"></textarea>
+      <button type="button" class="swap-pill obs-treino-salvar" style="width:100%; background:var(--accent); color:var(--accent-ink);">Salvar observação</button>
       <div class="prev-hint obs-treino-status"></div>
     </div>
   `;

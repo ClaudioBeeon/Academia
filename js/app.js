@@ -159,12 +159,20 @@ function renderShell(db) {
       onMinimizar: (infoTempo) => {
         if (!rootSessaoRef) return;
         rootSessaoRef.remove();
+        // Se a bolha for tocada de volta antes da Home terminar de montar
+        // (a leitura do banco dela é assíncrona), a Home não pode "vencer"
+        // a corrida e aparecer por cima da sessão recém-reaberta — sem essa
+        // flag, era exatamente isso que acontecia: a bolha reabria a
+        // execução, e um instante depois a Home surgia por cima sozinha,
+        // parecendo que o toque na bolha não tinha feito nada.
+        let reaberta = false;
         definirCronometroFlutuante({
           rotulo: infoTempo.rotulo,
           alvoTimestamp: infoTempo.alvoTimestamp,
           inicioTimestamp: infoTempo.inicioTimestamp,
           duracaoTotalSegundos: infoTempo.duracaoTotalSegundos,
           aoExpandir: () => {
+            reaberta = true;
             limparCronometroFlutuante();
             content.replaceChildren(rootSessaoRef);
             tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === "hoje"));
@@ -173,7 +181,9 @@ function renderShell(db) {
         // Sem isso #tab-content ficava vazio atrás da bolha — minimizar
         // devolve pra Início, que é o pedido original (poder mexer no
         // resto do app com o cronômetro rodando).
-        renderTab("hoje");
+        renderTab("hoje").then(() => {
+          if (reaberta) content.replaceChildren(rootSessaoRef);
+        });
       },
     }), { direcao: "avancar" });
     promessa.then((elemento) => { rootSessaoRef = elemento; });

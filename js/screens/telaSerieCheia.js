@@ -206,7 +206,11 @@ export function montarTelaSerieCheia({
   // chamou (execucao.js repassa pra sessao.js, que repassa pro app.js, o
   // único lugar que sabe como desanexar/reanexar a sessão do #tab-content
   // sem destruir nada). Aqui só informa em que ponto do tempo ela está.
-  elemento.querySelector(".sc-minimizar").addEventListener("click", () => {
+  // Exposto como função nomeada (não só o listener do botão) porque
+  // execucao.js também precisa disparar o mesmo caminho quando a seta de
+  // voltar do cabeçalho é tocada com um cronômetro rodando — sem isso, sair
+  // por ali matava o cronômetro sem deixar a bolha flutuante pra voltar.
+  function minimizar() {
     if (!aoMinimizar) return;
     if (elemento.dataset.modo === "descanso" && descansoRestanteAtual != null) {
       aoMinimizar({
@@ -222,7 +226,8 @@ export function montarTelaSerieCheia({
         inicioTimestamp: inicioTrabalhoTs,
       });
     }
-  });
+  }
+  elemento.querySelector(".sc-minimizar").addEventListener("click", minimizar);
   const terminarBtn = elemento.querySelector(".sc-terminar");
   terminarBtn.addEventListener("click", () => {
     // O aperto de confirmação toca junto com o crossfade pro descanso — o
@@ -416,5 +421,6 @@ export function montarTelaSerieCheia({
     mostrarContagem,
     atualizarSerieAtual,
     atualizarValores,
+    minimizar,
   };
 }

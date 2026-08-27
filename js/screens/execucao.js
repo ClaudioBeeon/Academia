@@ -16,6 +16,8 @@ import { montarTelaHistorico } from "./historico.js";
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 import { responderPerguntaExercicio } from "../ai/gemini.js";
 import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/perguntasIA.js";
+import { DIAS_SEQUENCIA, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
+import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -116,7 +118,18 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     </div>
   `;
   header.querySelector(".exec-titulo").textContent = exercicio.nome;
-  header.querySelector(".voltar-btn").addEventListener("click", () => { if (onFechar) onFechar(); });
+  header.querySelector(".voltar-btn").addEventListener("click", () => {
+    // Com o telão aberto e um cronômetro rodando (descanso ou trabalho),
+    // sair por aqui minimiza em vez de matar o cronômetro sem deixar a
+    // bolha flutuante pra voltar depois — mesmo caminho do botão "⌄" do
+    // telão. Sem cronômetro ativo (ainda na contagem, ou nenhuma série
+    // começada), continua fechando normalmente.
+    if (telaCheiaAtual && (cronometroAtivo || inicioTrabalhoTs != null)) {
+      telaCheiaAtual.minimizar();
+      return;
+    }
+    if (onFechar) onFechar();
+  });
   const acoesHeader = document.createElement("div");
   acoesHeader.className = "exec-acoes-header";
   const trocarBtn = document.createElement("button");
@@ -132,11 +145,52 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     adiarBtn.addEventListener("click", () => onExercicioAdiado(exercicio.id));
     acoesHeader.appendChild(adiarBtn);
   }
+  const diaCicloBtn = document.createElement("button");
+  diaCicloBtn.type = "button";
+  diaCicloBtn.className = "swap-pill dia-ciclo-pill";
+  diaCicloBtn.textContent = "Dia do ciclo";
+  acoesHeader.appendChild(diaCicloBtn);
   header.appendChild(acoesHeader);
   root.appendChild(header);
 
   const main = document.createElement("main");
   root.appendChild(main);
+
+  // Trocar o dia do ciclo sem sair da execução — é o momento mais prático
+  // pra testar como fica outro dia, sem precisar voltar pra Config, mudar
+  // lá e reabrir a fila. Mesma escrita que a seção "Dia do ciclo" de
+  // Config (js/screens/config.js): grava em config/sequenciaSemanal.
+  const painelDiaCiclo = document.createElement("div");
+  painelDiaCiclo.className = "ferramentas-painel";
+  main.appendChild(painelDiaCiclo);
+
+  diaCicloBtn.addEventListener("click", async () => {
+    const abrindo = !painelDiaCiclo.classList.contains("aberto");
+    if (abrindo) {
+      const ultimoDiaRegistrado = await getUltimoDiaRegistrado(db);
+      const diaAtual = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+      painelDiaCiclo.innerHTML = `
+        <div class="ferramentas-painel-corpo">
+          <div class="set-field">
+            <label>Dia do ciclo
+              <select class="dia-ciclo-select">
+                ${DIAS_SEQUENCIA.map((d) => `<option value="${d.numero}"${d.numero === diaAtual ? " selected" : ""}>Dia ${d.numero} — ${d.titulo}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <button type="button" class="swap-pill dia-ciclo-salvar" style="width:100%;">Salvar</button>
+          <div class="prev-hint dia-ciclo-status" style="padding:8px 0 0;"></div>
+        </div>
+      `;
+      const status = painelDiaCiclo.querySelector(".dia-ciclo-status");
+      painelDiaCiclo.querySelector(".dia-ciclo-salvar").addEventListener("click", async () => {
+        const novoDia = Number(painelDiaCiclo.querySelector(".dia-ciclo-select").value);
+        await registrarDiaDaSessao(db, novoDia, hoje, false);
+        status.textContent = `Salvo — volte pra fila (←) pra ver o dia ${novoDia}.`;
+      });
+    }
+    painelDiaCiclo.classList.toggle("aberto", abrindo);
+  });
 
   if (exercicio.equipamento === "barra") {
     const ferramentasPill = document.createElement("button");

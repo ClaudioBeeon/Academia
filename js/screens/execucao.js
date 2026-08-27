@@ -142,7 +142,19 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     adiarBtn.type = "button";
     adiarBtn.className = "swap-pill adiar-pill";
     adiarBtn.textContent = "Deixar pra depois";
-    adiarBtn.addEventListener("click", () => onExercicioAdiado(exercicio.id));
+    // Mesma trava do botão primário: dois toques rápidos aqui disparavam
+    // onExercicioAdiado duas vezes antes da tela seguinte terminar de
+    // montar, arriscando o mesmo tipo de índice corrompido.
+    let adiandoEmAndamento = false;
+    adiarBtn.addEventListener("click", async () => {
+      if (adiandoEmAndamento) return;
+      adiandoEmAndamento = true;
+      try {
+        await onExercicioAdiado(exercicio.id);
+      } finally {
+        adiandoEmAndamento = false;
+      }
+    });
     acoesHeader.appendChild(adiarBtn);
   }
   const diaCicloBtn = document.createElement("button");
@@ -837,17 +849,31 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     document.body.appendChild(overlayHistorico);
   });
   const primarioBtn = rodape.querySelector(".primario-btn");
+  // Sem essa trava, um segundo toque rápido em "Concluir exercício" — bem
+  // fácil de acontecer, é o botão mais tocado da tela — disparava
+  // onProximoExercicio() de novo antes do primeiro terminar de montar a
+  // tela seguinte (ele nunca era esperado/`await`ado aqui). Isso incrementa
+  // o índice duas vezes, pulando o exercício seguinte de verdade — some da
+  // tela até a pessoa voltar pra fila e reabrir manualmente, que é onde o
+  // estado real (correto) volta a ser lido do zero.
+  let acaoEmAndamento = false;
   primarioBtn.addEventListener("click", async () => {
-    if (numeroEmAndamento != null) {
-      await finalizarTrabalhoERegistrar();
-      return;
+    if (acaoEmAndamento) return;
+    acaoEmAndamento = true;
+    try {
+      if (numeroEmAndamento != null) {
+        await finalizarTrabalhoERegistrar();
+        return;
+      }
+      const pendente = numeroPendenteAtual();
+      if (pendente == null) {
+        if (onProximoExercicio) await onProximoExercicio();
+        return;
+      }
+      iniciarTrabalho(pendente);
+    } finally {
+      acaoEmAndamento = false;
     }
-    const pendente = numeroPendenteAtual();
-    if (pendente == null) {
-      if (onProximoExercicio) onProximoExercicio();
-      return;
-    }
-    iniciarTrabalho(pendente);
   });
   root.appendChild(rodape);
 

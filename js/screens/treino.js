@@ -459,11 +459,15 @@ const NOME_MODALIDADE_CARDIO = {
 
 function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onIniciarCardio, onRegistrarSemPrescricao) {
   const card = document.createElement("section");
-  card.className = "plano-hero";
+  // Mesmo tratamento visual do "Treino de hoje" quando feito — card muda de
+  // lima pra escuro e ganha o "✓ ... concluído" no rótulo. Sem isso, cardio
+  // já registrado ficava com a MESMA cara de cardio ainda pendente, só o
+  // texto do botão ("Ver mais") avisava, fácil de não notar.
+  card.className = cardioLogadoHoje ? "plano-hero alt" : "plano-hero";
 
   const rotulo = document.createElement("div");
   rotulo.className = "rotulo";
-  rotulo.textContent = "Cardio";
+  rotulo.textContent = cardioLogadoHoje ? "✓ Cardio · concluído" : "Cardio";
   card.appendChild(rotulo);
 
   const titulo = document.createElement("h2");

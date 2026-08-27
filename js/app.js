@@ -18,6 +18,7 @@ import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaHistoricoSessoes } from "./screens/historicoSessoes.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
 import { montarTelaDieta } from "./screens/dieta.js";
+import { montarTelaMusica } from "./screens/musica.js";
 import { montarTelaCardio } from "./screens/cardioTimer.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
@@ -259,6 +260,12 @@ function renderShell(db) {
       }
       if (tabName === "dieta") {
         await trocarConteudo(content, () => montarTelaDieta(db), { direcao });
+        return;
+      }
+      if (tabName === "musica") {
+        await trocarConteudo(content, () => montarTelaMusica(db, {
+          onAbrirConfig: () => renderTab("config", "avancar"),
+        }), { direcao });
         return;
       }
       await trocarConteudo(content, () => criarMensagem(`Tela "${tabName}" ainda não implementada (vem depois).`), { direcao });

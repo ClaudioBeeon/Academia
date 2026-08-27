@@ -109,6 +109,73 @@ export async function migrarCadenciaDaFicha(db) {
   return { migrados, jaFeita: false };
 }
 
+// Mesma lógica de migrarCadenciaDaFicha: a ficha é dado pessoal, editar
+// data/ficha.json não alcança quem já tem o app instalado. Troca 3
+// exercícios que causavam dificuldade real (elevação lateral no cabo —
+// compensação com trapézio, sentida mais forte no braço esquerdo; tríceps
+// testa com barra W — exigia estabilidade fina de cotovelo em bilateral;
+// abdominal na máquina — dor lombar) por alternativas equivalentes, com o
+// texto de execução/porquê atualizado pra cada uma. Roda uma vez só,
+// marcada em config; nunca mexe num dia que já não tenha mais o
+// exercicioId antigo (seja porque já migrou, seja porque a pessoa trocou
+// esse slot por conta própria via substituição).
+const CHAVE_VERSAO_SUBSTITUICOES = "substituicoesFichaVersao";
+const VERSAO_SUBSTITUICOES = 1;
+
+const SUBSTITUICOES_FICHA = {
+  elevacao_lateral_cabo: {
+    exercicioId: "elevacao_lateral_maquina",
+    incrementoTexto: "Sobe 2 kg e volta pra 12.",
+    porqueEstaAquiSufixo: " Substituiu a versão no cabo depois de dificuldade recorrente controlando o movimento sem compensar com o ombro subindo (trapézio assumindo o lugar do deltoide) — a máquina trava o braço no plano certo e tira essa margem de erro.",
+    comoExecutar: "Ajuste o encosto pra o eixo de rotação da máquina ficar na altura do seu ombro — esse ajuste importa mais que a carga aqui. Suba o braço até a altura do ombro, não mais. Desça em 3s resistindo.",
+    atencao: "Ajuste o encosto antes de cada série — assento errado muda o ângulo de trabalho inteiro. Se ainda sentir o ombro subindo (encolhendo) no início do movimento, reduza a carga: o trapézio ainda está roubando o trabalho do deltoide.",
+  },
+  triceps_testa_barra_w: {
+    exercicioId: "triceps_frances_halteres",
+    incrementoTexto: "Sobe 2 kg e volta pra 10.",
+    porqueEstaAquiSufixo: " Substituiu a testa com barra W, que exige estabilidade fina de cotovelo em movimento bilateral — o halter permite ajustar cada braço e é mais fácil de controlar perto da posição alongada.",
+    comoExecutar: "Sentado ou em pé, halteres acima da cabeça, cotovelos apontados pro teto e FIXOS. Desça o(s) halter(es) atrás da cabeça em 3 segundos até sentir o tríceps alongar. Suba sem deixar o cotovelo abrir pros lados.",
+    atencao: "Se sentir incômodo no cotovelo, reduza a amplitude (não desça tanto atrás da cabeça) ou troque por corda na polia alta. Nunca insista em dor articular.",
+  },
+  abdominal_maquina: {
+    exercicioId: "abdominal_polia_alta",
+    incrementoTexto: "Sobe 2,5 kg e volta pra 12.",
+    porqueEstaAquiSufixo: " Substituiu a versão na máquina depois de dor na lombar — ajoelhado, o quadril fica livre pra acompanhar o tronco em vez de preso num encosto que pode não bater com a curva natural da sua coluna.",
+    comoExecutar: "Ajoelhado de frente pra polia alta, segure a corda perto do rosto. Flexione o TRONCO vindo do abdômen, arredondando a coluna, sem puxar com os braços — eles só seguram a corda no lugar. Volte em 2s sem relaxar totalmente.",
+    atencao: "Se sentir o pescoço trabalhando mais que a barriga, reduza a carga. Se a lombar incomodar de novo mesmo nessa versão, para e me avisa — não é pra insistir em dor lombar em exercício nenhum de abdômen.",
+  },
+};
+
+export async function migrarSubstituicoesFicha(db) {
+  const marcador = await get(db, "config", CHAVE_VERSAO_SUBSTITUICOES);
+  if (marcador?.valor >= VERSAO_SUBSTITUICOES) return { migrados: 0, jaFeita: true };
+
+  const ficha = await get(db, "ficha", "1.0");
+  if (!ficha?.dias) {
+    await put(db, "config", { chave: CHAVE_VERSAO_SUBSTITUICOES, valor: VERSAO_SUBSTITUICOES });
+    return { migrados: 0, jaFeita: false };
+  }
+
+  let migrados = 0;
+  for (const dia of ficha.dias) {
+    for (const exercicio of dia.exercicios ?? []) {
+      const troca = SUBSTITUICOES_FICHA[exercicio.exercicioId];
+      if (!troca) continue;
+      exercicio.exercicioId = troca.exercicioId;
+      exercicio.porqueEstaAqui = `${exercicio.porqueEstaAqui}${troca.porqueEstaAquiSufixo}`;
+      exercicio.comoExecutar = troca.comoExecutar;
+      exercicio.atencao = troca.atencao;
+      const prefixoIncremento = exercicio.quandoSubirCarga.split(/\.\s*Sobe/)[0];
+      exercicio.quandoSubirCarga = `${prefixoIncremento}. ${troca.incrementoTexto}`;
+      migrados++;
+    }
+  }
+
+  if (migrados > 0) await put(db, "ficha", ficha);
+  await put(db, "config", { chave: CHAVE_VERSAO_SUBSTITUICOES, valor: VERSAO_SUBSTITUICOES });
+  return { migrados, jaFeita: false };
+}
+
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const [storesPessoaisSemeadas, bibliotecaAtualizada] = await Promise.all([
     semearPessoaisSeVazias(db, fetchImpl),
@@ -116,14 +183,16 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   ]);
 
   // Depois do seed: numa conta nova a ficha recém-escrita já vem com
-  // cadência do JSON e a migração não acha nada pra fazer.
+  // cadência do JSON e as migrações não acham nada pra fazer.
   const cadencia = await migrarCadenciaDaFicha(db);
+  const substituicoes = await migrarSubstituicoesFicha(db);
 
   return {
     seeded: storesPessoaisSemeadas.length > 0 || bibliotecaAtualizada,
     storesPessoaisSemeadas,
     bibliotecaAtualizada,
     cadenciaMigrada: cadencia.migrados,
+    substituicoesMigradas: substituicoes.migrados,
   };
 }
 

@@ -494,7 +494,7 @@
         },
         {
           "ordem": 2,
-          "exercicioId": "elevacao_lateral_cabo",
+          "exercicioId": "elevacao_lateral_maquina",
           "series": 3,
           "repeticoes": {
             "min": 12,
@@ -504,10 +504,10 @@
           "descansoSegundos": 75,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Deltoide lateral é o único da cintura escapular que dá largura sem piorar a postura — ele não puxa o ombro pra frente como o anterior. Por isso foi o volume de ombro que ficou quando o desenvolvimento saiu.",
-          "comoExecutar": "Cabo na polia baixa, passando POR TRÁS do corpo, pegando com a mão do lado oposto. Suba o braço pro lado até a altura do ombro, não mais. Cotovelo levemente dobrado e fixo. Desça em 3s resistindo. O cabo por trás mantém tensão na posição alongada, o que o halter não faz.",
-          "quandoSubirCarga": "Quando fechar 20 repetições nas 3 séries. Sobe 1 kg e volta pra 12.",
-          "atencao": "Carga leve. Se você precisa dar tranco com o corpo pra subir o braço, o deltoide lateral não está fazendo o trabalho — o trapézio está.",
+          "porqueEstaAqui": "Deltoide lateral é o único da cintura escapular que dá largura sem piorar a postura — ele não puxa o ombro pra frente como o anterior. Por isso foi o volume de ombro que ficou quando o desenvolvimento saiu. Substituiu a versão no cabo depois de dificuldade recorrente controlando o movimento sem compensar com o ombro subindo (trapézio assumindo o lugar do deltoide) — a máquina trava o braço no plano certo e tira essa margem de erro.",
+          "comoExecutar": "Ajuste o encosto pra o eixo de rotação da máquina ficar na altura do seu ombro — esse ajuste importa mais que a carga aqui. Suba o braço até a altura do ombro, não mais. Desça em 3s resistindo.",
+          "quandoSubirCarga": "Quando fechar 20 repetições nas 3 séries. Sobe 2 kg e volta pra 12.",
+          "atencao": "Ajuste o encosto antes de cada série — assento errado muda o ângulo de trabalho inteiro. Se ainda sentir o ombro subindo (encolhendo) no início do movimento, reduza a carga: o trapézio ainda está roubando o trabalho do deltoide.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -519,7 +519,7 @@
         },
         {
           "ordem": 3,
-          "exercicioId": "triceps_testa_barra_w",
+          "exercicioId": "triceps_frances_halteres",
           "series": 3,
           "repeticoes": {
             "min": 10,
@@ -529,10 +529,10 @@
           "descansoSegundos": 90,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Carrega o tríceps na posição alongada, que o pulley não faz. Junto com o pulley do dia 1, cobre as duas pontas do músculo com apenas 6 séries diretas na semana.",
-          "comoExecutar": "Deitado no banco, barra W, cotovelos apontados pro teto e FIXOS. Desça a barra em 3 segundos em direção à testa ou um pouco atrás da cabeça, até sentir o tríceps alongar. Suba sem deixar o cotovelo abrir pros lados.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 15 repetições. Sobe 2,5 kg e volta pra 10.",
-          "atencao": "Se sentir incômodo no cotovelo, troque por tríceps francês sentado ou aumente as repetições reduzindo a carga. Nunca insista em dor articular.",
+          "porqueEstaAqui": "Carrega o tríceps na posição alongada, que o pulley não faz. Junto com o pulley do dia 1, cobre as duas pontas do músculo com apenas 6 séries diretas na semana. Substituiu a testa com barra W, que exige estabilidade fina de cotovelo em movimento bilateral — o halter permite ajustar cada braço e é mais fácil de controlar perto da posição alongada.",
+          "comoExecutar": "Sentado ou em pé, halteres acima da cabeça, cotovelos apontados pro teto e FIXOS. Desça o(s) halter(es) atrás da cabeça em 3 segundos até sentir o tríceps alongar. Suba sem deixar o cotovelo abrir pros lados.",
+          "quandoSubirCarga": "Quando as 3 séries chegarem a 15 repetições. Sobe 2 kg e volta pra 10.",
+          "atencao": "Se sentir incômodo no cotovelo, reduza a amplitude (não desça tanto atrás da cabeça) ou troque por corda na polia alta. Nunca insista em dor articular.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -544,7 +544,7 @@
         },
         {
           "ordem": 4,
-          "exercicioId": "abdominal_maquina",
+          "exercicioId": "abdominal_polia_alta",
           "series": 3,
           "repeticoes": {
             "min": 12,
@@ -554,10 +554,10 @@
           "descansoSegundos": 60,
           "tempo": "2s flexionando · 2s voltando",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Abdômen entra como manutenção, 6 séries na semana — e é importante ser honesto: isso NÃO acelera a perda da barriga. Nenhum exercício faz isso. O abdômen está aqui como músculo, o déficit calórico é que trata a gordura.",
-          "comoExecutar": "Flexione o TRONCO vindo do abdômen, encurtando a distância entre as costelas e o quadril. Não puxe com os braços nem com o pescoço — os braços só seguram. Volte em 2s sem relaxar totalmente.",
+          "porqueEstaAqui": "Abdômen entra como manutenção, 6 séries na semana — e é importante ser honesto: isso NÃO acelera a perda da barriga. Nenhum exercício faz isso. O abdômen está aqui como músculo, o déficit calórico é que trata a gordura. Substituiu a versão na máquina depois de dor na lombar — ajoelhado, o quadril fica livre pra acompanhar o tronco em vez de preso num encosto que pode não bater com a curva natural da sua coluna.",
+          "comoExecutar": "Ajoelhado de frente pra polia alta, segure a corda perto do rosto. Flexione o TRONCO vindo do abdômen, arredondando a coluna, sem puxar com os braços — eles só seguram a corda no lugar. Volte em 2s sem relaxar totalmente.",
           "quandoSubirCarga": "Quando as 3 séries fecharem 20 repetições. Sobe 2,5 kg e volta pra 12.",
-          "atencao": "Se sentir o pescoço trabalhando mais que a barriga, reduza a carga.",
+          "atencao": "Se sentir o pescoço trabalhando mais que a barriga, reduza a carga. Se a lombar incomodar de novo mesmo nessa versão, para e me avisa — não é pra insistir em dor lombar em exercício nenhum de abdômen.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -868,7 +868,7 @@
         },
         {
           "ordem": 4,
-          "exercicioId": "elevacao_lateral_cabo",
+          "exercicioId": "elevacao_lateral_maquina",
           "series": 3,
           "repeticoes": {
             "min": 12,
@@ -879,9 +879,9 @@
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": true,
           "porqueEstaAqui": "Segunda e última dose de deltoide lateral na semana, fechando as 6 séries. Largura de ombro sem custo postural.",
-          "comoExecutar": "Igual ao dia 3: cabo por trás do corpo, sobe até a altura do ombro, desce em 3s resistindo.",
-          "quandoSubirCarga": "Quando fechar 20 repetições nas 3 séries. Sobe 1 kg e volta pra 12.",
-          "atencao": "Carga leve, sem tranco.",
+          "comoExecutar": "Igual ao dia 3: ajuste o encosto pra o eixo da máquina ficar na altura do ombro, sobe até a altura do ombro, desce em 3s resistindo.",
+          "quandoSubirCarga": "Quando fechar 20 repetições nas 3 séries. Sobe 2 kg e volta pra 12.",
+          "atencao": "Ajuste o encosto antes de cada série. Se sentir o ombro subindo (encolhendo) no início do movimento, reduza a carga.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,

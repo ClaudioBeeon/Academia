@@ -1,8 +1,12 @@
 // js/data/cardio.js
-import { put, getAll, getAllByIndex } from "./db.js";
+import { put, getAll, getAllByIndex, del } from "./db.js";
 
 export function registrarCardio(db, registro) {
   return put(db, "registrosCardio", registro);
+}
+
+export function excluirCardio(db, id) {
+  return del(db, "registrosCardio", id);
 }
 
 export function getCardioDoDia(db, data) {

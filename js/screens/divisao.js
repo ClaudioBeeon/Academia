@@ -425,7 +425,7 @@ function montarLinhaSessao(db, sessao, cardioTodos, exercicios, pesoKg, diaInfoH
   return wrap;
 }
 
-function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
+export function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
   const form = document.createElement("form");
   form.className = "sets";
   form.style.padding = "0";

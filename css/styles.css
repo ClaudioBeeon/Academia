@@ -1029,13 +1029,23 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .historico-serie.editando { align-items: stretch; }
 .historico-serie-form { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; align-items: flex-end; }
 .historico-serie-form .campo { flex: 1; min-width: 64px; }
+.historico-serie-form .campo-exercicio { flex-basis: 100%; }
 .historico-serie-form label { display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin-bottom: 4px; }
-.historico-serie-form input { width: 100%; background: var(--paper); border: 1px solid var(--line); color: var(--ink); border-radius: 9px; padding: 7px 8px; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.historico-serie-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.historico-serie-form input, .historico-serie-form select { width: 100%; background: var(--paper); border: 1px solid var(--line); color: var(--ink); border-radius: 9px; padding: 7px 8px; font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.historico-serie-form select { font-family: inherit; font-weight: 500; }
+.historico-serie-form input:focus-visible, .historico-serie-form select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .historico-serie-form-acoes { display: flex; gap: 6px; flex: 0 0 auto; }
 .historico-serie-form-acoes button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: none; font-family: inherit; font-weight: 700; font-size: 0.76rem; cursor: pointer; }
 .historico-serie-form-acoes .salvar { background: var(--accent); color: var(--accent-ink); }
 .historico-serie-form-acoes .cancelar { background: var(--card); color: var(--ink-dim); }
+
+.historico-adicionar-serie {
+  display: block; width: 100%; margin-top: 2px; padding: 9px 0; border-radius: 12px;
+  border: 1px dashed var(--line); background: transparent; color: var(--ink-faint);
+  font-family: inherit; font-size: 0.76rem; font-weight: 700; cursor: pointer;
+}
+.historico-adicionar-serie:hover { color: var(--accent); border-color: var(--accent); }
+.historico-adicionar-serie[hidden] { display: none; }
 
 /* Aba Treinos (antiga Divisão) — fita do ciclo, dia detalhado, cobertura
    por músculo, sessões recentes com lançamento retroativo, calendário. */

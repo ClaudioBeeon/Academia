@@ -41,6 +41,19 @@ function montarHeatmapCobertura(cobertura) {
   card.className = "exercise-card";
   card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Cobertura muscular</div><div class="exercise-meta">7 dias</div></div>`;
 
+  // Sem isso o card simplesmente sumia da tela quando não há série nos
+  // últimos 7 dias — parecia que a funcionalidade nem existia, diferente do
+  // resto da tela (Postura, por exemplo), que sempre mostra algum estado
+  // vazio explicando o que falta.
+  if (cobertura.length === 0) {
+    const vazio = document.createElement("p");
+    vazio.className = "prev-hint";
+    vazio.style.cssText = "padding:0 18px 18px;";
+    vazio.textContent = "Nenhuma série registrada nos últimos 7 dias — treine algo pra ver a cobertura por músculo aqui.";
+    card.appendChild(vazio);
+    return card;
+  }
+
   const grid = document.createElement("div");
   grid.className = "heatmap-cobertura";
   for (const item of cobertura) {
@@ -115,7 +128,7 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     const definicaoFase = protocolo?.volumeSemanalPorFase?.[perfil?.fase?.atual ?? "definicao"];
     const seriesUltimos7Dias = todasAsSeries.filter((s) => s.data >= subtrairDias(hoje, 6));
     const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias, definicaoFase });
-    if (cobertura.length > 0) main.appendChild(montarHeatmapCobertura(cobertura));
+    main.appendChild(montarHeatmapCobertura(cobertura));
 
     montarSecaoCarga(main, exercicios, todasAsSeries);
     montarSecaoVolume(main, todasAsSeries);
@@ -250,6 +263,23 @@ function criarSvgLinha(pontos) {
     svg.appendChild(circulo);
   });
 
+  // Com poucos pontos a linha some (1 ponto) ou quase não diz nada (2-4) — o
+  // valor precisa aparecer escrito, senão sobra só uma bolinha sem
+  // significado nenhum (era o caso do peso/1RM com um único registro).
+  if (pontos.length <= 4) {
+    pontos.forEach((p, i) => {
+      const valorLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      valorLabel.setAttribute("x", escalaX(i));
+      valorLabel.setAttribute("y", escalaY(p.valor) - 8);
+      valorLabel.setAttribute("font-size", "11");
+      valorLabel.setAttribute("font-weight", "700");
+      valorLabel.setAttribute("fill", "var(--ink)");
+      valorLabel.setAttribute("text-anchor", "middle");
+      valorLabel.textContent = Number.isInteger(p.valor) ? p.valor : p.valor.toFixed(1);
+      svg.appendChild(valorLabel);
+    });
+  }
+
   const passoRotulo = Math.max(1, Math.ceil(pontos.length / 6));
   pontos.forEach((p, i) => {
     if (i % passoRotulo !== 0 && i !== pontos.length - 1) return;
@@ -271,7 +301,11 @@ function criarSvgBarras(semanas) {
   const altura = 100;
   const margem = 16;
   const maxValor = Math.max(...semanas.map((s) => s.volume), 1);
-  const larguraBarra = (largura - margem * 2) / semanas.length;
+  const slotBarra = (largura - margem * 2) / semanas.length;
+  // Sem isso, com 1-2 semanas de dado a barra ocupa o slot inteiro e vira um
+  // bloco sólido sem forma de "barra" nenhuma — trava a largura num valor
+  // razoável mesmo quando o slot disponível é bem maior.
+  const larguraBarra = Math.min(slotBarra - 4, 44);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", `0 0 ${largura} ${altura + 16}`);
@@ -279,16 +313,44 @@ function criarSvgBarras(semanas) {
   svg.style.display = "block";
 
   semanas.forEach((s, i) => {
+    const centroSlot = margem + i * slotBarra + slotBarra / 2;
     const alturaBarra = (s.volume / maxValor) * (altura - margem);
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", String(margem + i * larguraBarra + 2));
+    rect.setAttribute("x", String(centroSlot - larguraBarra / 2));
     rect.setAttribute("y", String(altura - alturaBarra));
-    rect.setAttribute("width", String(Math.max(larguraBarra - 4, 1)));
+    rect.setAttribute("width", String(Math.max(larguraBarra, 1)));
     rect.setAttribute("height", String(alturaBarra));
     rect.setAttribute("fill", "var(--accent)");
     rect.setAttribute("rx", "2");
     svg.appendChild(rect);
+
+    // Mesma lógica do gráfico de linha: sem o número escrito, uma barra
+    // sozinha não diz quase nada além de "existe volume".
+    const valorLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    valorLabel.setAttribute("x", String(centroSlot));
+    valorLabel.setAttribute("y", String(altura - alturaBarra - 6));
+    valorLabel.setAttribute("font-size", "10");
+    valorLabel.setAttribute("font-weight", "700");
+    valorLabel.setAttribute("fill", "var(--ink)");
+    valorLabel.setAttribute("text-anchor", "middle");
+    valorLabel.textContent = Math.round(s.volume);
+    svg.appendChild(valorLabel);
   });
+
+  // Com uma única semana, "início" e "fim" são a mesma coisa — repetir o
+  // mesmo rótulo nas duas pontas parecia um bug de renderização. Uma semana
+  // só, centralizada, é o que realmente está sendo mostrado.
+  if (semanas.length === 1) {
+    const rotuloUnico = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    rotuloUnico.setAttribute("x", String(largura / 2));
+    rotuloUnico.setAttribute("y", String(altura + 12));
+    rotuloUnico.setAttribute("font-size", "9");
+    rotuloUnico.setAttribute("fill", "var(--ink-faint)");
+    rotuloUnico.setAttribute("text-anchor", "middle");
+    rotuloUnico.textContent = semanas[0].semana;
+    svg.appendChild(rotuloUnico);
+    return svg;
+  }
 
   const rotuloPrimeira = document.createElementNS("http://www.w3.org/2000/svg", "text");
   rotuloPrimeira.setAttribute("x", String(margem));

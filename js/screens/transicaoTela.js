@@ -51,6 +51,10 @@ export async function trocarConteudo(container, montarNovaTela, { direcao = "tro
   }
 
   container.appendChild(novaTela);
+  // Toda troca de tela é uma tela nova aos olhos do usuário — sem isso, trocar
+  // de aba ou abrir uma tela depois de rolar a anterior pra baixo abre no meio
+  // do conteúdo em vez do topo, bem desorientador.
+  window.scrollTo(0, 0);
   animarSpring(novaTela, { x: entradaX, opacity: 0 }, { x: 0, opacity: 1 });
 
   return novaTela;

@@ -55,6 +55,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
 
   main.appendChild(criarSecaoBolhaFlutuante(db));
   main.appendChild(await criarSecaoDiaDoCiclo(db));
+  main.appendChild(await criarSecaoPerfil(db));
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini(db));
@@ -198,7 +199,7 @@ async function criarSecaoSupabase(db) {
             <label>URL do projeto Supabase<input name="url" type="text" placeholder="https://xxxx.supabase.co" /></label>
           </div>
           <div class="set-field">
-            <label>Chave anon (pública) do projeto<input name="anonKey" type="password" /></label>
+            <label>Chave anon (pública) do projeto<input name="anonKey" type="password" autocomplete="off" /></label>
           </div>
           <button type="submit" class="swap-pill">Salvar credenciais</button>
         </form>
@@ -404,7 +405,7 @@ function criarSecaoGemini(db) {
     <div class="exercise-head"><div class="exercise-name">Chave de IA (Gemini)</div></div>
     <form class="sets gemini-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — sincroniza pela sua conta (se estiver logado em Config), sobrevive a reinstalar o app<input name="chave" type="password" /></label>
+        <label>Chave de API — sincroniza pela sua conta (se estiver logado em Config), sobrevive a reinstalar o app<input name="chave" type="password" autocomplete="off" /></label>
       </div>
       <div class="set-field" style="grid-column:1/-1;">
         <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)<input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" /></label>
@@ -575,6 +576,64 @@ function criarBlocoInformativo(titulo, itens) {
 function dataDeHoje() {
   const agora = new Date();
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+}
+
+// Idade, altura e sexo só eram preenchidos na semeadura inicial (data/perfil.json)
+// ou (idade) uma vez, no formulário travado da Dieta — sem nenhum lugar pra
+// corrigir depois se algo entrou errado. Como os três alimentam o cálculo de
+// TMB (Mifflin-St Jeor, js/engine/nutricao.js), um erro aqui fica preso pra
+// sempre até editar o backup JSON na mão. Peso já é editável em Evolução
+// (é medida que muda com frequência) — não duplicado aqui de propósito.
+async function criarSecaoPerfil(db) {
+  const perfil = await get(db, "perfil", "1.0");
+  const dadosBasicos = perfil?.dadosBasicos ?? {};
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Dados do perfil</div></div>`;
+
+  const form = document.createElement("form");
+  form.className = "sets";
+  form.style.padding = "0 18px 18px";
+  form.innerHTML = `
+    <div class="set-field">
+      <label>Idade<input name="idade" type="number" min="10" max="100" /></label>
+    </div>
+    <div class="set-field">
+      <label>Altura (cm)<input name="altura_cm" type="number" min="100" max="250" /></label>
+    </div>
+    <div class="set-field" style="grid-column:1/-1;">
+      <label>Sexo (usado na fórmula de TMB — Mifflin-St Jeor)
+        <select name="sexo">
+          <option value="masculino">Masculino</option>
+          <option value="feminino">Feminino</option>
+        </select>
+      </label>
+    </div>
+    <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
+    <div class="prev-hint perfil-status" style="grid-column:1/-1;"></div>
+  `;
+  if (dadosBasicos.idade != null) form.idade.value = dadosBasicos.idade;
+  if (dadosBasicos.altura_cm != null) form.altura_cm.value = dadosBasicos.altura_cm;
+  form.sexo.value = dadosBasicos.sexo ?? "masculino";
+  card.appendChild(form);
+
+  const status = form.querySelector(".perfil-status");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const idade = Number(form.idade.value) || undefined;
+    const altura_cm = Number(form.altura_cm.value) || undefined;
+    const sexo = form.sexo.value;
+    const perfilAtual = (await get(db, "perfil", "1.0")) ?? perfil;
+    const perfilAtualizado = {
+      ...perfilAtual,
+      dadosBasicos: { ...perfilAtual?.dadosBasicos, idade, altura_cm, sexo },
+    };
+    await put(db, "perfil", perfilAtualizado);
+    status.textContent = "Salvo.";
+  });
+
+  return card;
 }
 
 async function criarSecaoEquipamento(db) {

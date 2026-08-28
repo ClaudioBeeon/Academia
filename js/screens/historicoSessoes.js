@@ -45,13 +45,13 @@ function opcoesDeExercicio(exerciciosOrdenados, selecionadoId) {
     .join("");
 }
 
-export async function montarTelaHistoricoSessoes(db, { aoVoltar } = {}) {
+export async function montarTelaHistoricoSessoes(db, { aoVoltar, origemLabel = "Evolução" } = {}) {
   const root = document.createElement("div");
   root.className = "tela-historico-sessoes";
 
   const header = document.createElement("header");
   header.className = "top";
-  header.innerHTML = `<div><div class="date-label">Evolução</div><div class="day-title">Histórico de treinos</div></div>`;
+  header.innerHTML = `<div><div class="date-label">${origemLabel}</div><div class="day-title">Histórico de treinos</div></div>`;
   root.appendChild(header);
 
   if (aoVoltar) {

@@ -57,7 +57,7 @@ async function bootstrap() {
   // atrasa a abertura do app: initAutoSync() não é awaited.
   if (supabaseConfigurado()) initAutoSync(db);
 
-  renderShell(db);
+  const { renderTab, obterTabAtual } = renderShell(db);
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
 
   // Dispara uma vez por abertura do app (não por troca de aba), com o que
@@ -67,9 +67,13 @@ async function bootstrap() {
   const hoje = obterDataLocal();
   const [habitoHoje, checkinHoje, seriesDeHoje] = await Promise.all([getHabito(db, hoje), getCheckin(db, hoje), getSeriesDoDia(db, hoje)]);
   const treinouHoje = seriesDeHoje.length > 0;
-  montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje, treinouHoje).catch((err) =>
-    console.error("Falha ao montar o popup de perguntas diárias:", err)
-  );
+  montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje, treinouHoje, {
+    // Sem isso, os chips de hábito e o readiness score na tela por trás do
+    // popup ficavam com os valores de antes das respostas até a pessoa dar
+    // reload — as respostas salvavam certinho no banco, só a tela que não
+    // sabia que precisava se redesenhar.
+    aoFechar: () => renderTab(obterTabAtual()),
+  }).catch((err) => console.error("Falha ao montar o popup de perguntas diárias:", err));
 }
 
 function obterDataLocal() {
@@ -117,6 +121,7 @@ async function verificarEEnviarLembretes(db) {
 function renderShell(db) {
   const content = document.getElementById("tab-content");
   const tabs = document.querySelectorAll("#tab-bar button");
+  let tabAtual = "hoje";
 
   if (!document.querySelector(".widget-flutuante")) {
     document.body.appendChild(montarWidgetFlutuante());
@@ -196,6 +201,7 @@ function renderShell(db) {
   }
 
   const renderTab = async (tabName, direcao = "trocarAba") => {
+    tabAtual = tabName;
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
     try {
@@ -250,6 +256,7 @@ function renderShell(db) {
         await trocarConteudo(content, () => montarTelaEvolucao(db, {
           onAbrirHistoricoTreinos: () => trocarConteudo(content, () => montarTelaHistoricoSessoes(db, {
             aoVoltar: () => renderTab("evolucao", "voltar"),
+            origemLabel: "Evolução",
           }), { direcao: "avancar" }),
         }), { direcao });
         return;
@@ -258,6 +265,7 @@ function renderShell(db) {
         await trocarConteudo(content, () => montarTelaDivisao(db, {
           onAbrirHistoricoTreinos: () => trocarConteudo(content, () => montarTelaHistoricoSessoes(db, {
             aoVoltar: () => renderTab("divisao", "voltar"),
+            origemLabel: "Treinos",
           }), { direcao: "avancar" }),
         }), { direcao });
         return;
@@ -318,6 +326,7 @@ function renderShell(db) {
   })();
 
   renderTab("hoje");
+  return { renderTab, obterTabAtual: () => tabAtual };
 }
 
 bootstrap().catch((err) => {

@@ -139,8 +139,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   root.className = "tela-execucao";
 
   const header = document.createElement("header");
-  header.className = "top";
-  header.style.alignItems = "center";
+  header.className = "top exec-header";
   header.innerHTML = `
     <div style="display:flex; align-items:center; gap:12px;">
       <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">←</button>

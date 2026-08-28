@@ -145,7 +145,7 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) 
   const refeicoes = dietaBase?.dietaBase ?? {};
   const ordemCompleta = ordenarChavesRefeicoes(dietaBase);
   const detalhePorRefeicao = [];
-  const total = { kcal: 0, proteina_g: 0, carboidrato_g: 0, gordura_g: 0 };
+  const total = { kcal: 0, proteina_g: 0, carboidrato_g: 0, gordura_g: 0, fibra_g: 0 };
 
   for (const chave of ordemCompleta) {
     const refeicao = refeicoes[chave];
@@ -166,6 +166,7 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) 
       total.proteina_g += opcao.totalEstimado.proteina_g;
       total.carboidrato_g += opcao.totalEstimado.carboidrato_g;
       total.gordura_g += opcao.totalEstimado.gordura_g;
+      total.fibra_g += opcao.totalEstimado.fibra_g ?? 0;
     }
 
     detalhePorRefeicao.push({ chave, nome: refeicao.nome, opcoes: opcoesEscolhidas, confirmada });
@@ -179,6 +180,7 @@ export function calcularTotalDoDia(dietaBase, selecoes = {}, dataDeHoje = null) 
     total.proteina_g += alimento.proteina_g ?? 0;
     total.carboidrato_g += alimento.carboidrato_g ?? 0;
     total.gordura_g += alimento.gordura_g ?? 0;
+    total.fibra_g += alimento.fibra_g ?? 0;
   }
 
   return { total, detalhePorRefeicao, alimentosPessoaisDoDia };

@@ -12,6 +12,8 @@ import { getCardioRecente } from "../data/cardio.js";
 import { getFicha, getInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
+import { calcularSequenciaDias } from "../engine/consistencia.js";
+import { calcularReadiness } from "../engine/readiness.js";
 import { abrirNovaAtividade } from "./novaAtividade.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 
@@ -51,7 +53,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
-  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco, habito, perfil] = await Promise.all([
+  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco, habito, perfil, todosCardios, todosRegistrosDiarios] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
@@ -60,7 +62,23 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     getInicioDoBloco(db),
     getHabito(db, hoje),
     get(db, "perfil", "1.0"),
+    getAll(db, "registrosCardio"),
+    getAll(db, "registrosDiarios"),
   ]);
+  // Sequência de dias seguidos com pelo menos uma atividade — treino,
+  // cardio ou refeição marcada na dieta — mesmo reforço de consistência
+  // que qualquer app de hábito usa (Duolingo, Strava).
+  const datasComAtividade = new Set([
+    ...todasAsSeries.filter((s) => s.tipoSerie !== "aquecimento").map((s) => s.data),
+    ...todosCardios.map((c) => c.data),
+    ...todosRegistrosDiarios.filter((r) => r.refeicoes && Object.keys(r.refeicoes).length > 0).map((r) => r.data),
+  ]);
+  const sequenciaDias = calcularSequenciaDias(datasComAtividade, hoje);
+  const readiness = calcularReadiness({
+    sonoOntem: habito?.sonoOntem ?? null,
+    alcoolOntem: habito?.alcool === true,
+    sequenciaDias,
+  });
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
@@ -84,6 +102,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     <div>
       <div class="day-title">${saudacaoPorHorario()} 👋</div>
       <div class="date-label">${DIAS_SEMANA_EXTENSO[new Date().getDay()]} · Dia ${diaDaSessao} do ciclo</div>
+      ${sequenciaDias > 0 ? `<div class="sequencia-chip">${ICONE_CHAMA}<span>${sequenciaDias} dia${sequenciaDias === 1 ? "" : "s"} seguido${sequenciaDias === 1 ? "" : "s"}</span></div>` : ""}
     </div>
     <div class="icon-row">
       <button type="button" class="icon-btn" aria-label="Notificações">${ICONE_SINO}${statusPermissao() === "default" ? '<i class="badge-dot" aria-hidden="true"></i>' : ""}</button>
@@ -120,6 +139,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const main = document.createElement("main");
   root.appendChild(main);
 
+  main.appendChild(montarCardReadiness(readiness));
   main.appendChild(montarChipsHabitos(controladorHabitos));
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
@@ -281,6 +301,26 @@ function montarChipsHabitos(controlador) {
   ]));
   linha.appendChild(criarChipToggle(controlador, "alcool", "Álcool"));
   return linha;
+}
+
+const CATEGORIA_READINESS_LABEL = { otimo: "Ótimo", bom: "Bom", atencao: "Atenção", baixo: "Baixo" };
+
+function montarCardReadiness(readiness) {
+  const card = document.createElement("section");
+  card.className = "exercise-card readiness-card";
+  card.innerHTML = `
+    <div class="exercise-head">
+      <div class="exercise-name">Como você está hoje</div>
+      <div class="readiness-score readiness-${readiness.categoria}">${readiness.score}</div>
+    </div>
+    <div class="readiness-body">
+      <div class="readiness-categoria">${CATEGORIA_READINESS_LABEL[readiness.categoria]}</div>
+      ${readiness.fatores.length > 0
+        ? `<ul class="readiness-fatores">${readiness.fatores.map((f) => `<li>${f}</li>`).join("")}</ul>`
+        : `<p class="readiness-fatores-vazio">Nenhum fator negativo registrado — segue no ritmo.</p>`}
+    </div>
+  `;
+  return card;
 }
 
 function horaAgora(agora = new Date()) {

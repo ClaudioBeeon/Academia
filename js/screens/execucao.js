@@ -63,6 +63,39 @@ function esperar(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Discos visuais das anilhas por lado da barra — antes só existia como
+// texto ("20 + 10 + 5 kg"), obrigando a converter número em imagem mental
+// no meio do treino. Tamanho do disco escala com o peso (mesma lógica
+// visual de anilha de academia de verdade: mais pesada, mais larga).
+function montarVisualAnilhas(anilhasPorLado, pesoBarra) {
+  const wrap = document.createElement("div");
+  wrap.className = "anilhas-visual-linha";
+
+  const barraEl = document.createElement("div");
+  barraEl.className = "anilha-barra-rotulo";
+  barraEl.textContent = `${formatarNumero(pesoBarra)}`;
+  wrap.appendChild(barraEl);
+
+  if (anilhasPorLado.length === 0) {
+    const vazio = document.createElement("div");
+    vazio.className = "anilha-disco-vazio";
+    vazio.textContent = "só a barra";
+    wrap.appendChild(vazio);
+    return wrap;
+  }
+
+  for (const peso of anilhasPorLado) {
+    const disco = document.createElement("div");
+    disco.className = "anilha-disco";
+    const tamanho = Math.max(30, Math.min(58, 22 + peso * 1.3));
+    disco.style.width = `${tamanho}px`;
+    disco.style.height = `${tamanho}px`;
+    disco.textContent = formatarNumero(peso);
+    wrap.appendChild(disco);
+  }
+  return wrap;
+}
+
 export async function montarTelaExecucao(db, contexto, callbacks) {
   const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
   const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onMinimizarSessao } = callbacks;
@@ -235,11 +268,13 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
             <div class="prev-hint">
               <b>Anilhas para ${pesoAlvo} kg:</b> ${textoAnilhas}${anilhas.atingivel ? "" : ` (falta ${anilhas.restante} kg por lado)`}
             </div>
+            <div class="anilhas-visual"></div>
             <div class="prev-hint">
               <b>Aquecimento:</b> ${textoAquecimento || "—"}
             </div>
           </div>
         `;
+        painelFerramentas.querySelector(".anilhas-visual").appendChild(montarVisualAnilhas(anilhas.anilhasPorLado, equipamento.pesoBarra));
       }
       painelFerramentas.classList.toggle("aberto", abrindo);
     });

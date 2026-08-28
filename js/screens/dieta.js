@@ -1,9 +1,9 @@
 // js/screens/dieta.js
 import { get, put } from "../data/db.js";
-import { getDietaBase, getSelecoesDoDia, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao, ordenarChavesRefeicoes } from "../data/dieta.js";
+import { getDietaBase, getSelecoesDoDia, getSelecoesRecentes, salvarSelecaoRefeicao, adicionarAlimentoPessoal, calcularTotalDoDia, adicionarRefeicao, removerRefeicao, adicionarOpcaoRefeicao, removerOpcaoRefeicao, ordenarChavesRefeicoes } from "../data/dieta.js";
 import { getMedidas } from "../data/medidas.js";
 import { getCheckin, registrarCheckin } from "../data/checkin.js";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia, pisoGorduraDiaria } from "../engine/nutricao.js";
+import { calcularTMB, calcularMetaCaloricaAdaptativa, checarAdequacaoNutricional, calcularMetaProteina, avaliarProteinaDoDia, pisoGorduraDiaria } from "../engine/nutricao.js";
 import { interpretarComida, interpretarComidaPorFoto, gerarResumoNutricionalDoDia, responderPerguntaDieta, getApiKey } from "../ai/gemini.js";
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 import { confirmarAcao } from "./confirmarAcao.js";
@@ -146,6 +146,7 @@ export async function montarTelaDieta(db) {
         <div class="stat-tile"><b>${total.proteina_g.toFixed(0)}g</b><span>Proteína</span></div>
         <div class="stat-tile"><b>${total.carboidrato_g.toFixed(0)}g</b><span>Carboidrato</span></div>
         <div class="stat-tile"><b>${total.gordura_g.toFixed(1)}g</b><span>Gordura</span></div>
+        <div class="stat-tile"><b>${total.fibra_g.toFixed(1)}g</b><span>Fibra</span></div>
       </div>
       ${detalhePorRefeicao.some((r) => !r.confirmada)
         ? `<div class="prev-hint" style="padding:0 18px 14px;">Refeições sem marcação ainda não entram nesse total — marque o que você comeu acima.</div>`
@@ -192,12 +193,21 @@ export async function montarTelaDieta(db) {
     });
     const medidas = await getMedidas(db);
     const historicoPesoTendencia = medidas.filter((m) => m.peso_kg != null);
-    const metaCalorica = calcularMetaCalorica({ tmb, fase: perfil.fase?.atual, historicoPesoTendencia });
+    // Janela de 30 dias (não só os 14 mínimos) pra tolerar dias sem refeição
+    // marcada no meio do caminho e ainda assim ter os 14 dias exigidos de
+    // dieta registrada dentro do intervalo.
+    const selecoesRecentes = await getSelecoesRecentes(db, 30);
+    const totaisDiariosRecentes = selecoesRecentes.map(
+      (registro) => calcularTotalDoDia(dietaBase, registro.refeicoes, registro.data).total
+    );
+    const metaCalorica = calcularMetaCaloricaAdaptativa({
+      tmb, fase: perfil.fase?.atual, historicoPesoTendencia, totaisDiariosRecentes,
+    });
     const alertas = checarAdequacaoNutricional({
       totalDia: total,
       metaCalorica,
       pesoKg: perfil.dadosBasicos.peso_kg,
-      temFibraOuVegetais: false,
+      fibraG: total.fibra_g,
       metaProteina,
     });
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcularTMB, calcularMetaCalorica, checarAdequacaoNutricional, pisoCaloricoSeguranca, avaliarDeficitConsistente, calcularMetaProteina, avaliarProteinaDoDia } from "./nutricao.js";
+import { calcularTMB, calcularMetaCalorica, calcularMetaCaloricaAdaptativa, checarAdequacaoNutricional, pisoCaloricoSeguranca, avaliarDeficitConsistente, calcularMetaProteina, avaliarProteinaDoDia, calcularMetaFibra } from "./nutricao.js";
 
 test("calcularTMB usa Mifflin-St Jeor para homem", () => {
   const tmb = calcularTMB({ sexo: "masculino", pesoKg: 71, alturaCm: 170, idade: 30 });
@@ -43,7 +43,7 @@ test("checarAdequacaoNutricional avisa quando total fica abaixo do piso de segur
     totalDia: { kcal: 1200, proteina_g: 100, carboidrato_g: 50, gordura_g: 40 },
     metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500, meta_kcal: 1360 },
     pesoKg: 71,
-    temFibraOuVegetais: true,
+    fibraG: 20,
   });
   assert.ok(alertas.some((a) => a.eixo === "calorias"));
 });
@@ -53,19 +53,39 @@ test("checarAdequacaoNutricional avisa quando gordura fica abaixo de 0.5g/kg", (
     totalDia: { kcal: 1600, proteina_g: 150, carboidrato_g: 80, gordura_g: 20 },
     metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500, meta_kcal: 1360 },
     pesoKg: 71,
-    temFibraOuVegetais: true,
+    fibraG: 20,
   });
   assert.ok(alertas.some((a) => a.eixo === "gordura"));
 });
 
-test("checarAdequacaoNutricional sinaliza lacuna de fibra/variedade quando não há vegetais", () => {
+test("checarAdequacaoNutricional sinaliza lacuna de fibra quando fica abaixo da referência de 14g/1000kcal", () => {
   const alertas = checarAdequacaoNutricional({
     totalDia: { kcal: 1600, proteina_g: 150, carboidrato_g: 80, gordura_g: 60 },
     metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500, meta_kcal: 1360 },
     pesoKg: 71,
-    temFibraOuVegetais: false,
+    fibraG: 5,
   });
   assert.ok(alertas.some((a) => a.eixo === "fibraEVariedade"));
+});
+
+test("checarAdequacaoNutricional não sinaliza fibra quando já bate a referência", () => {
+  const alertas = checarAdequacaoNutricional({
+    totalDia: { kcal: 1600, proteina_g: 150, carboidrato_g: 80, gordura_g: 60 },
+    metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500, meta_kcal: 1360 },
+    pesoKg: 71,
+    fibraG: 25,
+  });
+  assert.equal(alertas.find((a) => a.eixo === "fibraEVariedade"), undefined);
+});
+
+test("calcularMetaFibra escala 14g por 1000kcal (referência USDA)", () => {
+  assert.equal(calcularMetaFibra(2000), 28);
+  assert.equal(calcularMetaFibra(1360), 19);
+});
+
+test("calcularMetaFibra retorna null sem meta calórica válida", () => {
+  assert.equal(calcularMetaFibra(0), null);
+  assert.equal(calcularMetaFibra(undefined), null);
 });
 
 test("avaliarDeficitConsistente retorna false sem dias registrados", () => {
@@ -105,7 +125,7 @@ test("checarAdequacaoNutricional não gera alertas quando tudo está dentro das 
     totalDia: { kcal: 1650, proteina_g: 150, carboidrato_g: 80, gordura_g: 60 },
     metaCalorica: { tmb_kcal: 1700, piso_kcal: 1500, meta_kcal: 1360 },
     pesoKg: 71,
-    temFibraOuVegetais: true,
+    fibraG: 20,
   });
   assert.deepEqual(alertas, []);
 });
@@ -148,7 +168,7 @@ test("checarAdequacaoNutricional inclui o eixo proteína quando a meta é inform
     totalDia: { kcal: 1800, proteina_g: 90, gordura_g: 60 },
     metaCalorica: { meta_kcal: 1800, piso_kcal: 1500, tmb_kcal: 1650 },
     pesoKg: 71,
-    temFibraOuVegetais: true,
+    fibraG: 30,
     metaProteina: meta,
   });
   const proteina = alertas.find((a) => a.eixo === "proteina");
@@ -161,7 +181,58 @@ test("checarAdequacaoNutricional não quebra quando metaProteina não é passada
     totalDia: { kcal: 1800, proteina_g: 90, gordura_g: 60 },
     metaCalorica: { meta_kcal: 1800, piso_kcal: 1500, tmb_kcal: 1650 },
     pesoKg: 71,
-    temFibraOuVegetais: true,
+    fibraG: 30,
   });
   assert.equal(alertas.find((a) => a.eixo === "proteina"), undefined);
+});
+
+test("calcularMetaCaloricaAdaptativa cai pro cálculo padrão sem dados suficientes de peso", () => {
+  const meta = calcularMetaCaloricaAdaptativa({
+    tmb: 1700, fase: "definicao",
+    historicoPesoTendencia: [{ data: "2026-08-01", peso_kg: 80 }],
+    totaisDiariosRecentes: Array.from({ length: 20 }, () => ({ kcal: 1800 })),
+  });
+  assert.equal(meta.adaptativa, false);
+  assert.equal(meta.tdeeEstimado, null);
+});
+
+test("calcularMetaCaloricaAdaptativa cai pro cálculo padrão sem dieta suficiente registrada", () => {
+  const meta = calcularMetaCaloricaAdaptativa({
+    tmb: 1700, fase: "definicao",
+    historicoPesoTendencia: [
+      { data: "2026-08-01", peso_kg: 80 },
+      { data: "2026-08-15", peso_kg: 79 },
+    ],
+    totaisDiariosRecentes: [{ kcal: 1800 }, { kcal: 1800 }],
+  });
+  assert.equal(meta.adaptativa, false);
+});
+
+test("calcularMetaCaloricaAdaptativa recalibra a meta a partir do TDEE real (peso + dieta o bastante)", () => {
+  const meta = calcularMetaCaloricaAdaptativa({
+    tmb: 1700, fase: "definicao",
+    historicoPesoTendencia: [
+      { data: "2026-08-01", peso_kg: 80 },
+      { data: "2026-08-15", peso_kg: 79 },
+    ],
+    totaisDiariosRecentes: Array.from({ length: 14 }, () => ({ kcal: 1800 })),
+  });
+  assert.equal(meta.adaptativa, true);
+  assert.equal(meta.tdeeEstimado, 2350);
+  assert.equal(meta.meta_kcal, 1880);
+  assert.ok(meta.meta_kcal >= meta.piso_kcal);
+});
+
+test("calcularMetaCaloricaAdaptativa nunca deixa a meta cair abaixo do piso de segurança", () => {
+  // Cenário extremo de propósito (ganhou peso comendo pouco) só pra forçar
+  // um TDEE estimado bem baixo e confirmar que o piso segura a meta.
+  const meta = calcularMetaCaloricaAdaptativa({
+    tmb: 1700, fase: "definicao",
+    historicoPesoTendencia: [
+      { data: "2026-08-01", peso_kg: 70 },
+      { data: "2026-08-15", peso_kg: 72 },
+    ],
+    totaisDiariosRecentes: Array.from({ length: 14 }, () => ({ kcal: 1200 })),
+  });
+  assert.equal(meta.meta_kcal, meta.piso_kcal);
 });

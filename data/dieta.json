@@ -10,10 +10,10 @@
         {
           "id": "unica",
           "alimentos": [
-            { "nome": "banana", "quantidade": "2 unidades médias", "kcal": 210, "proteina_g": 2.6, "carboidrato_g": 54, "gordura_g": 0.8, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "morango", "quantidade": "4 unidades médias", "kcal": 16, "proteina_g": 0.3, "carboidrato_g": 4, "gordura_g": 0.1, "estimativa": true, "margemPercentual": 20 }
+            { "nome": "banana", "quantidade": "2 unidades médias", "kcal": 210, "proteina_g": 2.6, "carboidrato_g": 54, "gordura_g": 0.8, "fibra_g": 6.2, "estimativa": true, "margemPercentual": 15 },
+            { "nome": "morango", "quantidade": "4 unidades médias", "kcal": 16, "proteina_g": 0.3, "carboidrato_g": 4, "gordura_g": 0.1, "fibra_g": 1.5, "estimativa": true, "margemPercentual": 20 }
           ],
-          "totalEstimado": { "kcal": 226, "proteina_g": 2.9, "carboidrato_g": 58, "gordura_g": 0.9 }
+          "totalEstimado": { "kcal": 226, "proteina_g": 2.9, "carboidrato_g": 58, "gordura_g": 0.9, "fibra_g": 7.7 }
         }
       ]
     },
@@ -23,9 +23,9 @@
         {
           "id": "unica",
           "alimentos": [
-            { "nome": "bife de frango grelhado", "quantidade": "3 unidades (~100-120g cada)", "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12, "estimativa": true, "margemPercentual": 20 }
+            { "nome": "bife de frango grelhado", "quantidade": "3 unidades (~100-120g cada)", "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
           ],
-          "totalEstimado": { "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12 }
+          "totalEstimado": { "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12, "fibra_g": 0 }
         }
       ]
     },
@@ -35,27 +35,27 @@
         {
           "id": "whey",
           "alimentos": [
-            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "estimativa": true, "margemPercentual": 10 }
+            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 }
           ],
-          "totalEstimado": { "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5 }
+          "totalEstimado": { "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0 }
         },
         {
           "id": "fruta",
           "alimentos": [
-            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "morango", "quantidade": "3 unidades médias", "kcal": 12, "proteina_g": 0.3, "carboidrato_g": 3, "gordura_g": 0.1, "estimativa": true, "margemPercentual": 20 }
+            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "fibra_g": 3.1, "estimativa": true, "margemPercentual": 15 },
+            { "nome": "morango", "quantidade": "3 unidades médias", "kcal": 12, "proteina_g": 0.3, "carboidrato_g": 3, "gordura_g": 0.1, "fibra_g": 1.2, "estimativa": true, "margemPercentual": 20 }
           ],
-          "totalEstimado": { "kcal": 117, "proteina_g": 1.6, "carboidrato_g": 30, "gordura_g": 0.5 }
+          "totalEstimado": { "kcal": 117, "proteina_g": 1.6, "carboidrato_g": 30, "gordura_g": 0.5, "fibra_g": 4.3 }
         },
         {
           "id": "iogurte_whey_fruta_aveia",
           "alimentos": [
-            { "nome": "iogurte grego caseiro (leite proteico Camponesa + fermento + leite em pó)", "quantidade": "200g", "kcal": 138, "proteina_g": 15.5, "carboidrato_g": 13.9, "gordura_g": 1.2, "estimativa": true, "margemPercentual": 20 },
-            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "estimativa": true, "margemPercentual": 10 },
-            { "nome": "aveia em flocos", "quantidade": "30g (3 colheres de sopa)", "kcal": 117, "proteina_g": 4.2, "carboidrato_g": 20.1, "gordura_g": 2.1, "estimativa": true, "margemPercentual": 15 }
+            { "nome": "iogurte grego caseiro (leite proteico Camponesa + fermento + leite em pó)", "quantidade": "200g", "kcal": 138, "proteina_g": 15.5, "carboidrato_g": 13.9, "gordura_g": 1.2, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 },
+            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "fibra_g": 3.1, "estimativa": true, "margemPercentual": 15 },
+            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 },
+            { "nome": "aveia em flocos", "quantidade": "30g (3 colheres de sopa)", "kcal": 117, "proteina_g": 4.2, "carboidrato_g": 20.1, "gordura_g": 2.1, "fibra_g": 3, "estimativa": true, "margemPercentual": 15 }
           ],
-          "totalEstimado": { "kcal": 480, "proteina_g": 45, "carboidrato_g": 64, "gordura_g": 5.2 }
+          "totalEstimado": { "kcal": 480, "proteina_g": 45, "carboidrato_g": 64, "gordura_g": 5.2, "fibra_g": 6.1 }
         }
       ],
       "obs": "usuário alterna entre as opções; app deve perguntar qual foi usada no dia, não presumir a primeira"
@@ -66,24 +66,24 @@
         {
           "id": "ovos_cozidos",
           "alimentos": [
-            { "nome": "ovo cozido", "quantidade": "3 unidades", "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16, "estimativa": true, "margemPercentual": 10 }
+            { "nome": "ovo cozido", "quantidade": "3 unidades", "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 }
           ],
-          "totalEstimado": { "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16 }
+          "totalEstimado": { "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16, "fibra_g": 0 }
         },
         {
           "id": "omelete",
           "alimentos": [
-            { "nome": "omelete de 3 ovos", "quantidade": "3 ovos + fio de óleo", "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20, "estimativa": true, "margemPercentual": 20 }
+            { "nome": "omelete de 3 ovos", "quantidade": "3 ovos + fio de óleo", "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
           ],
-          "totalEstimado": { "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20 }
+          "totalEstimado": { "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20, "fibra_g": 0 }
         },
         {
           "id": "pao_com_ovos",
           "alimentos": [
-            { "nome": "pão francês", "quantidade": "1 unidade", "kcal": 150, "proteina_g": 4, "carboidrato_g": 28, "gordura_g": 1.5, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "ovo mexido/frito", "quantidade": "2 unidades", "kcal": 210, "proteina_g": 13, "carboidrato_g": 1, "gordura_g": 16, "estimativa": true, "margemPercentual": 20 }
+            { "nome": "pão francês", "quantidade": "1 unidade", "kcal": 150, "proteina_g": 4, "carboidrato_g": 28, "gordura_g": 1.5, "fibra_g": 1.6, "estimativa": true, "margemPercentual": 15 },
+            { "nome": "ovo mexido/frito", "quantidade": "2 unidades", "kcal": 210, "proteina_g": 13, "carboidrato_g": 1, "gordura_g": 16, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
           ],
-          "totalEstimado": { "kcal": 360, "proteina_g": 17, "carboidrato_g": 29, "gordura_g": 17.5 }
+          "totalEstimado": { "kcal": 360, "proteina_g": 17, "carboidrato_g": 29, "gordura_g": 17.5, "fibra_g": 1.6 }
         }
       ],
       "obs": "usuário alterna entre as três opções; app deve perguntar qual foi usada no dia, não presumir a primeira"

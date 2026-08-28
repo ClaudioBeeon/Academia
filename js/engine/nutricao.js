@@ -46,7 +46,65 @@ export function calcularMetaCalorica({ tmb, fase = "definicao", historicoPesoTen
     emCalibracao,
     obs: emCalibracao
       ? "Estimativa ainda em calibração (menos de 2 semanas de dados de peso) — usando fórmula padrão com déficit moderado."
-      : "Meta ajustada pela tendência de peso registrada.",
+      : "Ainda na fórmula padrão — sem dieta registrada suficiente pra recalibrar pelo peso real (ver calcularMetaCaloricaAdaptativa).",
+  };
+}
+
+// kcal por kg de gordura corporal — constante padrão de balanço energético
+// (1kg de gordura ≈ 7700kcal), usada pra converter variação de peso em
+// déficit/superávit real.
+const KCAL_POR_KG_GORDURA = 7700;
+
+function diferencaDias(dataA, dataB) {
+  const a = new Date(`${dataA}T00:00:00`);
+  const b = new Date(`${dataB}T00:00:00`);
+  return Math.round((b - a) / 86400000);
+}
+
+// Meta calórica adaptativa (mesmo princípio do TDEE dinâmico do MacroFactor):
+// em vez de confiar só na fórmula de TMB — que erra facilmente ±10-15% pra
+// qualquer pessoa específica (Mifflin-St Jeor é uma média populacional) —
+// compara o que a pessoa comeu de verdade com o que a balança mostrou no
+// mesmo período, e infere o gasto calórico REAL. Precisa de pelo menos
+// DIAS_MINIMOS_CALIBRACAO dias com peso E dieta registrados no mesmo
+// intervalo; sem isso, cai pro cálculo padrão (fórmula × déficit) — nunca
+// trava a tela nem inventa dado que não existe.
+export function calcularMetaCaloricaAdaptativa({ tmb, fase = "definicao", historicoPesoTendencia = [], totaisDiariosRecentes = [] }) {
+  const padrao = calcularMetaCalorica({ tmb, fase, historicoPesoTendencia });
+  if (!padrao) return null;
+
+  const pesos = [...historicoPesoTendencia]
+    .filter((m) => m.peso_kg > 0)
+    .sort((a, b) => a.data.localeCompare(b.data));
+
+  if (pesos.length < 2 || totaisDiariosRecentes.length < DIAS_MINIMOS_CALIBRACAO) {
+    return { ...padrao, adaptativa: false, tdeeEstimado: null };
+  }
+
+  const primeira = pesos[0];
+  const ultima = pesos[pesos.length - 1];
+  const dias = diferencaDias(primeira.data, ultima.data);
+  if (dias < DIAS_MINIMOS_CALIBRACAO) {
+    return { ...padrao, adaptativa: false, tdeeEstimado: null };
+  }
+
+  const variacaoPesoKg = ultima.peso_kg - primeira.peso_kg;
+  const mediaIngestaoKcal = totaisDiariosRecentes.reduce((soma, t) => soma + t.kcal, 0) / totaisDiariosRecentes.length;
+  const tdeeEstimado = mediaIngestaoKcal - (variacaoPesoKg * KCAL_POR_KG_GORDURA) / dias;
+
+  if (!(tdeeEstimado > 0)) return { ...padrao, adaptativa: false, tdeeEstimado: null };
+
+  const deficitPadrao = fase === "definicao" ? 0.2 : 0;
+  const meta = Math.max(Math.round(tdeeEstimado * (1 - deficitPadrao)), padrao.piso_kcal);
+
+  return {
+    meta_kcal: meta,
+    tmb_kcal: tmb,
+    piso_kcal: padrao.piso_kcal,
+    emCalibracao: false,
+    adaptativa: true,
+    tdeeEstimado: Math.round(tdeeEstimado),
+    obs: `Meta recalibrada com base no seu peso real dos últimos ${dias} dias (gasto calórico estimado: ${Math.round(tdeeEstimado)} kcal/dia) — não é mais só a fórmula.`,
   };
 }
 
@@ -81,9 +139,20 @@ export function avaliarProteinaDoDia({ proteinaG, metaProteina }) {
   };
 }
 
+// Meta de fibra — 14g por 1000kcal é a referência do USDA/Institute of
+// Medicine (mesma base usada nos rótulos de "% valor diário" americanos),
+// escalada pela meta calórica do dia em vez de um número fixo pra fazer
+// sentido tanto em déficit quanto fora dele.
+const FIBRA_G_POR_1000KCAL = 14;
+
+export function calcularMetaFibra(kcalMeta) {
+  if (!(kcalMeta > 0)) return null;
+  return Math.round((kcalMeta / 1000) * FIBRA_G_POR_1000KCAL);
+}
+
 // checagemTresEixos (protocolo.json): calorias, gordura, fibra/variedade.
 // Cada eixo só sinaliza — nunca reescreve a dieta nem prescreve substituição.
-export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, temFibraOuVegetais = false, metaProteina = null }) {
+export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, fibraG = null, metaProteina = null }) {
   const alertas = [];
   if (!totalDia || !metaCalorica) return alertas;
 
@@ -120,15 +189,17 @@ export function checarAdequacaoNutricional({ totalDia, metaCalorica, pesoKg, tem
     }
   }
 
-  return alertas.concat(checarFibraEVariedade(temFibraOuVegetais));
+  return alertas.concat(checarFibraEVariedade(fibraG, metaCalorica));
 }
 
-function checarFibraEVariedade(temFibraOuVegetais) {
+function checarFibraEVariedade(fibraG, metaCalorica) {
   const alertas = [];
-  if (!temFibraOuVegetais) {
+  const metaFibra = calcularMetaFibra(metaCalorica?.meta_kcal);
+  const fibraDoDia = fibraG ?? 0;
+  if (metaFibra != null && fibraDoDia < metaFibra) {
     alertas.push({
       eixo: "fibraEVariedade",
-      mensagem: "Essa dieta não tem vegetais/fontes de fibra — não é urgente, mas é uma lacuna de micronutrientes a considerar com um nutricionista.",
+      mensagem: `${fibraDoDia.toFixed(1)}g de fibra hoje — referência é ~${metaFibra}g pra essa meta calórica (14g/1000kcal, USDA). Não é urgente, mas fibra baixa por muito tempo é uma lacuna de micronutrientes/saúde intestinal a considerar.`,
     });
   }
 

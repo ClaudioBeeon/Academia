@@ -1,9 +1,21 @@
 // js/screens/evolucao.js
-import { getAll } from "../data/db.js";
+import { getAll, get } from "../data/db.js";
 import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
 import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
+import { calcularCoberturaMuscular } from "../engine/cobertura.js";
 import { montarCardPostura } from "./postura.js";
+
+const NOME_MUSCULO = {
+  peito: "Peito", costas: "Costas", biceps: "Bíceps", triceps: "Tríceps",
+  ombro: "Ombro (lateral)", deltoide_posterior: "Deltoide posterior",
+  quadriceps: "Quadríceps", posterior_coxa: "Posterior de coxa",
+  gluteo: "Glúteo", panturrilha: "Panturrilha", abdomen: "Abdômen",
+  antebraco: "Antebraço", ombro_anterior: "Ombro (anterior)",
+};
+function nomeDoMusculo(chave) {
+  return NOME_MUSCULO[chave] ?? chave.replace(/_/g, " ");
+}
 
 function obterDataLocal() {
   const agora = new Date();
@@ -11,6 +23,41 @@ function obterDataLocal() {
   const mes = String(agora.getMonth() + 1).padStart(2, "0");
   const dia = String(agora.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
+}
+
+function subtrairDias(dataISO, dias) {
+  const d = new Date(`${dataISO}T00:00:00`);
+  d.setDate(d.getDate() - dias);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Heatmap de cobertura muscular — grade colorida em vez de barra fina, pra
+// ler de relance quais músculos estão em dia e quais estão abaixo do alvo
+// da fase, sem precisar ler número por número (Boostcamp Pro faz algo
+// parecido). Cor por status (verde-lima = ok, âmbar = abaixo), intensidade
+// proporcional a quão perto do alvo está.
+function montarHeatmapCobertura(cobertura) {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `<div class="exercise-head"><div class="exercise-name">Cobertura muscular</div><div class="exercise-meta">7 dias</div></div>`;
+
+  const grid = document.createElement("div");
+  grid.className = "heatmap-cobertura";
+  for (const item of cobertura) {
+    const pct = item.min != null ? Math.min(100, Math.max(0, Math.round((item.atual / item.min) * 100))) : 100;
+    const corBase = item.abaixoDoAlvo ? "224, 176, 74" : "201, 242, 65"; // --aviso / --accent em rgb
+    const opacidade = (0.14 + (pct / 100) * 0.6).toFixed(2);
+
+    const celula = document.createElement("div");
+    celula.className = "heatmap-celula";
+    celula.style.background = `rgba(${corBase}, ${opacidade})`;
+    celula.innerHTML = `<b></b><span></span>`;
+    celula.querySelector("b").textContent = nomeDoMusculo(item.musculo);
+    celula.querySelector("span").textContent = item.min != null ? `${item.atual}/${item.min}` : `${item.atual}`;
+    grid.appendChild(celula);
+  }
+  card.appendChild(grid);
+  return card;
 }
 
 export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
@@ -35,10 +82,12 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     main.appendChild(historicoBtn);
   }
 
-  const [exercicios, todasAsSeries, linhasMedidas] = await Promise.all([
+  const [exercicios, todasAsSeries, linhasMedidas, protocolos, perfil] = await Promise.all([
     getAll(db, "exercicios"),
     getAll(db, "historicoSeries"),
     getMedidas(db),
+    getAll(db, "protocolo"),
+    get(db, "perfil", "1.0"),
   ]);
 
   // Postura abre a tela: virou prioridade declarada na auditoria e é a única
@@ -62,6 +111,12 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     vazio.textContent = "Sem treinos registrados ainda.";
     main.appendChild(vazio);
   } else {
+    const protocolo = protocolos[0] ?? null;
+    const definicaoFase = protocolo?.volumeSemanalPorFase?.[perfil?.fase?.atual ?? "definicao"];
+    const seriesUltimos7Dias = todasAsSeries.filter((s) => s.data >= subtrairDias(hoje, 6));
+    const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias, definicaoFase });
+    if (cobertura.length > 0) main.appendChild(montarHeatmapCobertura(cobertura));
+
     montarSecaoCarga(main, exercicios, todasAsSeries);
     montarSecaoVolume(main, todasAsSeries);
   }

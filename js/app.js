@@ -1,6 +1,7 @@
 // js/app.js
 import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
+import { carregarCacheDeChaves } from "./data/chavesApi.js";
 import { initAutoSync } from "./data/sync.js";
 import { isConfigured as supabaseConfigurado } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
@@ -47,6 +48,10 @@ async function bootstrap() {
 
   const db = await openDatabase();
   await seedIfNeeded(db);
+  // Antes de renderizar qualquer tela: várias leem a chave do Gemini/YouTube
+  // de forma síncrona (valor padrão de parâmetro), então o cache em memória
+  // (js/data/chavesApi.js) precisa estar pronto primeiro.
+  await carregarCacheDeChaves(db);
 
   // Sem credenciais salvas isso é praticamente um no-op — o gancho fica
   // registrado, mas isConfigured() barra tudo antes de tocar rede. Nunca

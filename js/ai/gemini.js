@@ -5,8 +5,8 @@
 // função aqui tem fallback gracioso: sem chave, offline ou erro da API nunca
 // derruba a tela, sempre devolve { ok: false, motivo }.
 
-const CHAVE_LOCALSTORAGE = "gemini_api_key";
-const CHAVE_MODELO_LOCALSTORAGE = "gemini_model";
+import { getGeminiApiKeyBruta, getGeminiModeloBruto } from "../data/chavesApi.js";
+
 // flash-lite é a variante de menor custo/latência da família — cota grátis
 // bem mais generosa que o "flash" cheio, e o app só pede texto curto (JSON de
 // estimativa nutricional, parágrafo de resumo), nada que precise do modelo
@@ -14,39 +14,16 @@ const CHAVE_MODELO_LOCALSTORAGE = "gemini_model";
 const MODELO_PADRAO = "gemini-3.5-flash-lite";
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Leitura só — salvar passa a ser direto por js/data/chavesApi.js
+// (salvarGeminiApiKey/salvarGeminiModelo), que precisa do `db` pra
+// persistir e sincronizar. Mantidas aqui porque cada chamada à IA usa
+// getApiKey()/getModelo() como valor padrão de parâmetro.
 export function getApiKey() {
-  try {
-    return localStorage.getItem(CHAVE_LOCALSTORAGE) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-export function salvarApiKey(chave) {
-  try {
-    if (chave) localStorage.setItem(CHAVE_LOCALSTORAGE, chave);
-    else localStorage.removeItem(CHAVE_LOCALSTORAGE);
-  } catch {
-    // localStorage indisponível (ex.: modo privado) — segue sem salvar,
-    // as funções de IA vão cair no fallback "sem chave" normalmente.
-  }
+  return getGeminiApiKeyBruta();
 }
 
 export function getModelo() {
-  try {
-    return localStorage.getItem(CHAVE_MODELO_LOCALSTORAGE) || MODELO_PADRAO;
-  } catch {
-    return MODELO_PADRAO;
-  }
-}
-
-export function salvarModelo(modelo) {
-  try {
-    if (modelo && modelo !== MODELO_PADRAO) localStorage.setItem(CHAVE_MODELO_LOCALSTORAGE, modelo);
-    else localStorage.removeItem(CHAVE_MODELO_LOCALSTORAGE);
-  } catch {
-    // idem salvarApiKey — sem localStorage, cai sempre no padrão.
-  }
+  return getGeminiModeloBruto() || MODELO_PADRAO;
 }
 
 export async function chamarGemini(prompt, opcoes = {}) {

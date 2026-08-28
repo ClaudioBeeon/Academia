@@ -6,7 +6,8 @@
 // verdade por texto, usando a YouTube Data API v3; exige uma chave grátis
 // cadastrada em Configurações, diferente do SoundCloud/Spotify que exigem
 // aprovação manual e não dá pra fazer sozinho).
-import { getYoutubeApiKey, buscarVideosYoutube, construirUrlWidgetSoundcloud, pareceUrlSoundcloud } from "../lib/musica.js";
+import { buscarVideosYoutube, construirUrlWidgetSoundcloud, pareceUrlSoundcloud } from "../lib/musica.js";
+import { getYoutubeApiKey } from "../data/chavesApi.js";
 
 export async function montarTelaMusica(db, { onAbrirConfig } = {}) {
   const root = document.createElement("div");

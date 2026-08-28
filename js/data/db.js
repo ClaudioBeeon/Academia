@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 
 const STORES = {
   perfil: "versao",
@@ -20,6 +20,13 @@ const STORES = {
   // Fica no mesmo banco local por simplicidade — não é lida/gravada por
   // nenhuma tela, só pelo módulo de sync.
   syncOutbox: { keyPath: "id", autoIncrement: true },
+  // Chaves de API do usuário (Gemini, YouTube — js/data/chavesApi.js).
+  // Diferente de "config", esta store NÃO está excluída da sincronização de
+  // propósito: essas chaves não têm o problema de "preciso da credencial do
+  // Supabase pra guardar a credencial do Supabase" que credenciais do
+  // próprio Supabase têm (essas continuam em localStorage). Sincronizar é o
+  // que permite a chave sobreviver a reinstalar o app ou trocar de aparelho.
+  chavesApi: "chave",
 };
 
 // Stores cuja chave é numérica autoIncrement (as demais usam chave string:

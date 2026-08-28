@@ -1,29 +1,11 @@
 // js/lib/musica.js
 //
-// Busca de vídeos no YouTube (YouTube Data API v3) — mesmo padrão de chave
-// do Gemini (js/ai/gemini.js): salva só neste dispositivo via localStorage,
-// nunca sincronizada, nunca enviada a lugar nenhum além da própria chamada
-// à API do Google. Chave é grátis e de auto-cadastro (console.cloud.google.com),
-// diferente da do SoundCloud/Spotify, que exigem aprovação manual — por isso
-// é o único dos três que permite busca de verdade dentro do app hoje.
-const CHAVE_LOCALSTORAGE = "youtube_api_key";
-
-export function getYoutubeApiKey() {
-  try {
-    return localStorage.getItem(CHAVE_LOCALSTORAGE) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-export function salvarYoutubeApiKey(chave) {
-  try {
-    if (chave) localStorage.setItem(CHAVE_LOCALSTORAGE, chave);
-    else localStorage.removeItem(CHAVE_LOCALSTORAGE);
-  } catch {
-    // localStorage indisponível (ex.: modo privado) — segue sem salvar.
-  }
-}
+// Busca de vídeos no YouTube (YouTube Data API v3). Chave é grátis e de
+// auto-cadastro (console.cloud.google.com), diferente da do SoundCloud/
+// Spotify, que exigem aprovação manual — por isso é o único dos três que
+// permite busca de verdade dentro do app hoje. Armazenamento/sincronização
+// da chave em si moram em js/data/chavesApi.js, não aqui.
+import { getYoutubeApiKey } from "../data/chavesApi.js";
 
 export async function buscarVideosYoutube(consulta, { fetchImpl = globalThis.fetch, apiKey = getYoutubeApiKey() } = {}) {
   if (!apiKey) return { ok: false, motivo: "sem_chave" };

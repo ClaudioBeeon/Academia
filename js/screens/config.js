@@ -3,8 +3,8 @@ import { exportarTudo, importarTudo, historicoParaCsv, observacoesTreinoParaMark
 import { getObservacoesTreino } from "../data/observacoesTreino.js";
 import { getAll, get, put } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
-import { getApiKey, salvarApiKey, getModelo, salvarModelo } from "../ai/gemini.js";
-import { getYoutubeApiKey, salvarYoutubeApiKey } from "../lib/musica.js";
+import { getApiKey, getModelo } from "../ai/gemini.js";
+import { salvarGeminiApiKey, salvarGeminiModelo, getYoutubeApiKey, salvarYoutubeApiKey } from "../data/chavesApi.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
@@ -57,8 +57,8 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(await criarSecaoDiaDoCiclo(db));
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
-  main.appendChild(criarSecaoGemini());
-  main.appendChild(criarSecaoYoutube());
+  main.appendChild(criarSecaoGemini(db));
+  main.appendChild(criarSecaoYoutube(db));
   main.appendChild(criarSecaoLembretes());
   main.appendChild(await criarSecaoSugestoes(db));
 
@@ -398,14 +398,14 @@ async function criarSecaoSupabase(db) {
   return card;
 }
 
-function criarSecaoGemini() {
+function criarSecaoGemini(db) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Chave de IA (Gemini)</div></div>
     <form class="sets gemini-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar<input name="chave" type="password" /></label>
+        <label>Chave de API — sincroniza pela sua conta (se estiver logado em Config), sobrevive a reinstalar o app<input name="chave" type="password" /></label>
       </div>
       <div class="set-field" style="grid-column:1/-1;">
         <label>Modelo — troque se a cota grátis do padrão acabar (veja em ai.google.dev/gemini-api/docs/models)<input name="modelo" type="text" placeholder="gemini-3.5-flash-lite" /></label>
@@ -418,10 +418,10 @@ function criarSecaoGemini() {
   form.chave.value = getApiKey();
   form.modelo.value = getModelo();
   const status = card.querySelector(".gemini-status");
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    salvarApiKey(form.chave.value.trim());
-    salvarModelo(form.modelo.value.trim());
+    await salvarGeminiApiKey(db, form.chave.value.trim());
+    await salvarGeminiModelo(db, form.modelo.value.trim());
     status.textContent = "Salvo.";
   });
   return card;
@@ -431,14 +431,14 @@ function criarSecaoGemini() {
 // (js/screens/musica.js). Diferente da chave do Gemini, essa é de
 // auto-cadastro — cria em console.cloud.google.com/apis/library/youtube.googleapis.com,
 // sem esperar aprovação de ninguém.
-function criarSecaoYoutube() {
+function criarSecaoYoutube(db) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">Chave do YouTube (busca de música)</div></div>
     <form class="sets youtube-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — salva só neste dispositivo, nunca enviada a outro lugar. Cria grátis em console.cloud.google.com, procurando "YouTube Data API v3"<input name="chave" type="password" /></label>
+        <label>Chave de API — sincroniza pela sua conta (se estiver logado em Config), sobrevive a reinstalar o app. Cria grátis em console.cloud.google.com, procurando "YouTube Data API v3"<input name="chave" type="password" /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
       <div class="prev-hint youtube-status" style="grid-column:1/-1;"></div>
@@ -447,9 +447,9 @@ function criarSecaoYoutube() {
   const form = card.querySelector(".youtube-form");
   form.chave.value = getYoutubeApiKey();
   const status = card.querySelector(".youtube-status");
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    salvarYoutubeApiKey(form.chave.value.trim());
+    await salvarYoutubeApiKey(db, form.chave.value.trim());
     status.textContent = "Salvo.";
   });
   return card;

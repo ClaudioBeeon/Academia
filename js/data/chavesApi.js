@@ -1,6 +1,6 @@
 // js/data/chavesApi.js
 //
-// Chaves de API do usuário (Gemini, YouTube) — diferente das credenciais do
+// Chaves de API do usuário (Gemini) — diferente das credenciais do
 // próprio Supabase (js/data/supabaseClient.js), que têm que ficar fora do
 // banco sincronizado por necessidade (não dá pra usar o Supabase pra
 // guardar a credencial que abre o Supabase). Essas aqui não têm esse
@@ -18,8 +18,7 @@ import { get, put } from "./db.js";
 
 const CHAVE_GEMINI = "gemini_api_key";
 const CHAVE_GEMINI_MODELO = "gemini_model";
-const CHAVE_YOUTUBE = "youtube_api_key";
-const TODAS_AS_CHAVES = [CHAVE_GEMINI, CHAVE_GEMINI_MODELO, CHAVE_YOUTUBE];
+const TODAS_AS_CHAVES = [CHAVE_GEMINI, CHAVE_GEMINI_MODELO];
 
 const cache = new Map(TODAS_AS_CHAVES.map((chave) => [chave, ""]));
 
@@ -59,8 +58,6 @@ async function salvar(db, chave, valor) {
 
 export function getGeminiApiKeyBruta() { return ler(CHAVE_GEMINI); }
 export function getGeminiModeloBruto() { return ler(CHAVE_GEMINI_MODELO); }
-export function getYoutubeApiKey() { return ler(CHAVE_YOUTUBE); }
 
 export function salvarGeminiApiKey(db, valor) { return salvar(db, CHAVE_GEMINI, valor); }
 export function salvarGeminiModelo(db, valor) { return salvar(db, CHAVE_GEMINI_MODELO, valor); }
-export function salvarYoutubeApiKey(db, valor) { return salvar(db, CHAVE_YOUTUBE, valor); }

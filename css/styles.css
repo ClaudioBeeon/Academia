@@ -92,29 +92,6 @@ body {
   .wf-progresso { transition: none; }
 }
 
-/* Mini-player flutuante de música (js/screens/widgetMusica.js) — mesma
-   lógica de sobrevivência a troca de aba do .widget-flutuante do
-   cronômetro logo acima, e o mesmo cuidado de especificidade: `display`
-   só entra via :not([hidden]), nunca direto na classe (empate de
-   especificidade com a regra nativa do navegador faria o elemento nunca
-   sumir de verdade — mesmo bug já corrigido uma vez neste projeto). */
-.widget-musica {
-  position: fixed; left: 12px; right: 12px; bottom: calc(90px + env(safe-area-inset-bottom));
-  z-index: 39; align-items: center; gap: 10px;
-  background: #000; color: #fff; border-radius: 18px; padding: 8px;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4); cursor: pointer; -webkit-tap-highlight-color: transparent;
-  font-family: inherit; text-align: left;
-}
-.widget-musica:not([hidden]) { display: flex; }
-.wm-player { flex: 0 0 auto; width: 72px; height: 44px; border-radius: 10px; overflow: hidden; background: #141414; }
-.wm-player iframe { width: 100%; height: 100%; border: none; display: block; }
-.wm-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.wm-fonte { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.6; }
-.wm-titulo { display: block; font-size: 0.82rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: capitalize; }
-.wm-fechar {
-  flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.12);
-  display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #fff;
-}
 
 /* Feedback de toque (estilo iOS: escala levemente ao pressionar) em todo
    elemento tocável do app — cartões, pills, botões, chips. */
@@ -1203,17 +1180,3 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .cpia-pergunta-salva:not(:empty)::before { content: "Você perguntou: "; font-weight: 500; color: var(--ink-faint); }
 .cpia-resposta { font-size: 0.85rem; line-height: 1.6; color: var(--ink); padding-top: 6px; white-space: pre-wrap; }
 
-/* Aba Música — escolhe o que tocar (SoundCloud por link, YouTube por busca);
-   quem toca de verdade é a barra flutuante logo abaixo. */
-.musica-resultados { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
-.musica-resultado {
-  display: flex; align-items: center; gap: 12px; background: var(--card-2); border-radius: 14px;
-  padding: 8px; text-align: left; border: none; cursor: pointer; font-family: inherit; width: 100%;
-}
-.musica-resultado-thumb { width: 68px; height: 50px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; background: var(--card); }
-.musica-resultado-info { min-width: 0; }
-.musica-resultado-info b {
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  font-size: 0.82rem; font-weight: 700; line-height: 1.3; color: var(--ink);
-}
-.musica-resultado-info span { display: block; font-size: 0.72rem; color: var(--ink-faint); margin-top: 3px; }

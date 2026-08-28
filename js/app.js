@@ -19,11 +19,9 @@ import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaHistoricoSessoes } from "./screens/historicoSessoes.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
 import { montarTelaDieta } from "./screens/dieta.js";
-import { montarTelaMusica } from "./screens/musica.js";
 import { montarTelaCardio } from "./screens/cardioTimer.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
-import { montarWidgetMusica } from "./screens/widgetMusica.js";
 import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
 import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
 
@@ -268,12 +266,6 @@ function renderShell(db) {
         await trocarConteudo(content, () => montarTelaDieta(db), { direcao });
         return;
       }
-      if (tabName === "musica") {
-        await trocarConteudo(content, () => montarTelaMusica(db, {
-          onAbrirConfig: () => renderTab("config", "avancar"),
-        }), { direcao });
-        return;
-      }
       await trocarConteudo(content, () => criarMensagem(`Tela "${tabName}" ainda não implementada (vem depois).`), { direcao });
     } catch (err) {
       console.error(`Falha ao renderizar a aba "${tabName}":`, err);
@@ -284,14 +276,6 @@ function renderShell(db) {
   tabs.forEach((button) => {
     button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
-
-  // Mini-player flutuante (js/screens/widgetMusica.js) — fora de
-  // #tab-content, então sobrevive a trocar de aba. Precisa de renderTab já
-  // definido (tocar na barra leva de volta pra Música), por isso montado
-  // só aqui, não junto do widget do cronômetro lá em cima.
-  if (!document.querySelector(".widget-musica")) {
-    document.body.appendChild(montarWidgetMusica(() => renderTab("musica")));
-  }
 
   // Recupera um cardio que ficou rodando quando o app fechou de verdade
   // (não só trocou de tela) — sem isso, o progresso salvo em

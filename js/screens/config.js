@@ -4,7 +4,7 @@ import { getObservacoesTreino } from "../data/observacoesTreino.js";
 import { getAll, get, put } from "../data/db.js";
 import { getEquipamento, salvarEquipamento } from "../data/equipamento.js";
 import { getApiKey, getModelo } from "../ai/gemini.js";
-import { salvarGeminiApiKey, salvarGeminiModelo, getYoutubeApiKey, salvarYoutubeApiKey } from "../data/chavesApi.js";
+import { salvarGeminiApiKey, salvarGeminiModelo } from "../data/chavesApi.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
@@ -58,7 +58,6 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini(db));
-  main.appendChild(criarSecaoYoutube(db));
   main.appendChild(criarSecaoLembretes());
   main.appendChild(await criarSecaoSugestoes(db));
 
@@ -422,34 +421,6 @@ function criarSecaoGemini(db) {
     event.preventDefault();
     await salvarGeminiApiKey(db, form.chave.value.trim());
     await salvarGeminiModelo(db, form.modelo.value.trim());
-    status.textContent = "Salvo.";
-  });
-  return card;
-}
-
-// Chave da YouTube Data API v3, usada só pela busca na aba Música
-// (js/screens/musica.js). Diferente da chave do Gemini, essa é de
-// auto-cadastro — cria em console.cloud.google.com/apis/library/youtube.googleapis.com,
-// sem esperar aprovação de ninguém.
-function criarSecaoYoutube(db) {
-  const card = document.createElement("section");
-  card.className = "exercise-card";
-  card.innerHTML = `
-    <div class="exercise-head"><div class="exercise-name">Chave do YouTube (busca de música)</div></div>
-    <form class="sets youtube-form" style="padding:0 18px 18px;">
-      <div class="set-field" style="grid-column:1/-1;">
-        <label>Chave de API — sincroniza pela sua conta (se estiver logado em Config), sobrevive a reinstalar o app. Cria grátis em console.cloud.google.com, procurando "YouTube Data API v3"<input name="chave" type="password" /></label>
-      </div>
-      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Salvar</button>
-      <div class="prev-hint youtube-status" style="grid-column:1/-1;"></div>
-    </form>
-  `;
-  const form = card.querySelector(".youtube-form");
-  form.chave.value = getYoutubeApiKey();
-  const status = card.querySelector(".youtube-status");
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await salvarYoutubeApiKey(db, form.chave.value.trim());
     status.textContent = "Salvo.";
   });
   return card;

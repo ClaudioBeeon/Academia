@@ -23,6 +23,7 @@ import { montarTelaMusica } from "./screens/musica.js";
 import { montarTelaCardio } from "./screens/cardioTimer.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
+import { montarWidgetMusica } from "./screens/widgetMusica.js";
 import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
 import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
 
@@ -283,6 +284,14 @@ function renderShell(db) {
   tabs.forEach((button) => {
     button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
+
+  // Mini-player flutuante (js/screens/widgetMusica.js) — fora de
+  // #tab-content, então sobrevive a trocar de aba. Precisa de renderTab já
+  // definido (tocar na barra leva de volta pra Música), por isso montado
+  // só aqui, não junto do widget do cronômetro lá em cima.
+  if (!document.querySelector(".widget-musica")) {
+    document.body.appendChild(montarWidgetMusica(() => renderTab("musica")));
+  }
 
   // Recupera um cardio que ficou rodando quando o app fechou de verdade
   // (não só trocou de tela) — sem isso, o progresso salvo em

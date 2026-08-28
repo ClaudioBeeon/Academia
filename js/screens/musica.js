@@ -1,13 +1,19 @@
 // js/screens/musica.js
 //
-// Aba "Música" — dois players embutidos, pra não precisar sair do app:
-// SoundCloud (cola o link de uma faixa/playlist já escolhida, sem precisar
-// de chave nem login — é só o widget público deles) e YouTube (busca de
-// verdade por texto, usando a YouTube Data API v3; exige uma chave grátis
-// cadastrada em Configurações, diferente do SoundCloud/Spotify que exigem
-// aprovação manual e não dá pra fazer sozinho).
+// Aba "Música" — dois players, pra não precisar sair do app: SoundCloud
+// (cola o link de uma faixa/playlist já escolhida, sem precisar de chave
+// nem login — é o widget público deles) e YouTube (busca de verdade por
+// texto, usando a YouTube Data API v3; exige uma chave grátis cadastrada em
+// Configurações, diferente do SoundCloud/Spotify que exigem aprovação
+// manual e não dá pra fazer sozinho).
+//
+// O player que toca de verdade não mora aqui — mora em js/screens/
+// widgetMusica.js, uma barra flutuante fora de #tab-content que sobrevive a
+// trocar de aba (js/lib/playerFlutuante.js guarda o estado compartilhado).
+// Esta tela só decide O QUE tocar; quem toca é a barra flutuante.
 import { buscarVideosYoutube, construirUrlWidgetSoundcloud, pareceUrlSoundcloud } from "../lib/musica.js";
 import { getYoutubeApiKey } from "../data/chavesApi.js";
+import { definirPlayerFlutuante } from "../lib/playerFlutuante.js";
 
 export async function montarTelaMusica(db, { onAbrirConfig } = {}) {
   const root = document.createElement("div");
@@ -27,23 +33,34 @@ export async function montarTelaMusica(db, { onAbrirConfig } = {}) {
   return root;
 }
 
+// Extrai um título aproximado do link, sem chamada de rede — o SoundCloud
+// tem um endpoint de oEmbed que devolveria o título real, mas não vale a
+// latência extra só pra um rótulo na barra flutuante.
+function tituloAproximadoSoundcloud(url) {
+  try {
+    const partes = new URL(url).pathname.split("/").filter(Boolean);
+    const ultimo = partes[partes.length - 1] ?? "";
+    return ultimo ? ultimo.replace(/-/g, " ") : "Faixa do SoundCloud";
+  } catch {
+    return "Faixa do SoundCloud";
+  }
+}
+
 function montarCardSoundcloud() {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
     <div class="exercise-head"><div class="exercise-name">SoundCloud</div></div>
-    <form class="sets musica-sc-form" style="padding:0 18px 16px;">
+    <form class="sets musica-sc-form" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
         <label>Link da faixa ou playlist<input name="url" type="url" placeholder="https://soundcloud.com/..." required /></label>
       </div>
       <button type="submit" class="swap-pill" style="grid-column:1/-1; background:var(--accent); color:var(--accent-ink);">Tocar</button>
       <div class="prev-hint musica-sc-status" style="grid-column:1/-1;"></div>
     </form>
-    <div class="musica-player-wrap musica-sc-wrap" hidden></div>
   `;
   const form = card.querySelector(".musica-sc-form");
   const status = card.querySelector(".musica-sc-status");
-  const wrap = card.querySelector(".musica-sc-wrap");
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -52,13 +69,12 @@ function montarCardSoundcloud() {
       status.textContent = "Isso não parece um link do SoundCloud — cola o link de uma faixa ou playlist de lá.";
       return;
     }
-    status.textContent = "";
-    const iframe = document.createElement("iframe");
-    iframe.src = construirUrlWidgetSoundcloud(url);
-    iframe.allow = "autoplay";
-    iframe.loading = "lazy";
-    wrap.replaceChildren(iframe);
-    wrap.hidden = false;
+    status.textContent = "Tocando — veja a barra no rodapé, continua mesmo trocando de aba.";
+    definirPlayerFlutuante({
+      tipo: "soundcloud",
+      src: construirUrlWidgetSoundcloud(url),
+      titulo: tituloAproximadoSoundcloud(url),
+    });
   });
 
   return card;
@@ -96,24 +112,20 @@ function montarCardYoutube(onAbrirConfig) {
       <button type="submit" class="swap-pill" style="grid-column:1/-1;">Buscar</button>
     </form>
     <div class="prev-hint musica-yt-status" style="padding:0 18px 12px;"></div>
-    <div class="musica-player-wrap musica-yt-wrap" hidden></div>
     <div class="musica-resultados"></div>
   `;
 
   const form = card.querySelector(".musica-yt-form");
   const status = card.querySelector(".musica-yt-status");
-  const wrap = card.querySelector(".musica-yt-wrap");
   const resultadosEl = card.querySelector(".musica-resultados");
 
-  function tocar(videoId) {
-    const iframe = document.createElement("iframe");
-    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    iframe.allow = "autoplay; encrypted-media";
-    iframe.allowFullscreen = true;
-    iframe.loading = "lazy";
-    wrap.replaceChildren(iframe);
-    wrap.hidden = false;
-    wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  function tocar(item) {
+    definirPlayerFlutuante({
+      tipo: "youtube",
+      src: `https://www.youtube.com/embed/${item.videoId}?autoplay=1`,
+      titulo: decodificarEntidadesHtml(item.titulo),
+    });
+    status.textContent = "Tocando — veja a barra no rodapé, continua mesmo trocando de aba.";
   }
 
   const MENSAGEM_ERRO = {
@@ -136,7 +148,7 @@ function montarCardYoutube(onAbrirConfig) {
     }
     status.textContent = resultado.resultados.length === 0 ? "Nada encontrado." : "";
     for (const item of resultado.resultados) {
-      resultadosEl.appendChild(montarLinhaResultado(item, () => tocar(item.videoId)));
+      resultadosEl.appendChild(montarLinhaResultado(item, () => tocar(item)));
     }
   });
 

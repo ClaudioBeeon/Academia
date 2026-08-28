@@ -176,6 +176,47 @@ export async function migrarSubstituicoesFicha(db) {
   return { migrados, jaFeita: false };
 }
 
+// dietaBase é dado pessoal igual à ficha: o seed só a escreve numa conta
+// vazia, então editar data/dieta.json não alcança quem já tem o app
+// instalado. Acrescenta a opção "iogurte grego caseiro + banana + whey +
+// aveia" no café da tarde de quem já tinha a dieta semeada antes dela
+// existir. Roda uma vez só, marcada em config; nunca mexe se a opção já
+// estiver lá (seja pela migração, seja porque a pessoa editou por conta
+// própria e por acaso usou o mesmo id).
+const CHAVE_VERSAO_OPCAO_CAFE_DA_TARDE = "opcaoIogurteCafeDaTardeVersao";
+const VERSAO_OPCAO_CAFE_DA_TARDE = 1;
+const OPCAO_IOGURTE_CAFE_DA_TARDE = {
+  id: "iogurte_whey_fruta_aveia",
+  alimentos: [
+    { nome: "iogurte grego caseiro (leite proteico Camponesa + fermento + leite em pó)", quantidade: "200g", kcal: 138, proteina_g: 15.5, carboidrato_g: 13.9, gordura_g: 1.2, estimativa: true, margemPercentual: 20 },
+    { nome: "banana", quantidade: "1 unidade média", kcal: 105, proteina_g: 1.3, carboidrato_g: 27, gordura_g: 0.4, estimativa: true, margemPercentual: 15 },
+    { nome: "whey protein", quantidade: "1 dose (~30g)", kcal: 120, proteina_g: 24, carboidrato_g: 3, gordura_g: 1.5, estimativa: true, margemPercentual: 10 },
+    { nome: "aveia em flocos", quantidade: "30g (3 colheres de sopa)", kcal: 117, proteina_g: 4.2, carboidrato_g: 20.1, gordura_g: 2.1, estimativa: true, margemPercentual: 15 },
+  ],
+  totalEstimado: { kcal: 480, proteina_g: 45, carboidrato_g: 64, gordura_g: 5.2 },
+};
+
+export async function migrarOpcaoIogurteCafeDaTarde(db) {
+  const marcador = await get(db, "config", CHAVE_VERSAO_OPCAO_CAFE_DA_TARDE);
+  if (marcador?.valor >= VERSAO_OPCAO_CAFE_DA_TARDE) return { migrado: false, jaFeita: true };
+
+  const dieta = await get(db, "dietaBase", "1.0");
+  const cafeDaTarde = dieta?.dietaBase?.cafeDaTarde;
+  if (!cafeDaTarde) {
+    await put(db, "config", { chave: CHAVE_VERSAO_OPCAO_CAFE_DA_TARDE, valor: VERSAO_OPCAO_CAFE_DA_TARDE });
+    return { migrado: false, jaFeita: false };
+  }
+
+  const jaTem = cafeDaTarde.opcoes.some((o) => o.id === OPCAO_IOGURTE_CAFE_DA_TARDE.id);
+  if (!jaTem) {
+    cafeDaTarde.opcoes.push(OPCAO_IOGURTE_CAFE_DA_TARDE);
+    await put(db, "dietaBase", dieta);
+  }
+
+  await put(db, "config", { chave: CHAVE_VERSAO_OPCAO_CAFE_DA_TARDE, valor: VERSAO_OPCAO_CAFE_DA_TARDE });
+  return { migrado: !jaTem, jaFeita: false };
+}
+
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const [storesPessoaisSemeadas, bibliotecaAtualizada] = await Promise.all([
     semearPessoaisSeVazias(db, fetchImpl),
@@ -186,6 +227,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   // cadência do JSON e as migrações não acham nada pra fazer.
   const cadencia = await migrarCadenciaDaFicha(db);
   const substituicoes = await migrarSubstituicoesFicha(db);
+  const opcaoCafeDaTarde = await migrarOpcaoIogurteCafeDaTarde(db);
 
   return {
     seeded: storesPessoaisSemeadas.length > 0 || bibliotecaAtualizada,
@@ -193,6 +235,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
     bibliotecaAtualizada,
     cadenciaMigrada: cadencia.migrados,
     substituicoesMigradas: substituicoes.migrados,
+    opcaoCafeDaTardeMigrada: opcaoCafeDaTarde.migrado,
   };
 }
 

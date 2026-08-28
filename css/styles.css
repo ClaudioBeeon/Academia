@@ -377,6 +377,23 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 .explicacao-execucao h5:first-of-type { margin-top: 10px; }
 
+/* Readiness vira <details> — fechado por padrão, só a pontuação em si (a
+   parte que valia a pena ver de relance) fica sempre visível; o resto (fatores
+   que pesaram no número) só aparece se a pessoa tocar. Mesmo padrão de
+   animação de altura do .explicacao-execucao acima. */
+.readiness-summary {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 18px 14px; cursor: pointer; list-style: none;
+}
+.readiness-summary::-webkit-details-marker { display: none; }
+.readiness-card[open] .readiness-summary { padding-bottom: 4px; }
+.readiness-body {
+  overflow: hidden; transition: height var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .readiness-body { transition: opacity var(--duration-fast) ease; }
+}
+
 /* Faixa de trabalho — visível sem abrir nada, é o que se olha durante a série */
 .guia-prescricao {
   margin: 14px 0 0; padding: 12px 14px;

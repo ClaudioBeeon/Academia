@@ -14,8 +14,11 @@ import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
 import { calcularSequenciaDias } from "../engine/consistencia.js";
 import { calcularReadiness } from "../engine/readiness.js";
+import { getDietaBase, getSelecoesDoDia, calcularTotalDoDia } from "../data/dieta.js";
+import { calcularMetaProteina, avaliarProteinaDoDia } from "../engine/nutricao.js";
 import { abrirNovaAtividade } from "./novaAtividade.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
+import { animarDetails } from "../lib/detailsAnimado.js";
 
 const MINUTOS_ESTIMADOS_POR_EXERCICIO = 7; // 3 séries + descanso, arredondado (heurística de exibição, não um limite do protocolo)
 const DIAS_SEMANA_EXTENSO = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
@@ -53,7 +56,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
-  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco, habito, perfil, todosCardios, todosRegistrosDiarios] = await Promise.all([
+  const [seriesDeHoje, todasAsSeries, ultimoDiaRegistrado, cardioRecente, ficha, inicioDoBloco, habito, perfil, todosCardios, todosRegistrosDiarios, dietaBase, selecoesHoje] = await Promise.all([
     getSeriesDoDia(db, hoje),
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
@@ -64,6 +67,8 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     get(db, "perfil", "1.0"),
     getAll(db, "registrosCardio"),
     getAll(db, "registrosDiarios"),
+    getDietaBase(db),
+    getSelecoesDoDia(db, hoje),
   ]);
   // Sequência de dias seguidos com pelo menos uma atividade — treino,
   // cardio ou refeição marcada na dieta — mesmo reforço de consistência
@@ -74,10 +79,22 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     ...todosRegistrosDiarios.filter((r) => r.refeicoes && Object.keys(r.refeicoes).length > 0).map((r) => r.data),
   ]);
   const sequenciaDias = calcularSequenciaDias(datasComAtividade, hoje);
+  // Proteína "abaixo da meta" usa a mesma leitura simples da barra da tela de
+  // Dieta (total do dia vs. mínimo) — sem tentar prever ritmo por hora do
+  // dia, que inventaria uma régua que não existe em nenhum outro lugar do app.
+  const metaProteinaHoje = calcularMetaProteina({
+    pesoKg: perfil?.dadosBasicos?.peso_kg,
+    fase: perfil?.fase?.atual,
+  });
+  const totalProteinaHoje = dietaBase ? calcularTotalDoDia(dietaBase, selecoesHoje, hoje).total.proteina_g : 0;
+  const proteinaAbaixoDaMeta = avaliarProteinaDoDia({ proteinaG: totalProteinaHoje, metaProteina: metaProteinaHoje })?.status === "abaixo";
   const readiness = calcularReadiness({
     sonoOntem: habito?.sonoOntem ?? null,
     alcoolOntem: habito?.alcool === true,
     sequenciaDias,
+    creatinaHoje: habito?.creatina === true,
+    proteinaAbaixoDaMeta,
+    treinouHoje: seriesDeHoje.length > 0,
   });
   const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
@@ -306,13 +323,13 @@ function montarChipsHabitos(controlador) {
 const CATEGORIA_READINESS_LABEL = { otimo: "Ótimo", bom: "Bom", atencao: "Atenção", baixo: "Baixo" };
 
 function montarCardReadiness(readiness) {
-  const card = document.createElement("section");
+  const card = document.createElement("details");
   card.className = "exercise-card readiness-card";
   card.innerHTML = `
-    <div class="exercise-head">
-      <div class="exercise-name">Como você está hoje</div>
-      <div class="readiness-score readiness-${readiness.categoria}">${readiness.score}</div>
-    </div>
+    <summary class="readiness-summary">
+      <span class="exercise-name">Pontuação de hoje</span>
+      <span class="readiness-score readiness-${readiness.categoria}">${readiness.score}</span>
+    </summary>
     <div class="readiness-body">
       <div class="readiness-categoria">${CATEGORIA_READINESS_LABEL[readiness.categoria]}</div>
       ${readiness.fatores.length > 0
@@ -320,6 +337,8 @@ function montarCardReadiness(readiness) {
         : `<p class="readiness-fatores-vazio">Nenhum fator negativo registrado — segue no ritmo.</p>`}
     </div>
   `;
+  const corpo = card.querySelector(".readiness-body");
+  animarDetails(card, corpo);
   return card;
 }
 

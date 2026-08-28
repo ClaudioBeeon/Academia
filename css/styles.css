@@ -15,6 +15,11 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  /* Sem isso, dois toques rápidos em qualquer botão/card (comum ao tentar
+     registrar uma série rápido) o Safari interpreta como double-tap-to-zoom
+     e dá zoom na página. "manipulation" mata só o double-tap-zoom — pinça
+     pra dar zoom continua funcionando pra quem precisa (acessibilidade). */
+  touch-action: manipulation;
 }
 
 /* Sem largura máxima fixa: o app preenche a tela inteira em qualquer

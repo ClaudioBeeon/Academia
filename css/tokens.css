@@ -18,3 +18,31 @@
   --duration-fast: 0.2s;
   --duration-standard: 0.3s;
 }
+
+/* Tema claro — "Sistema" (segue o SO, só quando a pessoa não travou um tema
+   à mão em Config) e "Claro" (forçado via [data-theme]) caem nas mesmas
+   cores; só muda qual seletor decide quando aplicar. accent/accent-ink/erro
+   ficam iguais nos dois temas — já têm contraste alto por conta própria,
+   não dependem do fundo. Os widgets flutuantes (cronômetro, bolha) ficam
+   pretos nos dois temas de propósito: são controles "de cima da UI", não
+   parte da página. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --paper: #F7F7F5;
+    --card: #FFFFFF;
+    --card-2: #EFEFEC;
+    --ink: #16170F;
+    --ink-dim: #6B6B66;
+    --ink-faint: #9A9A94;
+    --line: #E4E4E0;
+  }
+}
+:root[data-theme="light"] {
+  --paper: #F7F7F5;
+  --card: #FFFFFF;
+  --card-2: #EFEFEC;
+  --ink: #16170F;
+  --ink-dim: #6B6B66;
+  --ink-faint: #9A9A94;
+  --line: #E4E4E0;
+}

@@ -18,6 +18,7 @@ import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
 import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
+import { TEMAS_VALIDOS, obterTemaSalvo, salvarTema } from "../lib/tema.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -30,6 +31,8 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
 
   const main = document.createElement("main");
   root.appendChild(main);
+
+  main.appendChild(criarSecaoAparencia());
 
   main.appendChild(criarLinkAcao("Biblioteca de exercícios", () => {
     if (onAbrirBiblioteca) onAbrirBiblioteca();
@@ -89,6 +92,38 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(importCard);
 
   return root;
+}
+
+const ROTULO_TEMA = { sistema: "Sistema", escuro: "Escuro", claro: "Claro" };
+
+// Preferência de aparência (js/lib/tema.js) — fica em localStorage, não em
+// IndexedDB: é do aparelho, não do treino, não faz sentido sincronizar nem
+// entrar no backup.
+function criarSecaoAparencia() {
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Aparência</div></div>
+    <div class="sets" style="padding:0 18px 18px;">
+      <div class="tema-opcoes" style="display:flex; gap:8px;">
+        ${TEMAS_VALIDOS.map((tema) => `<button type="button" class="swap-pill tema-btn" data-tema="${tema}" style="flex:1;">${ROTULO_TEMA[tema]}</button>`).join("")}
+      </div>
+    </div>
+  `;
+
+  const botoes = card.querySelectorAll(".tema-btn");
+  const marcarSelecionado = (temaAtual) => {
+    botoes.forEach((botao) => botao.classList.toggle("selecionada", botao.dataset.tema === temaAtual));
+  };
+  marcarSelecionado(obterTemaSalvo());
+  botoes.forEach((botao) => {
+    botao.addEventListener("click", () => {
+      salvarTema(botao.dataset.tema);
+      marcarSelecionado(botao.dataset.tema);
+    });
+  });
+
+  return card;
 }
 
 // Botão de emergência: limpa a bolha do cronômetro flutuante (o estado em

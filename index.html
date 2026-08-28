@@ -8,6 +8,18 @@
   <link rel="icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="theme-color" content="#0E0E0E" />
+  <!-- Aplica o tema salvo (js/lib/tema.js) antes do CSS carregar — script de
+       módulo é adiado por padrão, e esperar por ele piscaria a paleta errada
+       (escura) por um instante em quem escolheu "Claro". Duplica só a leitura
+       do data-theme; o resto (cor da barra de status, trocar em runtime)
+       fica no módulo de verdade. -->
+  <script>
+    try {
+      var tema = localStorage.getItem("tema");
+      if (tema === "claro") document.documentElement.dataset.theme = "light";
+      else if (tema === "escuro") document.documentElement.dataset.theme = "dark";
+    } catch (e) {}
+  </script>
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

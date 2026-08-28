@@ -24,6 +24,7 @@ import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
 import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
 import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
+import { obterTemaSalvo, aplicarTema, observarTemaDoSistema } from "./lib/tema.js";
 
 function criarMensagem(texto) {
   const div = document.createElement("div");
@@ -33,6 +34,12 @@ function criarMensagem(texto) {
 }
 
 async function bootstrap() {
+  // A paleta em si já foi decidida pelo script inline no <head> (evita
+  // flash) — isso aqui só completa o que aquele script não faz: a cor da
+  // barra de status e reagir se o SO mudar de tema com o app já aberto.
+  aplicarTema(obterTemaSalvo());
+  observarTemaDoSistema();
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch((err) => {
       console.error("Falha ao registrar service worker:", err);

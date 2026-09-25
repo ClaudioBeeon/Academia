@@ -59,3 +59,23 @@ test("sem séries no período, retorna lista vazia", () => {
   const resultado = calcularCoberturaMuscular({ seriesUltimos7Dias: [], definicaoFase });
   assert.deepEqual(resultado, []);
 });
+
+test("soma séries fracionadas: indireta vale a contribuição, e o total de diretas vem à parte", () => {
+  const series = [
+    ...Array(12).fill(0).map(() => ({ musculo: "biceps", contribuicao: 1, direta: true, tipoSerie: "normal" })),
+    ...Array(12).fill(0).map(() => ({ musculo: "biceps", contribuicao: 0.5, direta: false, tipoSerie: "normal" })),
+  ];
+  const [biceps] = calcularCoberturaMuscular({ seriesUltimos7Dias: series, definicaoFase });
+  assert.equal(biceps.atual, 18);
+  assert.equal(biceps.diretas, 12);
+  assert.equal(biceps.abaixoDoAlvo, false, "12 diretas + 6 indiretas = 18 fracionadas, dentro de 15-20");
+});
+
+test("músculo secundário usa a faixa própria (faixasSecundario)", () => {
+  const fase = { ...definicaoFase, musculoSecundario: ["quadriceps"], faixasSecundario: { alvo_min: 6, alvo_max: 12 } };
+  const series = Array(8).fill(0).map(() => serie("quadriceps"));
+  const [quad] = calcularCoberturaMuscular({ seriesUltimos7Dias: series, definicaoFase: fase });
+  assert.equal(quad.categoria, "secundario");
+  assert.equal(quad.min, 6);
+  assert.equal(quad.abaixoDoAlvo, false);
+});

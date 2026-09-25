@@ -27,3 +27,20 @@ test("série com contribuicao ausente não gera NaN", () => {
   const resultado = calcularVolumeSemanal(series);
   assert.equal(resultado.porMusculo.peito, 0);
 });
+
+test("expandirContribuicoes credita o primário com 1 e os secundários com a fração do catálogo", async () => {
+  const { expandirContribuicoes } = await import("./volume.js");
+  const catalogo = [
+    { id: "remada", musculoPrimario: "costas", musculosSecundarios: [{ musculo: "biceps", contribuicao: 0.5 }, { musculo: "deltoide_posterior", contribuicao: 0.5 }] },
+  ];
+  const series = [{ exercicioId: "remada", musculo: "costas", contribuicao: 1, tipoSerie: "normal" }];
+  const r = calcularVolumeSemanal(expandirContribuicoes(series, catalogo));
+  assert.deepEqual(r.porMusculo, { costas: 1, biceps: 0.5, deltoide_posterior: 0.5 });
+});
+
+test("expandirContribuicoes mantém como gravada a série de exercício fora do catálogo", async () => {
+  const { expandirContribuicoes } = await import("./volume.js");
+  const r = expandirContribuicoes([{ exercicioId: "x", musculo: "peito", contribuicao: 1 }], []);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].musculo, "peito");
+});

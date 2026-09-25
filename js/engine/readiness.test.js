@@ -14,16 +14,10 @@ test("calcularReadiness retorna 100/ótimo quando tudo já foi feito e nenhum fa
   assert.deepEqual(r.fatores, []);
 });
 
-test("calcularReadiness desconta por creatina ainda não marcada hoje", () => {
-  const r = calcularReadiness({ ...TUDO_EM_DIA, creatinaHoje: false });
-  assert.ok(r.score < 100);
-  assert.ok(r.fatores.some((f) => f.includes("Creatina")));
-});
-
-test("calcularReadiness desconta por creatina nunca perguntada (null) igual a não marcada", () => {
-  const r1 = calcularReadiness({ ...TUDO_EM_DIA, creatinaHoje: null });
-  const r2 = calcularReadiness({ ...TUDO_EM_DIA, creatinaHoje: false });
-  assert.equal(r1.score, r2.score);
+test("calcularReadiness NÃO desconta por dia de descanso nem por creatina de um dia", () => {
+  const r = calcularReadiness({ ...TUDO_EM_DIA, sequenciaDias: 0, creatinaHoje: false });
+  assert.equal(r.score, 100);
+  assert.deepEqual(r.fatores, []);
 });
 
 test("calcularReadiness desconta por proteína abaixo da meta", () => {
@@ -49,8 +43,8 @@ test("calcularReadiness soma vários fatores negativos ao mesmo tempo", () => {
     sonoOntem: "ruim", alcoolOntem: true, sequenciaDias: 0,
     creatinaHoje: false, proteinaAbaixoDaMeta: true, treinouHoje: false,
   });
-  assert.equal(r.score, 100 - 30 - 18 - 12 - 10 - 10 - 8);
-  assert.equal(r.fatores.length, 6);
+  assert.equal(r.score, 100 - 30 - 18 - 10 - 8);
+  assert.equal(r.fatores.length, 4);
 });
 
 test("calcularReadiness nunca fica negativo mesmo empilhando todos os fatores", () => {
@@ -64,7 +58,6 @@ test("calcularReadiness nunca fica negativo mesmo empilhando todos os fatores", 
 test("calcularReadiness sem nenhum argumento (todos os padrões) já reflete nada feito ainda", () => {
   const r = calcularReadiness();
   assert.ok(r.score < 100);
-  assert.ok(r.fatores.includes("Creatina ainda não marcada hoje"));
   assert.ok(r.fatores.includes("Ainda não treinou hoje"));
 });
 

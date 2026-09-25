@@ -1,9 +1,10 @@
 // js/screens/evolucao.js
 import { getAll, get } from "../data/db.js";
-import { calcularProgressao1RM, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
+import { calcularProgressao1RM, calcularProgressaoCarga, calcularVolumeSemanalPorMusculo } from "../engine/graficos.js";
 import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
+import { expandirContribuicoes } from "../engine/volume.js";
 import { montarCardPostura } from "./postura.js";
 
 const NOME_MUSCULO = {
@@ -127,11 +128,13 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     const protocolo = protocolos[0] ?? null;
     const definicaoFase = protocolo?.volumeSemanalPorFase?.[perfil?.fase?.atual ?? "definicao"];
     const seriesUltimos7Dias = todasAsSeries.filter((s) => s.data >= subtrairDias(hoje, 6));
-    const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias, definicaoFase });
+    // Séries indiretas contam pela fração do catálogo (as faixas do
+    // protocolo são em séries fracionadas).
+    const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias: expandirContribuicoes(seriesUltimos7Dias, exercicios), definicaoFase });
     main.appendChild(montarHeatmapCobertura(cobertura));
 
     montarSecaoCarga(main, exercicios, todasAsSeries);
-    montarSecaoVolume(main, todasAsSeries);
+    montarSecaoVolume(main, expandirContribuicoes(todasAsSeries, exercicios));
   }
 
   montarSecaoMedidas(main, db, linhasMedidas);
@@ -147,7 +150,7 @@ function montarSecaoCarga(main, exercicios, todasAsSeries) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
-    <div class="exercise-head"><div class="exercise-name">Progressão de carga (1RM estimado)</div></div>
+    <div class="exercise-head"><div class="exercise-name">Progressão de carga</div><div class="exercise-meta grafico-tipo"></div></div>
     <div class="sets" style="padding:0 18px 18px;">
       <div class="set-field" style="grid-column:1/-1;">
         <label>Exercício
@@ -171,13 +174,19 @@ function montarSecaoCarga(main, exercicios, todasAsSeries) {
 
   const desenhar = (exercicioId) => {
     const seriesDoExercicio = todasAsSeries.filter((s) => s.exercicioId === exercicioId);
-    const pontos = calcularProgressao1RM(seriesDoExercicio);
+    // 1RM estimado só vale com séries de até 12 reps; isoladores de
+    // 12–25 reps caem na maior carga de trabalho de cada dia.
+    const pontos1RM = calcularProgressao1RM(seriesDoExercicio);
+    const pontos = pontos1RM.length > 0
+      ? pontos1RM.map((p) => ({ data: p.data, valor: p.carga1RM }))
+      : calcularProgressaoCarga(seriesDoExercicio).map((p) => ({ data: p.data, valor: p.carga }));
+    card.querySelector(".grafico-tipo").textContent = pontos1RM.length > 0 ? "1RM estimado" : "maior carga do dia";
     container.innerHTML = "";
     if (pontos.length === 0) {
       container.innerHTML = `<p class="prev-hint">Sem dados suficientes para este exercício.</p>`;
       return;
     }
-    container.appendChild(criarSvgLinha(pontos.map((p) => ({ data: p.data, valor: p.carga1RM }))));
+    container.appendChild(criarSvgLinha(pontos));
   };
 
   select.addEventListener("change", () => desenhar(select.value));
@@ -205,7 +214,7 @@ function montarSecaoVolume(main, todasAsSeries) {
     const head = document.createElement("div");
     head.className = "exercise-head";
     head.innerHTML = `<div class="exercise-name"></div>`;
-    head.querySelector(".exercise-name").textContent = `Volume semanal — ${musculo}`;
+    head.querySelector(".exercise-name").textContent = `Volume semanal — ${nomeDoMusculo(musculo)}`;
     card.appendChild(head);
 
     const corpo = document.createElement("div");
@@ -411,8 +420,22 @@ function montarSecaoMedidas(main, db, linhasIniciais) {
     { campo: "percentualGordura", titulo: "% Gordura" },
   ];
 
+  // A cintura é a métrica principal do objetivo de gordura abdominal. O
+  // valor inicial do perfil (62 cm pra 170 cm/71 kg) é implausível — abaixo
+  // de ~65 cm em adulto quase sempre é medida errada (fita no lugar errado
+  // ou apertada), e uma tendência que parte de um ponto errado não serve.
+  const CINTURA_SUSPEITA_CM = 65;
   const desenharGraficos = () => {
     graficosContainer.innerHTML = "";
+    const cinturas = prepararSerieTemporal(linhas, "cintura_cm");
+    const ultimaCintura = cinturas.at(-1)?.valor;
+    if (ultimaCintura != null && ultimaCintura < CINTURA_SUSPEITA_CM) {
+      const aviso = document.createElement("p");
+      aviso.className = "prev-hint";
+      aviso.style.padding = "0";
+      aviso.textContent = `A última cintura registrada (${ultimaCintura} cm) parece baixa demais — confira: fita na altura do umbigo, reta, sem apertar, medindo com o ar solto. É a métrica principal do objetivo de gordura abdominal.`;
+      graficosContainer.appendChild(aviso);
+    }
     for (const { campo, titulo } of METRICAS) {
       const pontos = prepararSerieTemporal(linhas, campo);
       if (pontos.length === 0) continue;

@@ -8,6 +8,9 @@ import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSem
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
+import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
+import { musculosTreinadosRecentemente } from "../engine/recuperacaoMuscular.js";
+import { getCheckinsRecentes } from "../data/checkin.js";
 import { montarTelaFila } from "./fila.js";
 import { montarTelaExecucao } from "./execucao.js";
 import { montarTelaRelatorio } from "./relatorio.js";
@@ -31,11 +34,15 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   const protocolos = await getAll(db, "protocolo");
   const protocolo = protocolos[0] ?? null;
   const equipamento = await getEquipamento(db);
-  const [todasAsSeries, ultimoDiaRegistrado, ficha] = await Promise.all([
+  const [todasAsSeries, ultimoDiaRegistrado, ficha, checkinsRecentes] = await Promise.all([
     getAll(db, "historicoSeries"),
     getUltimoDiaRegistrado(db),
     getFicha(db),
+    getCheckinsRecentes(db),
   ]);
+  // Queda de desempenho segura a série extra das semanas 4–6 (a ficha pede
+  // isso; antes nenhum alerta chegava até a montagem da sessão).
+  const { fadigaDetectada } = avaliarEstadoDoTreino({ todasAsSeries, checkinsRecentes, hoje });
 
   // O bloco começa no primeiro treino aberto e a partir daí a semana do
   // mesociclo é derivada da data — o usuário não precisa marcar nada.
@@ -54,7 +61,16 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   const diaInfo = obterDiaPorNumero(diaDaSessao);
 
   const { exerciciosHoje: exerciciosBase, diaDaFicha } = prepararSessaoDoDia({
-    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
+    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco, fadigaDetectada,
+  });
+
+  // Ciclo rotativo: o dia de hoje pode repetir músculo treinado ontem (ex.:
+  // dia 5 → dia 1, peito nos dois). Só avisa na fila, nunca bloqueia.
+  const musculosTreinadosHaPouco = modoPreview ? [] : musculosTreinadosRecentemente({
+    todasAsSeries,
+    catalogo: todosExercicios,
+    hoje,
+    musculosDeHoje: [...new Set(exerciciosBase.map((e) => e.musculoPrimario))],
   });
 
   // Substituição ("trocar exercício") e adiamento ("pular pra depois") só
@@ -118,7 +134,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
 
     telaAtual = await trocarConteudo(root, async () => {
       if (estadoAtual === "fila") {
-        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco, inicioSessaoTs }, {
+        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco, inicioSessaoTs, musculosTreinadosHaPouco }, {
           onExecutar: async (indice) => {
             indiceExercicioAtual = indice;
             estadoAtual = "execucao";
@@ -153,6 +169,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
           equipamento,
           hoje,
           mostrarExplicacaoAberta,
+          semanaDoBloco,
         }, {
           onFechar: async () => {
             estadoAtual = "fila";

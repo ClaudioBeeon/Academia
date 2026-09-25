@@ -1,5 +1,6 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
+import { descreverSemana, ordemDeCorte } from "../engine/fichaFixa.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
@@ -207,6 +208,7 @@ function partesDaPrescricao(exercicio) {
   const partes = [p?.repeticoes ? `${alvo} × ${p.repeticoes.min}-${p.repeticoes.max}` : `${alvo} séries`];
   if (p?.rirAlvo != null) partes.push(`RIR ${p.rirAlvo}`);
   if (p?.descansoSegundos) partes.push(`${p.descansoSegundos}s`);
+  if (p?.opcional) partes.push("opcional");
   return partes;
 }
 
@@ -271,12 +273,13 @@ function montarRotuloSecao(texto) {
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
-  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1, inicioSessaoTs = null } = contexto;
+  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1, inicioSessaoTs = null, musculosTreinadosHaPouco = [] } = contexto;
   const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
 
-  const seriesPorExercicio = await Promise.all(
+  // Séries de aquecimento não contam pra fechar um exercício.
+  const seriesPorExercicio = (await Promise.all(
     exerciciosHoje.map((e) => getSeriesDoExercicioNaData(db, e.id, hoje))
-  );
+  )).map((series) => series.filter((s) => s.tipoSerie !== "aquecimento"));
   const habitoHoje = (await getHabito(db, hoje)) ?? {};
 
   let totalSeriesFeitas = 0;
@@ -299,7 +302,7 @@ export async function montarTelaFila(db, contexto, callbacks) {
   const semanas = ficha?.mesociclo?.semanas;
   const infoSemana = semanas?.find((s) => s.semana === semanaDoBloco);
   const contexto1 = [`Dia ${diaInfo.numero}`];
-  if (infoSemana && semanas) contexto1.push(`Semana ${infoSemana.semana} de ${semanas.length}`);
+  if (infoSemana && semanas) contexto1.push(`Semana ${infoSemana.semana} de ${semanas.length} (${descreverSemana(semanaDoBloco)})`);
 
   const header = document.createElement("header");
   header.className = "top";
@@ -359,6 +362,25 @@ export async function montarTelaFila(db, contexto, callbacks) {
   root.appendChild(main);
 
   main.appendChild(montarBarraProgresso(exerciciosConcluidos, exerciciosHoje.length));
+
+  if (musculosTreinadosHaPouco.length > 0) {
+    const aviso = document.createElement("p");
+    aviso.className = "prev-hint fila-aviso-recuperacao";
+    const nomes = musculosTreinadosHaPouco.map((m) => `${nomeDoMusculo(m.musculo).toLowerCase()} (${m.series} séries)`).join(", ");
+    aviso.textContent = `Treinado há menos de ~36 h: ${nomes}. Dá pra treinar — o desempenho só pode vir um pouco abaixo. Se puder escolher, descanse um dia antes deste treino.`;
+    main.appendChild(aviso);
+  }
+
+  // Se faltar tempo: a ordem de corte vem da ficha (opcionais primeiro) e
+  // nunca inclui peito ou bíceps — substitui o antigo "de baixo pra cima",
+  // que cortava justamente o bíceps no fim do dia 2.
+  const corte = ordemDeCorte(exerciciosHoje);
+  if (corte.length > 0) {
+    const notaCorte = document.createElement("p");
+    notaCorte.className = "prev-hint fila-ordem-corte";
+    notaCorte.textContent = `Pouco tempo? Corte nesta ordem: ${corte.map((e) => e.nome).join(" → ")}. Peito e bíceps ficam sempre.`;
+    main.appendChild(notaCorte);
+  }
 
   const aquecimentoTemMovimentos = (ficha?.aquecimento?.exercicios?.length ?? 0) > 0;
   main.appendChild(montarChecklistAquecimento(db, hoje, ficha?.aquecimento, habitoHoje));

@@ -1,9 +1,11 @@
 // js/screens/execucao.js
-import { registrarSerie, getSeriesDoExercicioNaData, getUltimaSerieAnterior, getAmostrasRecentesDoExercicio, getHistoricoCompletoDoExercicio, getSeriesDaUltimaSessaoAnterior } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getHistoricoCompletoDoExercicio } from "../data/historico.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
-import { sugerirCarga } from "../engine/cargas.js";
+import { sugerirProximaCarga } from "../engine/progressao.js";
+import { validarRir } from "../engine/rir.js";
+import { perguntarResultadoSerie } from "./resultadoSerie.js";
 import { calcularAnilhas } from "../engine/anilhas.js";
-import { gerarEscadaAquecimento } from "../engine/aquecimento.js";
+import { gerarEscadaAquecimento, gerarAquecimentoComposto, precisaDeAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
 import { criarCronometro } from "./timer.js";
 import { montarTelaSerieCheia } from "./telaSerieCheia.js";
@@ -22,7 +24,7 @@ import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaS
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
 const INCREMENTO_CARGA_PADRAO_KG = 1;
-const CARGA_PRIMEIRA_VEZ_PADRAO_KG = 5;
+const DESCANSO_APOS_AQUECIMENTO_SEGUNDOS = 60;
 
 const ICONE_RELOGIO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>`;
 
@@ -47,6 +49,20 @@ function obterConfigExercicio(protocolo, exercicio) {
     rirAlvo: (config.rirAlvo.min + config.rirAlvo.max) / 2,
     descansoSegundos: config.descansoSegundos.min,
   };
+}
+
+// Histórico do exercício (mais recente primeiro) agrupado por data, sem o
+// dia de hoje — é o formato que js/engine/progressao.js espera.
+function agruparSessoesAnteriores(historico, hoje) {
+  const porData = new Map();
+  for (const serie of historico) {
+    if (serie.data >= hoje) continue;
+    if (!porData.has(serie.data)) porData.set(serie.data, []);
+    porData.get(serie.data).push(serie);
+  }
+  return [...porData.keys()]
+    .sort((a, b) => b.localeCompare(a))
+    .map((data) => ({ data, series: porData.get(data).sort((a, b) => (a.serieNumero ?? 0) - (b.serieNumero ?? 0)) }));
 }
 
 function formatarNumero(valor) {
@@ -97,7 +113,7 @@ function montarVisualAnilhas(anilhasPorLado, pesoBarra) {
 }
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
-  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta } = contexto;
+  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta, semanaDoBloco = null } = contexto;
   const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onMinimizarSessao } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
@@ -108,31 +124,40 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   let numeroEmAndamento = null;
   let inicioTrabalhoTs = null;
   let intervalTrabalho = null;
-  const seriesHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
-  const ultimaAnterior = await getUltimaSerieAnterior(db, exercicio.id, hoje);
-  const amostras = await getAmostrasRecentesDoExercicio(db, exercicio.id);
-  const sugestao = sugerirCarga(amostras, cfg.rirAlvo);
-  const sessaoAnteriorCompleta = await getSeriesDaUltimaSessaoAnterior(db, exercicio.id, hoje);
+  // Séries de aquecimento ficam à parte: não ocupam número de série, não
+  // entram na progressão nem nos recordes (auditoria 2026-09-24).
+  const todasHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
+  const seriesHoje = todasHoje.filter((s) => s.tipoSerie !== "aquecimento");
+  const historicoCompleto = await getHistoricoCompletoDoExercicio(db, exercicio.id);
+  const sessoesAnteriores = agruparSessoesAnteriores(historicoCompleto, hoje);
 
-  const cargaPadrao = sugestao.cargaSugerida
-    ?? ultimaAnterior?.carga
-    ?? (exercicio.equipamento === "barra" ? equipamento.pesoBarra : CARGA_PRIMEIRA_VEZ_PADRAO_KG);
-  let cargaSelecionada = Math.max(incrementoCarga, arredondarIncremento(cargaPadrao, incrementoCarga));
+  // Dupla progressão (js/engine/progressao.js): carga base = maior carga de
+  // trabalho da última sessão; sobe quando todas as séries bateram o topo
+  // da faixa. Substitui a regressão antiga, que virava a média das últimas
+  // 5 séries e puxava a carga pra baixo.
+  const sugestao = sugerirProximaCarga({
+    historicoSessoes: sessoesAnteriores,
+    faixaMin: cfg.repsMin,
+    faixaMax: cfg.repsMax,
+    rirAlvo: cfg.rirAlvo,
+    incremento: incrementoCarga,
+  });
 
-  // Reps e RIR não têm mais um valor fixo gravado sem perguntar: cada série
-  // pendente começa pré-preenchida com a mesma série da sessão anterior (é o
-  // dado mais parecido com o que vai acontecer agora), e só cai no padrão da
-  // prescrição quando não existe sessão anterior pra comparar.
-  function valoresIniciaisParaSerie(numero) {
-    const equivalente = sessaoAnteriorCompleta.find((s) => s.serieNumero === numero);
-    return {
-      reps: equivalente?.reps ?? cfg.repsMax,
-      rir: equivalente?.rir ?? cfg.rirAlvo,
-    };
+  // Primeira vez sem barra: começa em 0 e a nota pede pra ajustar — antes
+  // entrava 5 kg sem perguntar (até na prancha).
+  const cargaPadrao = sugestao.carga
+    ?? (exercicio.equipamento === "barra" ? equipamento.pesoBarra : 0);
+  let cargaSelecionada = Math.max(0, arredondarIncremento(cargaPadrao, incrementoCarga));
+
+  // Reps começam na meta da série (vinda da progressão) e o RIR começa
+  // vazio: é respondido na folha "Como foi a série?" ao terminar. Antes os
+  // dois vinham pré-preenchidos e eram gravados sem ninguém editar.
+  function valoresIniciaisParaSerie() {
+    return { reps: sugestao.repsAlvo ?? cfg.repsMin, rir: null };
   }
 
-  let repsAtual = cfg.repsMax;
-  let rirAtual = cfg.rirAlvo;
+  let repsAtual = sugestao.repsAlvo ?? cfg.repsMin;
+  let rirAtual = null;
   let campoAtivo = "carga";
 
   const root = document.createElement("div");
@@ -251,7 +276,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     ferramentasPill.addEventListener("click", () => {
       const abrindo = !painelFerramentas.classList.contains("aberto");
       if (abrindo) {
-        const pesoAlvo = sugestao.cargaSugerida ?? (ultimaAnterior ? ultimaAnterior.carga : equipamento.pesoBarra);
+        const pesoAlvo = cargaSelecionada > 0 ? cargaSelecionada : equipamento.pesoBarra;
         const anilhas = calcularAnilhas(pesoAlvo, equipamento.pesoBarra, equipamento.anilhasDisponiveis);
         const aquecimento = gerarEscadaAquecimento(pesoAlvo, equipamento.pesoBarra);
 
@@ -557,7 +582,26 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
     if (!emSerie) {
       notaEl.style.display = "";
-      notaEl.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${cfg.rirAlvo}</b> sobrando. Anda de ${formatarNumero(incrementoCarga)} em ${formatarNumero(incrementoCarga)} kg.`;
+      notaEl.innerHTML = "";
+      if (seriesHoje.length === 0) {
+        const sug = document.createElement("span");
+        sug.className = "exec-sugestao";
+        sug.textContent = sugestao.motivo;
+        notaEl.append(sug, document.createElement("br"));
+      }
+      const alvo = document.createElement("span");
+      alvo.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${formatarNumero(cfg.rirAlvo)}</b> sobrando.`;
+      notaEl.appendChild(alvo);
+      // Rampa de aquecimento pra todo composto que não usa barra (barra já
+      // tem a escada completa no painel "Ferramentas").
+      if (seriesHoje.length === 0 && exercicio.equipamento !== "barra" && precisaDeAquecimento(exercicio)) {
+        const passos = gerarAquecimentoComposto(cargaSelecionada, incrementoCarga);
+        if (passos.length > 0) {
+          const aq = document.createElement("span");
+          aq.textContent = ` Aquecimento antes: ${passos.map((p) => `${formatarNumero(p.peso)} kg × ${p.reps}`).join(" → ")} — ao registrar, marque "Foi aquecimento".`;
+          notaEl.appendChild(aq);
+        }
+      }
     } else {
       notaEl.style.display = "none";
     }
@@ -581,9 +625,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   }
 
   const AJUSTES = {
-    carga: (delta) => { cargaSelecionada = Math.max(incrementoCarga, cargaSelecionada + delta * incrementoCarga); },
+    carga: (delta) => { cargaSelecionada = Math.max(0, cargaSelecionada + delta * incrementoCarga); },
     reps: (delta) => { repsAtual = Math.max(0, repsAtual + delta); },
-    rir: (delta) => { rirAtual = Math.max(0, rirAtual + delta); },
+    rir: (delta) => { rirAtual = Math.max(0, (rirAtual ?? cfg.rirAlvo) + delta); },
   };
 
   // O telão (se estiver aberto) espelha qualquer ajuste feito por aqui —
@@ -691,7 +735,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     pararDescanso({ ocultar: !descansoVisivel });
 
     numeroEmAndamento = numero;
-    const iniciais = valoresIniciaisParaSerie(numero);
+    const iniciais = valoresIniciaisParaSerie();
     repsAtual = iniciais.reps;
     rirAtual = iniciais.rir;
     campoAtivo = "reps";
@@ -734,12 +778,49 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     renderizarTudo();
   }
 
+  // "Terminei — registrar" não grava mais direto: abre a folha "Como foi a
+  // série?". Voltar dela mantém a série em andamento (cronômetro rodando).
   async function finalizarTrabalhoERegistrar() {
     const numero = numeroEmAndamento;
+    const resultado = await perguntarResultadoSerie({
+      numero,
+      reps: repsAtual,
+      rirSugerido: rirAtual,
+      rirAlvo: cfg.rirAlvo,
+      repsMin: cfg.repsMin,
+      repsMax: cfg.repsMax,
+      rotuloReps: incrementoCarga === 0 ? "Segundos / reps" : "Repetições",
+    });
+    if (!resultado || numeroEmAndamento !== numero) return;
     pararAnimacaoTrabalho();
     numeroEmAndamento = null;
     campoAtivo = "carga";
+    repsAtual = resultado.reps;
+    rirAtual = resultado.rir;
+    if (resultado.aquecimento) {
+      await registrarAquecimento();
+      return;
+    }
     await registrarSerieAtual(numero);
+  }
+
+  async function registrarAquecimento() {
+    await registrarSerie(db, {
+      exercicioId: exercicio.id,
+      data: hoje,
+      musculo: exercicio.musculoPrimario,
+      contribuicao: 0,
+      tipoSerie: "aquecimento",
+      carga: cargaSelecionada,
+      reps: repsAtual,
+      rir: null,
+      serieNumero: 0,
+      registradaEm: Date.now(),
+      semanaBloco: semanaDoBloco,
+    });
+    renderizarTudo();
+    iniciarDescanso(DESCANSO_APOS_AQUECIMENTO_SEGUNDOS);
+    if (onSerieRegistrada) await onSerieRegistrada();
   }
 
   function formatarRelogio(segundos) {
@@ -780,12 +861,13 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         const proximaSerie = numeroPendenteAtual();
         if (telaCheiaAtual && proximaSerie != null) {
           numeroEmAndamento = proximaSerie;
-          const iniciais = valoresIniciaisParaSerie(proximaSerie);
+          const iniciais = valoresIniciaisParaSerie();
           repsAtual = iniciais.reps;
           rirAtual = iniciais.rir;
           campoAtivo = "reps";
           telaCheiaAtual.atualizarSerieAtual(proximaSerie);
           renderizarTudo();
+          sincronizarTelaCheia();
 
           const { segundos, rotulo } = duracaoContagem(proximaSerie);
           telaCheiaAtual.mostrarContagem(segundos, rotulo, () => comecarTrabalhoAgora(false));
@@ -825,8 +907,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     const reps = repsAtual;
     const rir = rirAtual;
 
-    const seriesAnteriores = await getHistoricoCompletoDoExercicio(db, exercicio.id);
+    const seriesAnteriores = (await getHistoricoCompletoDoExercicio(db, exercicio.id)).filter((s) => s.tipoSerie !== "aquecimento");
     const prs = detectarPRs({ carga, reps }, seriesAnteriores.map((s) => ({ carga: s.carga, reps: s.reps })));
+    const anteriorHoje = [...seriesHoje].sort((a, b) => (b.serieNumero ?? 0) - (a.serieNumero ?? 0))[0] ?? null;
 
     const registro = {
       exercicioId: exercicio.id,
@@ -838,6 +921,8 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       reps,
       rir,
       serieNumero: numero,
+      registradaEm: Date.now(),
+      semanaBloco: semanaDoBloco,
     };
 
     await registrarSerie(db, registro);
@@ -851,6 +936,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       mostrarToastPR(prsRelevantes);
       if (onPrsDetectados) onPrsDetectados(prsRelevantes);
     }
+
+    const checagemRir = validarRir({ serieAnterior: anteriorHoje, serieAtual: registro });
+    if (checagemRir.suspeitaSubestimado) mostrarToast("Calibrando o RIR", checagemRir.mensagem);
 
     if (onSerieRegistrada) await onSerieRegistrada();
   }
@@ -916,6 +1004,27 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   root._dispose = pararTudo;
 
   return root;
+}
+
+function mostrarToast(rotulo, mensagem) {
+  const toast = document.createElement("div");
+  toast.className = "rest-bar toast-flutuante";
+  toast.setAttribute("role", "status");
+  toast.style.position = "fixed";
+  toast.style.left = "50%";
+  toast.style.bottom = `${proximoOffsetToast()}px`;
+  toast.style.width = "calc(100% - 44px)";
+  toast.style.maxWidth = "398px";
+  toast.style.zIndex = "10";
+  toast.innerHTML = `<div><div class="label"></div><div class="time" style="font-size:0.85rem;line-height:1.4;"></div></div>`;
+  toast.querySelector(".label").textContent = rotulo;
+  toast.querySelector(".time").textContent = mensagem;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("mostrado"));
+  setTimeout(() => {
+    toast.classList.remove("mostrado");
+    setTimeout(() => toast.remove(), 400);
+  }, 6000);
 }
 
 function mostrarToastPR(prs) {

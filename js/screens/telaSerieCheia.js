@@ -186,9 +186,9 @@ export function montarTelaSerieCheia({
   }
 
   function ajustar(delta) {
-    if (campoAjusteAtivo === "carga") valoresAjuste.carga = Math.max(incrementoCarga, valoresAjuste.carga + delta * incrementoCarga);
+    if (campoAjusteAtivo === "carga") valoresAjuste.carga = Math.max(0, valoresAjuste.carga + delta * incrementoCarga);
     else if (campoAjusteAtivo === "reps") valoresAjuste.reps = Math.max(0, valoresAjuste.reps + delta);
-    else valoresAjuste.rir = Math.max(0, valoresAjuste.rir + delta);
+    else valoresAjuste.rir = Math.max(0, (valoresAjuste.rir ?? rirAlvo) + delta);
     redesenharAjuste();
     if (aoAjustar) aoAjustar(campoAjusteAtivo, delta);
   }
@@ -201,7 +201,9 @@ export function montarTelaSerieCheia({
   function atualizarValores({ carga, reps, rir }) {
     if (carga != null) valoresAjuste.carga = carga;
     if (reps != null) valoresAjuste.reps = reps;
-    if (rir != null) valoresAjuste.rir = rir;
+    // RIR pode voltar a vazio (null) numa série nova — é respondido na
+    // folha "Como foi a série?" ao terminar.
+    if (rir !== undefined) valoresAjuste.rir = rir;
     redesenharAjuste();
   }
 

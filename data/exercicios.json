@@ -1,7 +1,7 @@
 {
-  "versao": "1.3",
-  "dataAtualizacao": "2026-08-26",
-  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo)",
+  "versao": "1.4",
+  "dataAtualizacao": "2026-09-24",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo) + auditoria científica 2026-09-24 (mapeamentos de músculo corrigidos: leg press e agachamento não treinam posterior de coxa — Kubo 2019; remadas creditam deltoide posterior; desenvolvimento/elevação frontal são deltoide anterior; mesa flexora deitada não é posição alongada — Maeo 2021; + cadeira flexora sentada e rosca inclinada)",
   "exercicios": [
     {
       "id": "supino_inclinado_halteres",
@@ -78,6 +78,10 @@
         {
           "musculo": "biceps",
           "contribuicao": 0.5
+        },
+        {
+          "musculo": "deltoide_posterior",
+          "contribuicao": 0.5
         }
       ],
       "tipo": "maquina",
@@ -94,6 +98,10 @@
         {
           "musculo": "biceps",
           "contribuicao": 0.5
+        },
+        {
+          "musculo": "deltoide_posterior",
+          "contribuicao": 0.5
         }
       ],
       "tipo": "composto_pesado",
@@ -105,8 +113,12 @@
     {
       "id": "desenvolvimento_maquina",
       "nome": "Desenvolvimento de ombro na máquina",
-      "musculoPrimario": "ombro",
+      "musculoPrimario": "ombro_anterior",
       "musculosSecundarios": [
+        {
+          "musculo": "ombro",
+          "contribuicao": 0.5
+        },
         {
           "musculo": "triceps",
           "contribuicao": 0.5
@@ -225,10 +237,6 @@
         {
           "musculo": "gluteo",
           "contribuicao": 0.5
-        },
-        {
-          "musculo": "posterior_coxa",
-          "contribuicao": 0.5
         }
       ],
       "tipo": "composto_moderado",
@@ -255,9 +263,20 @@
       "musculosSecundarios": [],
       "tipo": "isolador",
       "equipamento": "maquina",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "quadril colado no banco, evitar impulso. Deitado o quadril fica estendido — posição encurtada dos isquiotibiais. Se tiver a cadeira flexora sentada, ela rende mais (Maeo 2021)."
+    },
+    {
+      "id": "cadeira_flexora_sentada",
+      "nome": "Cadeira flexora (sentado)",
+      "musculoPrimario": "posterior_coxa",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "maquina",
       "cargaAlongada": true,
       "incrementoMinimo_kg": 2.5,
-      "observacoesExecucao": "quadril colado no banco, evitar impulso."
+      "observacoesExecucao": "Sentado, o quadril fica flexionado e os isquiotibiais trabalham alongados — cresceram ~14% contra ~9% na versão deitada (Maeo 2021). Trave a coxa no apoio e flexione até o fim."
     },
     {
       "id": "cadeira_abdutora",
@@ -419,8 +438,14 @@
       "nome": "Supino reto com barra",
       "musculoPrimario": "peito",
       "musculosSecundarios": [
-        { "musculo": "triceps", "contribuicao": 0.5 },
-        { "musculo": "ombro_anterior", "contribuicao": 0.5 }
+        {
+          "musculo": "triceps",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "ombro_anterior",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_pesado",
       "equipamento": "barra",
@@ -455,7 +480,10 @@
       "nome": "Puxada frente (pegada fechada/triângulo)",
       "musculoPrimario": "costas",
       "musculosSecundarios": [
-        { "musculo": "biceps", "contribuicao": 0.5 }
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "cabos_polias",
@@ -468,8 +496,14 @@
       "nome": "Remada cavalinho (T-bar)",
       "musculoPrimario": "costas",
       "musculosSecundarios": [
-        { "musculo": "biceps", "contribuicao": 0.5 },
-        { "musculo": "deltoide_posterior", "contribuicao": 0.5 }
+        {
+          "musculo": "biceps",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "deltoide_posterior",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_pesado",
       "equipamento": "barra",
@@ -491,9 +525,16 @@
     {
       "id": "desenvolvimento_halteres",
       "nome": "Desenvolvimento de ombro com halteres",
-      "musculoPrimario": "ombro",
+      "musculoPrimario": "ombro_anterior",
       "musculosSecundarios": [
-        { "musculo": "triceps", "contribuicao": 0.5 }
+        {
+          "musculo": "ombro",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "triceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "halteres",
@@ -504,7 +545,7 @@
     {
       "id": "elevacao_frontal_halteres",
       "nome": "Elevação frontal com halteres",
-      "musculoPrimario": "ombro",
+      "musculoPrimario": "ombro_anterior",
       "musculosSecundarios": [],
       "tipo": "isolador",
       "equipamento": "halteres",
@@ -522,6 +563,17 @@
       "cargaAlongada": false,
       "incrementoMinimo_kg": 2,
       "observacoesExecucao": "gire o punho pra fora (supinação) conforme sobe, cotovelo fixo ao lado do corpo, alternando os braços."
+    },
+    {
+      "id": "rosca_inclinada_halteres",
+      "nome": "Rosca inclinada com halteres (supinada)",
+      "musculoPrimario": "biceps",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "halteres",
+      "cargaAlongada": true,
+      "incrementoMinimo_kg": 1,
+      "observacoesExecucao": "Sentado num banco inclinado a ~45-60°, braços pendurados atrás do tronco: o ombro estendido alonga a cabeça longa do bíceps. Palmas pra cima o tempo todo."
     },
     {
       "id": "rosca_concentrada",
@@ -550,8 +602,10 @@
       "nome": "Agachamento livre com barra",
       "musculoPrimario": "quadriceps",
       "musculosSecundarios": [
-        { "musculo": "gluteo", "contribuicao": 0.5 },
-        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_pesado",
       "equipamento": "barra",
@@ -564,7 +618,10 @@
       "nome": "Afundo com halteres",
       "musculoPrimario": "quadriceps",
       "musculosSecundarios": [
-        { "musculo": "gluteo", "contribuicao": 0.5 }
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "halteres",
@@ -588,7 +645,10 @@
       "nome": "Elevação pélvica com barra (hip thrust)",
       "musculoPrimario": "gluteo",
       "musculosSecundarios": [
-        { "musculo": "posterior_coxa", "contribuicao": 0.5 }
+        {
+          "musculo": "posterior_coxa",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "barra",
@@ -612,7 +672,10 @@
       "nome": "Passada com halteres (afundo caminhando)",
       "musculoPrimario": "gluteo",
       "musculosSecundarios": [
-        { "musculo": "quadriceps", "contribuicao": 0.5 }
+        {
+          "musculo": "quadriceps",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "composto_moderado",
       "equipamento": "halteres",
@@ -669,7 +732,10 @@
       "nome": "Crucifixo invertido com halteres",
       "musculoPrimario": "deltoide_posterior",
       "musculosSecundarios": [
-        { "musculo": "costas", "contribuicao": 0.5 }
+        {
+          "musculo": "costas",
+          "contribuicao": 0.5
+        }
       ],
       "tipo": "isolador",
       "equipamento": "halteres",

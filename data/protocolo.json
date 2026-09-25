@@ -1,9 +1,11 @@
 {
   "versao": "1.1",
-  "dataAtualizacao": "2026-08-23",
+  "dataAtualizacao": "2026-09-24",
   "baseadoEm": "base-cientifica-hipertrofia-forca.md (documento completo, especialmente seções 21 e 22) + auditoria 2026-08-23",
 
   "notaDaAuditoria": "A partir da versão 1.1 os exercícios da sessão vêm de data/ficha.json (ficha prescrita), não do gerador automático. O gerador segue como fallback. As faixas abaixo continuam valendo para os alertas de volume — e três delas foram corrigidas: glúteo, panturrilha e abdômen estavam na faixa 'padrão' (10-16 séries) quando são manutenção deliberada, o que fazia o app tratá-los como deficientes sem que ninguém tivesse decidido isso.",
+
+  "notaDaAuditoria20260924": "Auditoria científica de 2026-09-24. (1) As faixas são em séries FRACIONADAS (indireta = 0,5, calculada pelo catálogo na leitura) e agora a cobertura conta assim — antes contava só diretas e acusava bíceps/deltoide posterior/tríceps abaixo do alvo por construção. (2) Nova categoria 'secundário' (ombro lateral, tríceps, quadríceps, posterior de coxa): músculos que você quer desenvolver sem priorizar, com faixa 6–12 — a partir de 4 séries/semana já há ganho e entre 5 e 10 está a melhor relação estímulo/série (Pelland 2026). (3) Manutenção 3–9 (Bickel 2011: ~1/3 do volume mantém a massa em jovens). (4) Deltoide posterior: alvo mínimo 8 — é músculo pequeno, 6 séries diretas + remadas fecham ~9. (5) Gatilho de deload corrigido: 'RIR subindo com a mesma carga' é sinal de que você ficou mais forte, não de fadiga. (6) O ponto de ~11 séries fracionadas por sessão de Remmert 2025 é preprint e, segundo os próprios autores, NÃO é teto.",
 
   "contagemDeVolume": {
     "pesoTrabalhoDireto": 1.0,
@@ -15,8 +17,9 @@
     "definicao": {
       "obs": "fase atual do usuário. Prioridade 1 = gordura abdominal (déficit calórico), prioridades de treino = peito E bíceps (confirmadas pelo usuário em 2026-08-23), mais correção postural de ombros e pescoço pra frente. Peito e bíceps priorizados; deltoide posterior e costas em crescimento pela postura; glúteo, panturrilha e abdômen em manutenção deliberada; pernas em faixa intermediária baixa (usuário quer melhorar coxas sem que perna vire prioridade).",
       "musculoPriorizadoCrescimento": ["peito", "biceps"],
-      "musculoEmManutencao": ["gluteo", "panturrilha", "abdomen"],
+      "musculoEmManutencao": ["gluteo", "panturrilha", "abdomen", "antebraco", "ombro_anterior"],
       "musculoEmRecomposicao": ["costas", "deltoide_posterior"],
+      "musculoSecundario": ["ombro", "triceps", "quadriceps", "posterior_coxa"],
       "faixasPadrao": {
         "min": 8,
         "alvo_min": 10,
@@ -26,14 +29,22 @@
         "manutencao_max": 8
       },
       "faixasManutencao": {
-        "min": 6,
-        "alvo_min": 6,
+        "min": 3,
+        "alvo_min": 3,
         "alvo_max": 9,
-        "max": 10
+        "max": 10,
+        "obs": "manutenção deliberada — ~1/3 do volume de crescimento mantém a massa em adultos jovens (Bickel 2011; Spiering 2021)"
+      },
+      "faixasSecundario": {
+        "min": 4,
+        "alvo_min": 6,
+        "alvo_max": 12,
+        "max": 16,
+        "obs": "músculos que você quer desenvolver sem priorizar. 4 séries fracionadas/semana já é dose eficaz; 5–10 é a faixa de melhor retorno por série (Pelland 2026)."
       },
       "faixasRecomposicao": {
-        "min": 8,
-        "alvo_min": 10,
+        "min": 6,
+        "alvo_min": 8,
         "alvo_max": 17,
         "max": 19,
         "seriesPorExercicio": 3,
@@ -45,7 +56,7 @@
         "alvo_max": 20,
         "max": 22,
         "seriesPorExercicio": 5,
-        "obs": "peito e bíceps. Peito fecha 15 séries/semana com 5 por sessão em 3 dias; bíceps fecha 18 fracionadas (12 diretas + 6 indiretas das costas). 5 séries por sessão está bem abaixo do ponto de retorno indetectável de ~11 séries fracionadas por sessão (Remmert 2025)."
+        "obs": "peito e bíceps. Peito fecha 15 séries/semana com 5 por sessão em 3 dias; bíceps fecha 18 fracionadas (12 diretas + 6 indiretas das costas). 5 séries por sessão fica abaixo do ponto de ~11 séries fracionadas por sessão em que o ganho extra fica difícil de detectar (Remmert 2025, preprint sem revisão por pares — os autores dizem que isso NÃO é um teto)."
       }
     },
     "hipertrofia_peito": {
@@ -74,7 +85,7 @@
     "porMusculoPorSessao": {
       "min": 5,
       "max": 8,
-      "obs": "acima disso a qualidade cai claramente (seção 13, P3)"
+      "obs": "heurística de conveniência (tempo e fadiga), não limiar fisiológico: estudos com 10–16 séries por sessão não mostraram prejuízo (Schoenfeld 2019; Brigatto 2019). Equivale mais ou menos às ~11 fracionadas de Remmert 2025 (preprint)."
     },
     "baseadoEm": "P3, seção 13"
   },
@@ -121,23 +132,25 @@
   },
 
   "estruturaMesociclo": {
-    "duracaoSemanas": 5,
+    "duracaoSemanas": 7,
     "semanas": [
-      { "semana": 1, "volume": "base_do_bloco", "rirAlvo": 3, "obs": "semana de entrada, sentir as cargas" },
-      { "semana": 2, "volume": "+1_serie_musculos_priorizados", "rirAlvo": 2, "obs": "" },
-      { "semana": 3, "volume": "+1_serie_musculos_priorizados", "rirAlvo": [1, 2], "obs": "" },
-      { "semana": 4, "volume": "mantem", "rirAlvo": 1, "obs": "semana mais exigente do bloco" },
-      { "semana": 5, "volume": "50_por_cento_do_volume", "rirAlvo": 4, "obs": "deload" }
+      { "semana": 1, "volume": "base_do_bloco", "rirAlvo": "RIR do exercício + 1, sem falha", "obs": "semana de entrada" },
+      { "semana": 2, "volume": "base_do_bloco", "rirAlvo": "RIR do exercício", "obs": "" },
+      { "semana": 3, "volume": "base_do_bloco", "rirAlvo": "RIR do exercício", "obs": "" },
+      { "semana": 4, "volume": "+1_serie_musculos_priorizados", "rirAlvo": "RIR do exercício", "obs": "só se não houver queda de desempenho" },
+      { "semana": 5, "volume": "+1_serie_musculos_priorizados", "rirAlvo": "RIR do exercício", "obs": "" },
+      { "semana": 6, "volume": "+1_serie_musculos_priorizados", "rirAlvo": "RIR do exercício", "obs": "" },
+      { "semana": 7, "volume": "50_por_cento_arredondado_pra_cima", "rirAlvo": "RIR do exercício + 2 (mínimo 3), sem falha", "obs": "deload" }
     ],
-    "posDeload": "novo bloco começa com volume base recalculado a partir do que funcionou no bloco anterior",
-    "prioridadeDeloadReativo": "deload reativo tem prioridade sobre o calendário — se os gatilhos aparecerem na semana 3, o deload acontece na semana 3, não espera a semana 5",
-    "baseadoEm": "estrutura definida pelo usuário, seção 11 (periodização simples o suficiente para hipertrofia), seção 14"
+    "posDeload": "o bloco recomeça sozinho na semana 1, com as cargas conquistadas",
+    "prioridadeDeloadReativo": "deload reativo tem prioridade sobre o calendário — com gatilho, o deload pode ser feito em qualquer semana (Config > Bloco de treino)",
+    "baseadoEm": "auditoria 2026-09-24: periodizar não dá vantagem de hipertrofia com volume igual (Moesgaard 2022); rampa de RIR não superou RIR fixo (Martikainen 2025); deload planejado não aumentou hipertrofia (Coleman 2024), mas especialistas recomendam 1 a cada 4–8 semanas (Bell 2023) — daí o teto em 7"
   },
 
   "gatilhosDeloadReativo": {
     "condicoes": [
       "desempenho caindo em 2+ sessões consecutivas com o mesmo peso",
-      "RIR percebido subindo sem mudança de carga",
+      "RIR ou repetições CAINDO com a mesma carga em 2 sessões seguidas, em 2+ exercícios (RIR subindo com a mesma carga é progresso, não fadiga)",
       "dor articular ou tendínea persistente",
       "queda de motivação, sono ruim ou irritabilidade sustentada",
       "dor muscular ainda presente na sessão seguinte do mesmo músculo"
@@ -161,7 +174,7 @@
         "acao": "sugerir +2 séries semanais"
       },
       {
-        "condicao": "desempenho caindo por 2+ semanas OU RIR percebido subindo OU dor articular",
+        "condicao": "desempenho caindo por 2+ semanas OU RIR/reps caindo com a mesma carga OU dor articular",
         "acao": "sugerir redução de 30-50% do volume por 1 semana (deload reativo)"
       },
       {
@@ -173,16 +186,16 @@
   },
 
   "validacaoRir": {
-    "regra": "se usuário declara RIR <= 2 e na série seguinte consegue MAIS repetições com a mesma carga, marcar RIR declarado como provavelmente superestimado e exibir feedback educativo sobre calibração de esforço",
+    "regra": "comparar a capacidade (reps + RIR) de séries seguidas com a mesma carga; se a seguinte superar a anterior por mais de 1 rep (2 acima de 12 reps), o RIR da anterior provavelmente foi declarado baixo demais — mostrar feedback educativo sobre calibração de esforço",
     "baseadoEm": "seção 4, seção 22.5"
   },
 
   "alertas": {
     "condicoes": [
-      "volume abaixo do mínimo efetivo (< 4 séries diretas/semana) em algum músculo",
-      "volume acima de 22 séries/semana com desempenho em queda",
+      "cobertura semanal abaixo da faixa da categoria do músculo (contagem fracionada)",
       "mais de 8 séries diretas do mesmo músculo em uma sessão",
-      "ausência de progressão em um exercício por 4+ semanas (sugerir troca de exercício ou revisão de recuperação)",
+      "ausência de progressão (nem carga nem reps) em um exercício por 4+ semanas (sugerir revisar sono, dieta e honestidade do RIR antes de trocar o exercício)",
+      "músculo do dia treinado com 3+ séries diretas há menos de ~36 h",
       "sequência de sessões com qualidade percebida <= 2"
     ],
     "baseadoEm": "seção 22.6"

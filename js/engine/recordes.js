@@ -1,3 +1,5 @@
+import { serveParaEstimar1RM } from "./graficos.js";
+
 function estimativa1RM(serie) {
   return serie.carga * (1 + serie.reps / 30);
 }
@@ -12,8 +14,10 @@ export function detectarPRs(novaSerie, seriesAnteriores) {
 
   const prs = [];
 
+  // Carga 0 (peso corporal/isometria): só o recorde de reps faz sentido.
+  const temCarga = novaSerie.carga > 0;
   const maiorCargaAnterior = Math.max(...seriesAnteriores.map((s) => s.carga));
-  if (novaSerie.carga > maiorCargaAnterior) {
+  if (temCarga && novaSerie.carga > maiorCargaAnterior) {
     prs.push({ tipo: "carga", mensagem: `Novo recorde de carga: ${novaSerie.carga} kg!`, principio, secao });
   }
 
@@ -29,14 +33,15 @@ export function detectarPRs(novaSerie, seriesAnteriores) {
     });
   }
 
-  const melhor1RMAnterior = Math.max(...seriesAnteriores.map(estimativa1RM));
-  if (estimativa1RM(novaSerie) > melhor1RMAnterior) {
+  const anterioresValidas = seriesAnteriores.filter(serveParaEstimar1RM);
+  const melhor1RMAnterior = anterioresValidas.length > 0 ? Math.max(...anterioresValidas.map(estimativa1RM)) : 0;
+  if (serveParaEstimar1RM(novaSerie) && anterioresValidas.length > 0 && estimativa1RM(novaSerie) > melhor1RMAnterior) {
     const valor = Math.round(estimativa1RM(novaSerie) * 10) / 10;
     prs.push({ tipo: "1rm", mensagem: `Novo recorde estimado de 1RM: ${valor} kg!`, principio, secao });
   }
 
   const maiorVolumeAnterior = Math.max(...seriesAnteriores.map((s) => s.carga * s.reps));
-  if (novaSerie.carga * novaSerie.reps > maiorVolumeAnterior) {
+  if (temCarga && novaSerie.carga * novaSerie.reps > maiorVolumeAnterior) {
     prs.push({
       tipo: "volume",
       mensagem: `Novo recorde de volume nesta série: ${novaSerie.carga * novaSerie.reps} kg!`,

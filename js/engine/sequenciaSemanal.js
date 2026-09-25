@@ -15,11 +15,14 @@
 //   dominante, e o anterior já recebe trabalho indireto de todo supino.
 // Peito segue 3x por ciclo, um ângulo por dia (inclinado/horizontal/alongado),
 // sempre no primeiro exercício da sessão.
+// Revisão de 2026-09-24: o deltoide posterior saiu do dia 2 (face pull em
+// dias seguidos) e o crucifixo inverso foi do dia 1 pro dia 3 — deltoide
+// posterior agora nos dias 1 e 3, com 48 h entre eles.
 
 export const DIAS_SEQUENCIA = [
-  { numero: 1, titulo: "Peito (inclinado) + Costas + Deltoide posterior", musculos: ["peito", "costas", "deltoide_posterior", "triceps"] },
-  { numero: 2, titulo: "Costas + Bíceps", musculos: ["costas", "biceps", "deltoide_posterior"] },
-  { numero: 3, titulo: "Peito (horizontal) + Ombro + Tríceps + Abdômen", musculos: ["peito", "ombro", "triceps", "abdomen"] },
+  { numero: 1, titulo: "Peito (inclinado) + Costas + Deltoide posterior + Tríceps", musculos: ["peito", "costas", "deltoide_posterior", "triceps"] },
+  { numero: 2, titulo: "Costas + Bíceps", musculos: ["costas", "biceps"] },
+  { numero: 3, titulo: "Peito (horizontal) + Ombros + Tríceps + Abdômen", musculos: ["peito", "ombro", "deltoide_posterior", "triceps", "abdomen"] },
   { numero: 4, titulo: "Pernas", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"] },
   { numero: 5, titulo: "Peito (alongado) + Bíceps + Ombro + Antebraço", musculos: ["peito", "biceps", "ombro", "antebraco"] },
 ];

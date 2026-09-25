@@ -1,5 +1,7 @@
 # Atualização de 23/08/2026 — Auditoria, Ficha Prescrita e Novas Funcionalidades
 
+> **Errata de 24/09/2026:** três afirmações da seção 2 não se sustentam — "Remmert 2025" é preprint e os autores dizem que ~11 séries/sessão **não** é teto; o "+11% esternal/clavicular em 2025" não foi localizado em nenhuma base; e "puxar ≥ empurrar"/"1:1,8" não tem estudo por trás. Detalhes em `atualizacao-2026-09-24-auditoria-cientifica.md`.
+
 **Este documento é o pacote de atualização completo dessa sessão.** Reúne a auditoria do gerador de treino, o que a literatura mais recente trouxe de novo, e todas as funcionalidades adicionadas ao app — pra ser lido de uma vez quando quiser relembrar o que mudou e por quê, sem precisar reconstruir a conversa inteira.
 
 Relatório visual original da auditoria (gráficos, comparações lado a lado): https://claude.ai/code/artifact/1e996a18-231f-434f-a389-b652b622af14

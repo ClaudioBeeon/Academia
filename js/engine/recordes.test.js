@@ -55,3 +55,13 @@ test("cada PR carrega principio e secao", () => {
     assert.ok(pr.secao);
   }
 });
+
+test("carga zero (isometria/peso corporal) só gera recorde de reps", () => {
+  const prs = detectarPRs({ carga: 0, reps: 70 }, [{ carga: 0, reps: 60 }]);
+  assert.deepEqual(prs.map((p) => p.tipo), ["reps"]);
+});
+
+test("série acima de 12 reps não gera recorde de 1RM estimado", () => {
+  const prs = detectarPRs({ carga: 10, reps: 25 }, [{ carga: 20, reps: 10 }]);
+  assert.equal(prs.some((p) => p.tipo === "1rm"), false);
+});

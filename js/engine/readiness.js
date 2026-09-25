@@ -7,13 +7,18 @@
 // dia (creatina/proteína/treino) — decisão deliberada: 100 logo de manhã,
 // antes de fazer qualquer coisa, era enganoso. Só soma o que já é medido —
 // nunca inventa dado nem decide nada sozinho.
+//
+// Auditoria 2026-09-24: saíram "sequência zerada" e "creatina não marcada
+// hoje". Um dia de descanso MELHORA a recuperação — descontar por ele era
+// lógica invertida. E os estoques musculares de creatina levam ~30 dias pra
+// cair depois de parar (Hultman 1996): um dia sem tomar não muda nada no
+// músculo. Os dois continuam existindo como hábito (card e sequência), só
+// não entram mais nesta nota.
 
 const PESOS = {
   sonoRuim: 30,
   sonoMedio: 12,
   alcool: 18,
-  semSequencia: 12,
-  semCreatina: 10,
   proteinaAbaixoDaMeta: 10,
   semTreinoHoje: 8,
 };
@@ -21,8 +26,6 @@ const PESOS = {
 export function calcularReadiness({
   sonoOntem = null,
   alcoolOntem = false,
-  sequenciaDias = 0,
-  creatinaHoje = null,
   proteinaAbaixoDaMeta = false,
   treinouHoje = false,
 } = {}) {
@@ -40,19 +43,6 @@ export function calcularReadiness({
   if (alcoolOntem) {
     score -= PESOS.alcool;
     fatores.push("Álcool recente");
-  }
-
-  if (sequenciaDias === 0) {
-    score -= PESOS.semSequencia;
-    fatores.push("Sequência zerada");
-  }
-
-  // `null` = hábito ainda não perguntado nem marcado hoje — mesmo caso de
-  // "ainda não". `false` é explícito (só existe se um dia isso virar uma
-  // pergunta de sim/não/ainda-não com 3 estados); hoje o chip só marca true.
-  if (creatinaHoje !== true) {
-    score -= PESOS.semCreatina;
-    fatores.push("Creatina ainda não marcada hoje");
   }
 
   if (proteinaAbaixoDaMeta) {

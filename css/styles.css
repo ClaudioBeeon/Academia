@@ -1270,3 +1270,22 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .cpia-pergunta-salva:not(:empty)::before { content: "Você perguntou: "; font-weight: 500; color: var(--ink-faint); }
 .cpia-resposta { font-size: 0.85rem; line-height: 1.6; color: var(--ink); padding-top: 6px; white-space: pre-wrap; }
 
+
+/* Folha "Como foi a série?" (js/screens/resultadoSerie.js) — reps
+   ajustáveis e RIR sem valor marcado: tocar no RIR confirma e registra. */
+.resultado-serie-sheet { align-items: stretch; padding-top: 18px; }
+.resultado-serie-sheet h3 { font-size: 1.05rem; font-weight: 800; text-align: center; text-transform: none; color: var(--ink); margin: 0 0 16px; }
+.rs-linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card-2); border-radius: 16px; padding: 10px 12px 10px 16px; }
+.rs-rot { font-size: 0.86rem; font-weight: 700; color: var(--ink-dim); }
+.rs-ctl { display: flex; align-items: center; gap: 14px; }
+.rs-ctl button { width: 44px; height: 44px; border-radius: 999px; border: none; background: var(--card); color: var(--ink); font-size: 1.3rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+.rs-reps { min-width: 2ch; text-align: center; font: 900 1.9rem/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rs-pergunta { margin: 18px 0 10px; font-size: 0.95rem; font-weight: 800; color: var(--ink); text-align: center; }
+.rs-rir { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.rs-rir-btn { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-2); color: var(--ink); font: 800 1.1rem var(--font-mono); cursor: pointer; }
+.rs-rir-btn.sugerido { border-color: var(--accent); }
+.rs-rir-btn:active { background: var(--accent); color: var(--accent-ink); }
+.rs-rir-btn:focus-visible, .rs-ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rs-dica { margin: 12px 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--ink-faint); text-align: center; }
+.exec-sugestao { margin: 0 0 6px; }
+.exec-sugestao b { color: var(--ink); }

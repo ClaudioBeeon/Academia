@@ -1,40 +1,39 @@
 {
   "versao": "1.0",
-  "dataAtualizacao": "2026-08-23",
-  "nome": "Bloco 1 — Peito, bíceps e correção postural",
+  "dataAtualizacao": "2026-09-24",
+  "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
-  "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito.",
+  "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min.",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
-    "prioridade3": "hipertrofia de bíceps — 18 séries fracionadas/semana",
-    "prioridade4": "corrigir ombros e pescoço pra frente — 10,5 séries/semana de deltoide posterior + 16,5 de costas, invertendo a proporção empurrar:puxar",
-    "secundario": "melhorar coxas sem que perna vire prioridade — 8 séries de quadríceps, 7,5 de posterior",
+    "prioridade3": "hipertrofia de bíceps — 12 séries diretas/semana (~18 contando as remadas e puxadas)",
+    "prioridade4": "equilibrar a frente e as costas do ombro — 12 séries diretas de costas (6 delas verticais) e 6 de deltoide posterior por semana. A mudança de postura em si depende mais das pausas no expediente do que do treino, e a evidência de que exercício corrige postura é modesta.",
+    "secundario": "melhorar coxas sem que perna vire prioridade — 8 séries de quadríceps, 6 de posterior (com a flexora sentada, que rende mais)",
     "manutencao": "glúteo, panturrilha e abdômen em volume mínimo deliberado"
   },
   "balancoEmpurraPuxa": {
-    "empurrar": 15,
-    "puxar": 27,
-    "proporcao": "1 : 1,8 a favor de puxar",
-    "antes": "21 : 6 a favor de empurrar (3,5:1)",
-    "porque": "Para quem já tem ombros protraídos, a fase de correção pede puxar igual ou mais que empurrar. Isso foi alcançado sem tirar nenhuma série de peito — só adicionando do lado que faltava e cortando o desenvolvimento de ombro, que é press e reforçava o deltoide anterior já dominante."
+    "empurrar": "15 séries de peito + 6 de tríceps + 6 de elevação lateral",
+    "puxar": "12 de costas (6 verticais, 6 horizontais) + 6 de deltoide posterior + 12 de bíceps",
+    "porque": "Não existe proporção ideal comprovada entre empurrar e puxar — a meta antiga de 1:1,8 não tinha estudo por trás. O que importa é cada músculo receber o volume da categoria dele. As costas, que tinham 6 séries no programa original, agora têm 12."
   },
   "regrasGerais": {
-    "cadenciaPadrao": "Suba a carga em cerca de 1 segundo, com força e intenção. Desça em 2 a 3 segundos, segurando. A descida controlada é onde está a maior parte do estímulo — soltar o peso na volta joga fora metade da série.",
-    "rirExplicado": "RIR = repetições que ainda sobravam. RIR 2 significa que você pararia a série conseguindo fazer mais 2. Não conte com precisão de laboratório: se no fim da série você tinha certeza de que faria mais 4 ou 5, a série foi leve demais.",
+    "cadenciaPadrao": "Suba com intenção — rápido, mas controlado (o guia de ritmo marca ~2 s porque é o que dá com carga de verdade). Desça em 2 a 3 segundos, sem largar o peso. Descer controlado é técnica e segurança: alongar a descida além disso não faz o músculo crescer mais (Schoenfeld 2015; Amdi & King 2025).",
+    "rirExplicado": "RIR = repetições que ainda sobravam. RIR 2 significa que você pararia a série conseguindo fazer mais 2. Não conte com precisão de laboratório: se no fim da série você tinha certeza de que faria mais 4 ou 5, a série foi leve demais. O app pergunta o RIR no fim de cada série — responda o que aconteceu de verdade: é esse número, junto com as reps, que decide quando a carga sobe.",
     "amplitude": "Amplitude completa e controlada em tudo. Se precisar encurtar a amplitude pra levantar o peso, o peso está errado.",
-    "falhaTotal": "Só na ÚLTIMA série, e só nos exercícios marcados com falhaNaUltimaSerie: true (isoladores e máquinas). Nunca em supino, remada curvada, stiff ou agachamento — o risco técnico não compensa o ganho.",
+    "falhaTotal": "Só na ÚLTIMA série, e só nos exercícios marcados com falhaNaUltimaSerie: true (isoladores e máquinas). Nunca em supino com halteres, stiff, hack ou leg press — o risco técnico não compensa o ganho. Na semana de entrada e no deload, ninguém vai à falha.",
     "quandoNaoProgredir": "Estagnar 2 a 3 semanas é normal e esperado, não é falha do programa. Só é sinal de ação quando o desempenho CAI em 2 sessões seguidas com o mesmo peso.",
-    "ordem": "Faça na ordem escrita. O primeiro exercício do dia é o que mais importa e é feito com você mais descansado — por isso peito abre os dias 1, 3 e 5.",
-    "seFaltarTempo": "Corte de baixo pra cima, nunca de cima pra baixo. Os últimos exercícios do dia são os mais dispensáveis; o primeiro é intocável."
+    "ordem": "Faça na ordem escrita. O primeiro exercício é feito com você mais descansado — por isso peito abre os dias 1, 3 e 5, e hack e stiff abrem o dia de pernas.",
+    "seFaltarTempo": "Corte pela ordem de corte que aparece na fila: primeiro os marcados como opcionais, depois os outros na ordem indicada. Peito e bíceps nunca saem. O cardio sai antes de qualquer exercício."
   },
   "progressaoDupla": {
     "comoFunciona": "Cada exercício tem uma faixa de repetições (ex.: 8–12). Comece com um peso que te leve ao fundo da faixa (8) no RIR-alvo. A cada sessão, tente ganhar repetição. Quando TODAS as séries chegarem ao topo da faixa (12) dentro do RIR-alvo, suba a carga no menor incremento disponível e volte pro fundo da faixa (8).",
     "incrementoSuperiores": "2,5 a 5% — na prática, o menor incremento da academia (1 a 2,5 kg)",
     "incrementoInferiores": "5 a 10% — 5 kg em leg press e hack, 2 kg em stiff",
     "seCair": "Se alguma série ficar abaixo do mínimo da faixa em 2 sessões seguidas, reduza a carga em ~5% e reconstrua.",
-    "naoFaca": "Não suba carga toda sessão por obrigação. Subir peso com técnica pior é andar pra trás com número maior."
+    "naoFaca": "Não suba carga toda sessão por obrigação. Subir peso com técnica pior é andar pra trás com número maior.",
+    "noApp": "O app faz essa conta sozinho: no começo de cada exercício mostra a carga sugerida e o motivo (subir, manter ou reduzir), com base na última sessão. Séries de aquecimento e semanas de deload não entram na conta."
   },
   "aquecimento": {
     "nome": "Aquecimento postural",
@@ -64,14 +63,15 @@
         "nome": "Face pull leve na polia",
         "series": 2,
         "prescricao": "15 repetições com carga bem leve",
-        "como": "Mesma execução do face pull do treino, mas com metade da carga. Não é série de trabalho — é pra acordar deltoide posterior e trapézio médio antes deles serem exigidos, e pra você chegar no treino já sentindo onde é que essa musculatura fica."
+        "como": "Opcional. Mesma execução do face pull do treino, mas com metade da carga. Não é série de trabalho — é pra acordar deltoide posterior e trapézio médio antes deles serem exigidos, e pra você chegar no treino já sentindo onde é que essa musculatura fica. Como o face pull de verdade agora é só no dia 1, este aquecimento não conta como série de trabalho.",
+        "opcional": true
       }
     ]
   },
   "alongamentos": {
     "peitoralEPescoco": {
       "nome": "Alongamento da frente (dias de peito)",
-      "quando": "No fim dos dias 1, 3 e 5, depois do cardio",
+      "quando": "No fim dos dias 1, 3 e 5, depois do último exercício (e do cardio, no dia 5)",
       "porque": "Os dias de peito são os que mais encurtam a cadeia anterior. Alongar logo depois é o momento de maior retorno — e sem isso o volume de peito trabalha contra a postura.",
       "exercicios": [
         {
@@ -113,7 +113,7 @@
     "nome": "Pausa postural no expediente",
     "quando": "A cada ~1h30 entre 9h e 18h, sem contar o almoço",
     "duracaoMin": 2,
-    "porque": "Você passa 8 horas por dia sentado em frente ao computador e treina 4 vezes por semana. O corpo pratica muito mais a postura da cadeira do que a do face pull — por isso o que acontece no expediente pesa mais na correção de ombros e pescoço pra frente do que o que acontece na academia. Estes 2 minutos, 4 ou 5 vezes ao dia, somam mais tempo semanal de correção que o treino inteiro.",
+    "porque": "Você passa 8 horas por dia sentado em frente ao computador e treina 5 vezes por semana. O corpo pratica muito mais a postura da cadeira do que a do face pull — por isso o que acontece no expediente pesa mais na correção de ombros e pescoço pra frente do que o que acontece na academia. Estes 2 minutos, 4 ou 5 vezes ao dia, somam mais tempo semanal de correção que o treino inteiro.",
     "limitacao": "O app não consegue te acordar sozinho com ele fechado — isso é limitação de PWA, não escolha de projeto. Use como plano do dia e contador, não como alarme.",
     "exercicios": [
       {
@@ -143,21 +143,18 @@
     "modalidade": "Bicicleta, elíptico ou escada. Evite corrida — o componente excêntrico gera mais dano muscular e é a modalidade que mais interfere na hipertrofia de perna.",
     "intensidade": "Moderada: você consegue falar frases curtas, mas não conversar confortavelmente. Se conseguir cantar, está leve demais; se não conseguir falar, está forte demais pro objetivo.",
     "caminhada": "Caminhada leve é livre, todo dia, inclusive nos dias de descanso. Não interfere em nada e é a melhor ferramenta de gasto calórico pro objetivo da barriga.",
-    "avisoImportante": "Se a fadiga acumular ao longo do bloco, corte cardio ANTES de cortar treino. A musculação é o que protege sua massa magra no déficit."
+    "avisoImportante": "Se a fadiga acumular ao longo do bloco, corte cardio ANTES de cortar treino. A musculação é o que protege sua massa magra no déficit.",
+    "quando": "Só nos dias 2 e 5, os mais curtos — nos outros a musculação sozinha já passa de 45 min. Nos dias sem cardio, caminhe: a meta de passos faz o papel do gasto calórico."
   },
   "dias": [
     {
       "numero": 1,
-      "titulo": "Peito (inclinado) + Costas + Deltoide posterior",
+      "titulo": "Peito (inclinado) + Costas + Deltoide posterior + Tríceps",
       "foco": "Peito na porção clavicular e o grosso do trabalho postural",
-      "duracaoEstimadaMin": 55,
-      "totalSeries": 20,
-      "notaDoDia": "Este é o dia que a auditoria mais mudou. Antes tinha 3 exercícios e nenhum trabalho de costas ou deltoide posterior; agora carrega metade do seu volume de correção postural da semana.",
-      "cardio": {
-        "modalidade": "bicicleta",
-        "duracaoMin": 18,
-        "intensidade": "moderada"
-      },
+      "duracaoEstimadaMin": 50,
+      "totalSeries": 17,
+      "notaDoDia": "O crucifixo inverso foi pro dia 3: aqui ele vinha logo depois do face pull, repetindo a mesma função. Sem cardio hoje — com o aquecimento a sessão já fica em ~55 min.",
+      "cardio": null,
       "alongamentoFinal": "peitoralEPescoco",
       "exercicios": [
         {
@@ -172,7 +169,7 @@
           "descansoSegundos": 120,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Peito é prioridade e abre o dia com você descansado. O banco a 30° desloca o trabalho pra porção clavicular (peito superior), que é a região que a evidência de 2025 mostrou crescer mais com inclinado do que com reto.",
+          "porqueEstaAqui": "Peito é prioridade e abre o dia com você descansado. O banco a 30° desloca o trabalho pra porção clavicular (peito superior), região que tende a crescer mais com o inclinado do que com o reto (Chaves 2020 — evidência ainda limitada, em iniciantes).",
           "comoExecutar": "Banco entre 30 e 35°, não mais que isso — acima de 45° o ombro rouba o exercício. Escápulas presas pra trás e pra baixo no banco o tempo todo, peito aberto. Desça em 3 segundos até sentir o peito alongar, sem bater os halteres. Suba com intenção em 1 segundo, sem travar o cotovelo no topo e sem encostar os halteres um no outro — pare antes, mantendo tensão.",
           "quandoSubirCarga": "Quando as 5 séries chegarem a 12 repetições com RIR 2. Aí sobe 2 kg por halter e volta pra 8 repetições.",
           "atencao": "Não vá à falha aqui. É composto com halteres — falhar significa halter caindo perto do seu rosto. Pare com 2 sobrando.",
@@ -193,13 +190,13 @@
             "min": 8,
             "max": 12
           },
-          "rirAlvo": 2,
+          "rirAlvo": 1,
           "descansoSegundos": 120,
           "tempo": "2s puxando · 3s voltando",
           "falhaNaUltimaSerie": false,
           "porqueEstaAqui": "Costas subiu de 6 para 12 séries semanais por causa da postura. A puxada trabalha o dorsal na vertical e ensina a escápula a deprimir — o oposto de ombro subido e pra frente.",
           "comoExecutar": "Pegada um pouco mais aberta que os ombros. Antes de puxar, ABAIXE os ombros (afaste a orelha do ombro) — esse é o movimento que a maioria pula. Puxe a barra até a altura do queixo levando os cotovelos pra baixo e pra trás, peito pra cima. Volte em 3 segundos deixando a escápula subir de novo no fim, sem soltar o peso.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 12 repetições com RIR 2. Sobe 2,5 kg (uma placa) e volta pra 8.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 12 repetições com RIR 1. Sobe 2,5 kg (uma placa) e volta pra 8.",
           "atencao": "Nada de jogar o tronco pra trás pra vencer o peso. Se precisar balançar, tire carga.",
           "cadencia": {
             "concentrica": 2,
@@ -208,7 +205,8 @@
             "pausaBase": 0,
             "verboSubida": "puxando",
             "verboDescida": "voltando"
-          }
+          },
+          "corte": 3
         },
         {
           "ordem": 3,
@@ -247,7 +245,7 @@
           "descansoSegundos": 75,
           "tempo": "2s puxando · 2s voltando · 1s de aperto no topo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "O exercício mais importante do programa pra sua postura. Trabalha deltoide posterior, trapézio médio e rotadores externos ao mesmo tempo — os três grupos que ficam fracos em quem tem ombro pra frente. Antes você tinha ZERO séries disso.",
+          "porqueEstaAqui": "Trabalha deltoide posterior, trapézio médio e rotadores externos — a parte de trás do ombro, que ficava sem trabalho nenhum no programa original. Junto com o crucifixo inverso do dia 3, fecha 6 séries diretas de deltoide posterior por semana, em dias separados. Ajuda o equilíbrio entre frente e trás do ombro; a postura em si muda mais pelo que você faz sentado o dia todo do que pelo treino.",
           "comoExecutar": "Corda na polia na altura do rosto. Puxe SEPARANDO as mãos, levando os cotovelos pra trás e pra cima, até as mãos ficarem ao lado das orelhas e os polegares apontarem pra trás. Aperte 1 segundo. Volte controlado em 2s. Pense em 'abrir', não em 'puxar'.",
           "quandoSubirCarga": "Quando fechar 20 repetições nas 3 séries com boa forma. Sobe o mínimo possível (1 kg) e volta pra 12 — aqui a carga sobe devagar de propósito.",
           "atencao": "Carga leve. Este exercício é 100% execução: se você precisar usar o corpo pra puxar, perdeu o alvo. Pode ir à falha na última série, é seguro.",
@@ -258,35 +256,11 @@
             "pausaBase": 0,
             "verboSubida": "puxando",
             "verboDescida": "voltando"
-          }
+          },
+          "corte": 2
         },
         {
           "ordem": 5,
-          "exercicioId": "crucifixo_inverso_maquina",
-          "series": 3,
-          "repeticoes": {
-            "min": 12,
-            "max": 20
-          },
-          "rirAlvo": 1,
-          "descansoSegundos": 75,
-          "tempo": "2s abrindo · 2s voltando",
-          "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Segundo exercício de deltoide posterior no mesmo dia, de propósito: é o músculo mais atrasado do seu corpo e o que mais precisa de volume pra mudar a posição do ombro. Aqui o ângulo é diferente do face pull, cobrindo a região por outro caminho.",
-          "comoExecutar": "Peito apoiado no encosto, braços quase estendidos e levemente abaixo da linha do ombro. Abra puxando com os COTOVELOS, não com as mãos — imagine que suas mãos são só ganchos. Pare quando os braços estiverem na linha do corpo. Volte em 2s sem deixar as placas baterem.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 20 repetições. Sobe 2,5 kg e volta pra 12.",
-          "atencao": "Ombro longe da orelha o tempo todo. Se o trapézio superior encolher, você trocou o músculo-alvo pelo que já é tenso demais.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 0,
-            "excentrica": 2,
-            "pausaBase": 0,
-            "verboSubida": "abrindo",
-            "verboDescida": "voltando"
-          }
-        },
-        {
-          "ordem": 6,
           "exercicioId": "triceps_pulley_corda",
           "series": 3,
           "repeticoes": {
@@ -308,7 +282,8 @@
             "pausaBase": 0,
             "verboSubida": "empurrando",
             "verboDescida": "voltando"
-          }
+          },
+          "corte": 1
         }
       ]
     },
@@ -316,9 +291,9 @@
       "numero": 2,
       "titulo": "Costas + Bíceps",
       "foco": "Segundo dia de puxar da semana e o grosso do bíceps",
-      "duracaoEstimadaMin": 45,
-      "totalSeries": 15,
-      "notaDoDia": "Dia mais curto da semana. A remada serrote abre o treino de propósito: sendo unilateral, é o melhor exercício pra equilibrar diferença de força entre os lados.",
+      "duracaoEstimadaMin": 38,
+      "totalSeries": 12,
+      "notaDoDia": "Dia curto de propósito — é um dos dois dias com cardio. A remada curvada saiu (duas remadas seguidas, a segunda com a lombar e a pegada já cansadas) e entrou a puxada fechada, que dobra o trabalho vertical das costas na semana.",
       "cardio": {
         "modalidade": "escada",
         "duracaoMin": 18,
@@ -334,13 +309,13 @@
             "min": 8,
             "max": 12
           },
-          "rirAlvo": 2,
-          "descansoSegundos": 120,
+          "rirAlvo": 1,
+          "descansoSegundos": 90,
           "tempo": "2s puxando · 3s voltando",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Unilateral, então cada lado trabalha sozinho e não dá pra o lado forte compensar o fraco. Se você tem algum desalinhamento de ombro, este é o exercício do programa com mais chance de ajudar.",
+          "porqueEstaAqui": "Unilateral, então cada lado trabalha sozinho e não dá pra o lado forte compensar o fraco. Se você tem algum desalinhamento de ombro, este é o exercício do programa com mais chance de ajudar. Descanso de 90 s: enquanto um lado trabalha, o outro já está descansando.",
           "comoExecutar": "Joelho e mão do mesmo lado apoiados no banco, costas retas e paralelas ao chão. Puxe o halter em direção ao QUADRIL (não ao ombro), cotovelo rente ao corpo, deixando a escápula ir pra trás. Desça em 3s até o braço esticar e a escápula se afastar. COMECE PELO LADO MAIS FRACO e faça no lado forte o mesmo número de repetições que saiu no fraco.",
-          "quandoSubirCarga": "Quando o lado MAIS FRACO fizer 12 repetições nas 3 séries com RIR 2. O lado forte espera.",
+          "quandoSubirCarga": "Quando o lado MAIS FRACO fizer 12 repetições nas 3 séries com RIR 1. O lado forte espera.",
           "atencao": "Não gire o tronco pra ajudar. Se o ombro subir junto ou o tronco rodar, o peso está alto.",
           "cadencia": {
             "concentrica": 2,
@@ -353,20 +328,21 @@
         },
         {
           "ordem": 2,
-          "exercicioId": "remada_curvada_barra",
+          "exercicioId": "puxada_pegada_fechada",
           "series": 3,
           "repeticoes": {
             "min": 8,
             "max": 12
           },
-          "rirAlvo": 3,
-          "descansoSegundos": 150,
+          "rirAlvo": 1,
+          "descansoSegundos": 120,
           "tempo": "2s puxando · 3s voltando",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "É o exercício mais pesado do programa pras costas e o que mais exige da cadeia posterior inteira, incluindo os eretores da coluna que sustentam a postura em pé.",
-          "comoExecutar": "Pés na largura do quadril, joelhos levemente dobrados, tronco inclinado a uns 45°. Coluna NEUTRA — nem arredondada nem hiperestendida. Puxe a barra em direção ao umbigo com os cotovelos rentes, aperte as escápulas, desça em 3s. Olhe pra um ponto no chão à frente, não pro espelho.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 3. Sobe 2,5 kg (a menor anilha dos dois lados) e volta pra 8.",
-          "atencao": "RIR 3 aqui, mais folgado que o resto — é composto pesado com coluna carregada, e o custo técnico de chegar perto da falha não compensa. Nunca vá à falha. Se a lombar arredondar em qualquer repetição, encerre a série.",
+          "corte": 1,
+          "porqueEstaAqui": "Entrou no lugar da remada curvada (auditoria 24/09). O dia já abre com uma remada (serrote); a curvada era uma segunda remada, a mais técnica e a que mais carrega a lombar, feita com a pegada cansada e com RIR 3 — pouco estímulo pelo custo. A puxada fechada dobra o trabalho vertical do dorsal na semana (de 3 para 6 séries) sem carga na coluna.",
+          "comoExecutar": "Triângulo ou pegada neutra na polia alta. Antes de puxar, abaixe os ombros (afaste da orelha). Puxe até a parte de cima do peito levando os cotovelos pra baixo, rentes ao corpo, peito pra cima. Volte em 3 segundos deixando o braço esticar e a escápula subir no fim, sem soltar o peso.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 12 repetições com RIR 1. Sobe 2,5 kg e volta pra 8.",
+          "atencao": "Nada de jogar o tronco pra trás pra vencer o peso. Se precisar balançar, tire carga.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -413,7 +389,7 @@
           "descansoSegundos": 75,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Pegada neutra pega o braquial, que fica POR BAIXO do bíceps e empurra ele pra cima quando cresce — é o que dá espessura ao braço visto de lado. Complementa a rosca direta em vez de repetir o mesmo estímulo.",
+          "porqueEstaAqui": "Pegada neutra pega mais o braquial e o braquiorradial, que ficam junto do bíceps e dão espessura ao braço visto de lado. Agora é a única rosca martelo da semana — a do dia 5 virou rosca inclinada, mais específica pro bíceps.",
           "comoExecutar": "Palmas viradas uma pra outra o tempo todo, como se segurasse dois martelos. Cotovelos fixos. Pode alternar os braços ou fazer os dois juntos. Desça em 3s até esticar. De brinde, trabalha o antebraço.",
           "quandoSubirCarga": "Quando as 3 séries chegarem a 15 repetições. Sobe 2 kg por halter e volta pra 10.",
           "atencao": "Pode ir à falha na última série.",
@@ -425,46 +401,17 @@
             "verboSubida": "subindo",
             "verboDescida": "descendo"
           }
-        },
-        {
-          "ordem": 5,
-          "exercicioId": "face_pull_polia",
-          "series": 3,
-          "repeticoes": {
-            "min": 12,
-            "max": 20
-          },
-          "rirAlvo": 1,
-          "descansoSegundos": 75,
-          "tempo": "2s puxando · 2s voltando · 1s de aperto no topo",
-          "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Segunda dose de face pull na semana. Deltoide posterior recupera rápido e responde bem a frequência — treinar 2x/semana é o que faz a diferença aparecer na posição do ombro em 6 a 8 semanas.",
-          "comoExecutar": "Mesma execução do dia 1: puxe separando as mãos, cotovelos pra trás e pra cima, mãos ao lado das orelhas, aperta 1 segundo. Carga leve, execução perfeita.",
-          "quandoSubirCarga": "Mesma regra do dia 1 — 20 repetições nas 3 séries e sobe 1 kg.",
-          "atencao": "Se um lado puxar mais que o outro, pare e refaça. Simetria importa mais que carga aqui.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 1,
-            "excentrica": 2,
-            "pausaBase": 0,
-            "verboSubida": "puxando",
-            "verboDescida": "voltando"
-          }
         }
       ]
     },
     {
       "numero": 3,
-      "titulo": "Peito (horizontal) + Ombro + Tríceps + Abdômen",
-      "foco": "Peito na porção esternal e o único trabalho de abdômen da semana",
-      "duracaoEstimadaMin": 48,
+      "titulo": "Peito (horizontal) + Ombros + Tríceps + Abdômen",
+      "foco": "Peito na porção esternal, deltoide lateral e posterior, e o abdômen da semana",
+      "duracaoEstimadaMin": 50,
       "totalSeries": 17,
-      "notaDoDia": "O desenvolvimento de ombro saiu do programa de propósito: é um press que reforça o deltoide anterior, que já é o lado dominante da sua postura e já recebe trabalho de todo supino. Sobrou a elevação lateral, que não tem esse problema.",
-      "cardio": {
-        "modalidade": "eliptico",
-        "duracaoMin": 18,
-        "intensidade": "moderada"
-      },
+      "notaDoDia": "O crucifixo inverso veio do dia 1: assim o deltoide posterior é treinado duas vezes na semana, com 48 h entre elas. O desenvolvimento de ombro segue fora — o deltoide anterior já cresce com os supinos. A prancha virou opcional.",
+      "cardio": null,
       "alongamentoFinal": "peitoralEPescoco",
       "exercicios": [
         {
@@ -479,7 +426,7 @@
           "descansoSegundos": 120,
           "tempo": "2s empurrando · 3s voltando",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Segundo dos três ângulos de peito da semana. O reto concentra o trabalho na porção esternal (peito médio/inferior) — a evidência de 2025 mediu ~11% mais crescimento dessa região com o reto do que com inclinado.",
+          "porqueEstaAqui": "Segundo dos três ângulos de peito da semana. O reto concentra o trabalho na porção esternal (peito médio/inferior). Variar o ângulo entre os dias ajuda a crescer o peito por inteiro, não só a parte que um exercício pega melhor (Kassiano 2022).",
           "comoExecutar": "Ajuste o banco pra que as pegadas fiquem na altura do meio do peito, não do pescoço. Escápulas presas pra trás e pra baixo. Empurre com intenção, sem travar o cotovelo, e volte em 3 segundos até sentir o peito abrir. Não deixe as placas baterem entre as repetições.",
           "quandoSubirCarga": "Quando as 5 séries chegarem a 12 repetições com RIR 1. Sobe 2,5 kg e volta pra 8.",
           "atencao": "Por ser máquina, aqui você PODE ir à falha na última série com segurança — é a vantagem de máquina sobre peso livre e o motivo dela estar no programa.",
@@ -515,10 +462,37 @@
             "pausaBase": 0,
             "verboSubida": "subindo",
             "verboDescida": "descendo"
-          }
+          },
+          "corte": 5
         },
         {
           "ordem": 3,
+          "exercicioId": "crucifixo_inverso_maquina",
+          "series": 3,
+          "repeticoes": {
+            "min": 12,
+            "max": 20
+          },
+          "rirAlvo": 1,
+          "descansoSegundos": 75,
+          "tempo": "2s abrindo · 2s voltando",
+          "falhaNaUltimaSerie": true,
+          "porqueEstaAqui": "Segunda dose semanal de deltoide posterior, 48 h depois do face pull do dia 1. Antes ficava no dia 1, logo depois do face pull — a mesma função duas vezes seguidas, a segunda rendendo menos. É o exercício com maior ativação do deltoide posterior (Franke 2015).",
+          "comoExecutar": "Peito apoiado no encosto, braços quase estendidos e levemente abaixo da linha do ombro. Abra puxando com os COTOVELOS, não com as mãos — imagine que suas mãos são só ganchos. Pare quando os braços estiverem na linha do corpo. Volte em 2s sem deixar as placas baterem.",
+          "quandoSubirCarga": "Quando as 3 séries chegarem a 20 repetições. Sobe 2,5 kg e volta pra 12.",
+          "atencao": "Ombro longe da orelha o tempo todo. Se o trapézio superior encolher, você trocou o músculo-alvo pelo que já é tenso demais.",
+          "cadencia": {
+            "concentrica": 2,
+            "pausaTopo": 0,
+            "excentrica": 2,
+            "pausaBase": 0,
+            "verboSubida": "abrindo",
+            "verboDescida": "voltando"
+          },
+          "corte": 3
+        },
+        {
+          "ordem": 4,
           "exercicioId": "triceps_frances_halteres",
           "series": 3,
           "repeticoes": {
@@ -540,10 +514,11 @@
             "pausaBase": 0,
             "verboSubida": "subindo",
             "verboDescida": "descendo"
-          }
+          },
+          "corte": 4
         },
         {
-          "ordem": 4,
+          "ordem": 5,
           "exercicioId": "abdominal_polia_alta",
           "series": 3,
           "repeticoes": {
@@ -554,7 +529,7 @@
           "descansoSegundos": 60,
           "tempo": "2s flexionando · 2s voltando",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Abdômen entra como manutenção, 6 séries na semana — e é importante ser honesto: isso NÃO acelera a perda da barriga. Nenhum exercício faz isso. O abdômen está aqui como músculo, o déficit calórico é que trata a gordura. Substituiu a versão na máquina depois de dor na lombar — ajoelhado, o quadril fica livre pra acompanhar o tronco em vez de preso num encosto que pode não bater com a curva natural da sua coluna.",
+          "porqueEstaAqui": "Abdômen entra como manutenção, 3 séries na semana — e é importante ser honesto: isso NÃO acelera a perda da barriga. Nenhum exercício faz isso. O abdômen está aqui como músculo, o déficit calórico é que trata a gordura. Substituiu a versão na máquina depois de dor na lombar — ajoelhado, o quadril fica livre pra acompanhar o tronco em vez de preso num encosto que pode não bater com a curva natural da sua coluna.",
           "comoExecutar": "Ajoelhado de frente pra polia alta, segure a corda perto do rosto. Flexione o TRONCO vindo do abdômen, arredondando a coluna, sem puxar com os braços — eles só seguram a corda no lugar. Volte em 2s sem relaxar totalmente.",
           "quandoSubirCarga": "Quando as 3 séries fecharem 20 repetições. Sobe 2,5 kg e volta pra 12.",
           "atencao": "Se sentir o pescoço trabalhando mais que a barriga, reduza a carga. Se a lombar incomodar de novo mesmo nessa versão, para e me avisa — não é pra insistir em dor lombar em exercício nenhum de abdômen.",
@@ -565,12 +540,13 @@
             "pausaBase": 0,
             "verboSubida": "flexionando",
             "verboDescida": "voltando"
-          }
+          },
+          "corte": 2
         },
         {
-          "ordem": 5,
+          "ordem": 6,
           "exercicioId": "prancha_isometrica",
-          "series": 3,
+          "series": 2,
           "repeticoes": {
             "min": 30,
             "max": 60
@@ -579,10 +555,12 @@
           "descansoSegundos": 60,
           "tempo": "isometria — segure parado",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Complementa o abdominal com o padrão oposto: em vez de flexionar, resistir à extensão. Trabalha o transverso e ajuda a estabilizar o tronco nos exercícios em pé — inclusive na remada curvada e no stiff.",
+          "porqueEstaAqui": "Opcional. A prancha treina estabilidade do tronco, mas não há evidência de que faça o abdômen crescer — o abdominal na polia faz esse papel. Se o tempo estiver curto, é a primeira a sair.",
           "comoExecutar": "Antebraços e pontas dos pés no chão. Quadril alinhado com o tronco — nem subido nem caído. Contraia o abdômen e o glúteo, respire normal. AQUI A PROGRESSÃO É TEMPO, não carga: registre os segundos.",
           "quandoSubirCarga": "Quando conseguir 60 segundos nas 3 séries, aumente a dificuldade (levantar um pé alternado, ou apoiar os pés mais elevados) e volte pra 30 segundos.",
-          "atencao": "No instante em que o quadril cair ou subir, a série acabou. Segurar 60s com a lombar arriada não vale nada — 30s bem feitos valem mais."
+          "atencao": "No instante em que o quadril cair ou subir, a série acabou. Segurar 60s com a lombar arriada não vale nada — 30s bem feitos valem mais.",
+          "opcional": true,
+          "corte": 1
         }
       ]
     },
@@ -590,43 +568,14 @@
       "numero": 4,
       "titulo": "Pernas",
       "foco": "Coxas com volume moderado, resto em manutenção",
-      "duracaoEstimadaMin": 53,
-      "totalSeries": 20,
-      "notaDoDia": "Perna não é prioridade sua, mas você quis melhorar as coxas — então quadríceps subiu de 6 pra 8 séries e posterior de 4,5 pra 7,5 (o dobro do que tinha). Glúteo e panturrilha ficaram em manutenção de propósito: você já joga vôlei e futebol há anos e a panturrilha responde a isso.",
-      "cardio": {
-        "modalidade": "caminhada",
-        "duracaoMin": 12,
-        "intensidade": "leve"
-      },
+      "duracaoEstimadaMin": 58,
+      "totalSeries": 17,
+      "notaDoDia": "Hack e stiff agora abrem o dia: são os mais técnicos e os de mais risco pra lombar, então vêm com você descansado. A mesa flexora deitada virou flexora sentada. Sem cardio — se sobrar tempo, caminhe 10 min.",
+      "cardio": null,
       "alongamentoFinal": "coluna",
       "exercicios": [
         {
           "ordem": 1,
-          "exercicioId": "leg_press_45",
-          "series": 3,
-          "repeticoes": {
-            "min": 10,
-            "max": 15
-          },
-          "rirAlvo": 2,
-          "descansoSegundos": 150,
-          "tempo": "2s empurrando · 3s descendo",
-          "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Abre o dia de perna porque é o exercício que suporta mais carga com menor demanda técnica e menor risco de lombar — o oposto do agachamento livre.",
-          "comoExecutar": "Pés na largura do quadril, no meio da plataforma. Desça em 3 segundos até o joelho chegar perto de 90°, SEM que o quadril saia do banco (é aí que a lombar arredonda). Empurre sem travar o joelho no topo.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições com RIR 2. Sobe 10 kg e volta pra 10.",
-          "atencao": "O ponto onde o quadril começa a rolar pra fora do banco é o seu limite de amplitude. Descer além disso não treina mais perna, só castiga a lombar.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 0,
-            "excentrica": 3,
-            "pausaBase": 0,
-            "verboSubida": "empurrando",
-            "verboDescida": "descendo"
-          }
-        },
-        {
-          "ordem": 2,
           "exercicioId": "agachamento_hack_maquina",
           "series": 3,
           "repeticoes": {
@@ -637,7 +586,7 @@
           "descansoSegundos": 150,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Exercício novo no programa. Carrega o quadríceps na posição ALONGADA, que nem o leg press nem a extensora fazem bem — e é isso que faltava pras coxas responderem.",
+          "porqueEstaAqui": "Abre o dia: é o exercício mais técnico e o que mais carrega o quadríceps na posição alongada, então vem com você descansado — o leg press, mais estável e seguro, tolera melhor ir depois.",
           "comoExecutar": "Pés na largura do quadril, um pouco à frente do corpo. Desça em 3 segundos até a coxa passar da paralela, mantendo o lombar colado no apoio. Suba com intenção sem travar o joelho.",
           "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 2. Sobe 5 kg e volta pra 8.",
           "atencao": "Como é exercício novo, use as duas primeiras semanas pra achar a carga e a profundidade confortável. Não tenha pressa de carregar.",
@@ -651,46 +600,21 @@
           }
         },
         {
-          "ordem": 3,
-          "exercicioId": "cadeira_extensora",
-          "series": 2,
-          "repeticoes": {
-            "min": 12,
-            "max": 20
-          },
-          "rirAlvo": 0,
-          "descansoSegundos": 75,
-          "tempo": "2s subindo · 3s descendo · 1s de aperto no topo",
-          "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Fecha o quadríceps com o exercício de menor fadiga sistêmica do grupo. Vem por último de propósito: é onde você pode chegar perto da falha sem risco nenhum. São 2 séries e não 3 porque o teto de qualidade é 8 séries diretas por músculo por sessão — leg press (3) + hack (3) + extensora (2) fecha exatamente em 8.",
-          "comoExecutar": "Costas apoiadas, encoste o rolo logo acima do tornozelo. Estenda até quase travar e APERTE 1 segundo no topo. Desça em 3s sem deixar a placa bater.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 20 repetições. Sobe 2,5 kg e volta pra 12.",
-          "atencao": "Único exercício do programa com RIR 0 nas séries de trabalho — pode e deve chegar bem perto da falha. É seguro e é onde você compra estímulo barato.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 1,
-            "excentrica": 3,
-            "pausaBase": 0,
-            "verboSubida": "subindo",
-            "verboDescida": "descendo"
-          }
-        },
-        {
-          "ordem": 4,
+          "ordem": 2,
           "exercicioId": "stiff_halteres",
           "series": 3,
           "repeticoes": {
             "min": 8,
             "max": 12
           },
-          "rirAlvo": 3,
+          "rirAlvo": 2,
           "descansoSegundos": 150,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Exercício novo. Antes só existia a mesa flexora pro posterior de coxa, e a segunda vaga do músculo ficava vazia — literalmente faltava exercício cadastrado. O stiff carrega o posterior alongado, que a flexora não faz.",
+          "porqueEstaAqui": "Carrega o posterior de coxa alongado, pela extensão do quadril — o melhor estímulo pra cabeça longa do bíceps femoral (Bourne 2017). Subiu pra 2º: antes vinha depois de 8 séries de quadríceps, com glúteo, lombar e pegada já cansados, justamente no exercício do dia com mais risco pra lombar.",
           "comoExecutar": "Joelhos LEVEMENTE dobrados e travados nessa posição — eles não dobram mais durante o movimento. Empurre o quadril pra trás deixando os halteres deslizarem rente à perna. Desça em 3 segundos até sentir o alongamento atrás da coxa, e suba empurrando o quadril pra frente.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 3. Sobe 2 kg por halter e volta pra 8.",
-          "atencao": "A coluna NÃO arredonda em nenhum momento. Se arredondou, você desceu além da sua mobilidade — pare antes. RIR 3, nunca perto da falha.",
+          "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 2. Sobe 2 kg por halter e volta pra 8.",
+          "atencao": "A coluna NÃO arredonda em nenhum momento. Se arredondou, você desceu além da sua mobilidade — pare antes. RIR 2; se a lombar começar a perder a posição antes disso, encerre a série ali.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -701,21 +625,47 @@
           }
         },
         {
-          "ordem": 5,
-          "exercicioId": "mesa_flexora",
+          "ordem": 3,
+          "exercicioId": "leg_press_45",
+          "series": 3,
+          "repeticoes": {
+            "min": 10,
+            "max": 15
+          },
+          "rirAlvo": 2,
+          "descansoSegundos": 150,
+          "tempo": "2s empurrando · 3s descendo",
+          "falhaNaUltimaSerie": false,
+          "porqueEstaAqui": "Vem depois do hack e do stiff: é o mais estável e seguro dos três, então é o que melhor tolera fadiga. Além do quadríceps, trabalha bem glúteo e adutores — mas praticamente não trabalha o posterior de coxa, por isso a flexora vem logo depois.",
+          "comoExecutar": "Pés na largura do quadril, no meio da plataforma. Desça em 3 segundos até o joelho chegar perto de 90°, SEM que o quadril saia do banco (é aí que a lombar arredonda). Empurre sem travar o joelho no topo.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições com RIR 2. Sobe 10 kg e volta pra 10.",
+          "atencao": "O ponto onde o quadril começa a rolar pra fora do banco é o seu limite de amplitude. Descer além disso não treina mais perna, só castiga a lombar.",
+          "cadencia": {
+            "concentrica": 2,
+            "pausaTopo": 0,
+            "excentrica": 3,
+            "pausaBase": 0,
+            "verboSubida": "empurrando",
+            "verboDescida": "descendo"
+          },
+          "corte": 3
+        },
+        {
+          "ordem": 4,
+          "exercicioId": "cadeira_flexora_sentada",
           "series": 3,
           "repeticoes": {
             "min": 10,
             "max": 15
           },
           "rirAlvo": 1,
-          "descansoSegundos": 75,
+          "descansoSegundos": 90,
           "tempo": "2s flexionando · 3s voltando",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Complementa o stiff pelo outro lado da função: o stiff trabalha o posterior estendendo o quadril, a flexora trabalha dobrando o joelho. Os dois juntos cobrem o músculo inteiro.",
-          "comoExecutar": "Quadril colado no banco o tempo todo. Flexione levando o calcanhar em direção ao glúteo, sem levantar o quadril pra ajudar. Volte em 3s controlando.",
+          "porqueEstaAqui": "Substituiu a mesa flexora deitada. Sentado, o quadril fica dobrado e os isquiotibiais trabalham alongados: num estudo de 12 semanas a versão sentada fez o posterior crescer ~14% contra ~9% na deitada (Maeo 2021). Se a sua academia não tiver essa máquina, use 'Trocar' e escolha a mesa flexora — ela funciona, só rende um pouco menos.",
+          "comoExecutar": "Ajuste o encosto pra o joelho ficar alinhado com o eixo da máquina e trave a coxa com o apoio de cima. Flexione levando o calcanhar pra baixo e pra trás até o fim e volte em 3 segundos até quase esticar a perna, sem deixar a placa bater.",
           "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições. Sobe 2,5 kg e volta pra 10.",
-          "atencao": "Se o quadril sobe do banco, o peso está alto. Pode ir à falha na última série.",
+          "atencao": "Quadril encostado no banco o tempo todo. Pode ir à falha na última série.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -726,32 +676,33 @@
           }
         },
         {
-          "ordem": 6,
-          "exercicioId": "cadeira_abdutora",
-          "series": 3,
+          "ordem": 5,
+          "exercicioId": "cadeira_extensora",
+          "series": 2,
           "repeticoes": {
-            "min": 15,
-            "max": 25
+            "min": 12,
+            "max": 20
           },
-          "rirAlvo": 1,
-          "descansoSegundos": 60,
-          "tempo": "2s abrindo · 2s voltando · 1s de aperto no topo",
+          "rirAlvo": 0,
+          "descansoSegundos": 75,
+          "tempo": "2s subindo · 3s descendo · 1s de aperto no topo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Manutenção deliberada. Você disse que glúteo não é prioridade — 3 séries por semana mantêm o músculo sem gastar tempo nem recuperação que o peito e as costas precisam.",
-          "comoExecutar": "Tronco levemente inclinado pra frente aumenta a ênfase no glúteo médio. Abra até o fim, aperte 1 segundo, volte em 2s sem deixar as placas baterem.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 25 repetições. Sobe 2,5 kg e volta pra 15.",
-          "atencao": "Repetições altas de propósito — o glúteo médio responde bem a isso e o custo de recuperação é baixo.",
+          "porqueEstaAqui": "Fecha o quadríceps com o exercício de menor fadiga sistêmica do grupo, e é o único que trabalha bem o reto femoral — a parte da frente da coxa que o leg press quase não pega (Kinoshita 2026). São 2 séries porque o quadríceps já recebeu 6 do hack e do leg press: 8 por sessão é escolha de tempo e fadiga, não um limite fisiológico.",
+          "comoExecutar": "Se o encosto regular, incline pra trás — com o quadril mais aberto o reto femoral trabalha mais (Larsen 2025). Costas apoiadas, encoste o rolo logo acima do tornozelo. Estenda até quase travar e APERTE 1 segundo no topo. Desça em 3s sem deixar a placa bater.",
+          "quandoSubirCarga": "Quando as 2 séries fecharem 20 repetições. Sobe 2,5 kg e volta pra 12.",
+          "atencao": "Único exercício do programa com RIR 0 nas séries de trabalho — pode e deve chegar bem perto da falha. É seguro e é onde você compra estímulo barato.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 1,
-            "excentrica": 2,
+            "excentrica": 3,
             "pausaBase": 0,
-            "verboSubida": "abrindo",
-            "verboDescida": "voltando"
-          }
+            "verboSubida": "subindo",
+            "verboDescida": "descendo"
+          },
+          "corte": 4
         },
         {
-          "ordem": 7,
+          "ordem": 6,
           "exercicioId": "panturrilha_em_pe_maquina",
           "series": 3,
           "repeticoes": {
@@ -773,7 +724,35 @@
             "pausaBase": 2,
             "verboSubida": "subindo",
             "verboDescida": "descendo"
-          }
+          },
+          "corte": 2
+        },
+        {
+          "ordem": 7,
+          "exercicioId": "cadeira_abdutora",
+          "series": 2,
+          "repeticoes": {
+            "min": 15,
+            "max": 25
+          },
+          "rirAlvo": 1,
+          "descansoSegundos": 60,
+          "tempo": "2s abrindo · 2s voltando · 1s de aperto no topo",
+          "falhaNaUltimaSerie": true,
+          "porqueEstaAqui": "Opcional. Glúteo não é prioridade e já trabalha no hack, no leg press e no stiff — a abdutora completa o glúteo médio, mas não há estudo mostrando quanto ela faz crescer. É a primeira a sair se faltar tempo.",
+          "comoExecutar": "Tronco levemente inclinado pra frente aumenta a ênfase no glúteo médio. Abra até o fim, aperte 1 segundo, volte em 2s sem deixar as placas baterem.",
+          "quandoSubirCarga": "Quando as 2 séries fecharem 25 repetições. Sobe 2,5 kg e volta pra 15.",
+          "atencao": "Repetições altas de propósito — o glúteo médio responde bem a isso e o custo de recuperação é baixo.",
+          "cadencia": {
+            "concentrica": 2,
+            "pausaTopo": 1,
+            "excentrica": 2,
+            "pausaBase": 0,
+            "verboSubida": "abrindo",
+            "verboDescida": "voltando"
+          },
+          "opcional": true,
+          "corte": 1
         }
       ]
     },
@@ -781,12 +760,12 @@
       "numero": 5,
       "titulo": "Peito (alongado) + Bíceps + Ombro + Antebraço",
       "foco": "Terceiro ângulo de peito e o fechamento de braço da semana",
-      "duracaoEstimadaMin": 48,
-      "totalSeries": 17,
-      "notaDoDia": "Fecha a rotação de ângulos do peito: inclinado no dia 1, reto no dia 3, alongado hoje. Essa rotação é uma das coisas que a auditoria confirmou estar certa no seu programa original.",
+      "duracaoEstimadaMin": 45,
+      "totalSeries": 14,
+      "notaDoDia": "Fecha a rotação de ângulos do peito: inclinado no dia 1, reto no dia 3, alongado hoje. A segunda rosca martelo virou rosca inclinada, mais específica pro bíceps. A rosca de punho virou opcional.",
       "cardio": {
         "modalidade": "bicicleta",
-        "duracaoMin": 22,
+        "duracaoMin": 15,
         "intensidade": "moderada"
       },
       "alongamentoFinal": "peitoralEPescoco",
@@ -803,7 +782,7 @@
           "descansoSegundos": 90,
           "tempo": "2s fechando · 3s abrindo · 1s de aperto no topo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Terceiro ângulo do peito na semana. O cabo mantém tensão na posição ALONGADA, que é onde o peito recebe o melhor estímulo — coisa que nenhum supino faz, porque no supino a parte mais fácil é justamente embaixo.",
+          "porqueEstaAqui": "Terceiro ângulo do peito na semana. O cabo mantém tensão com o peito ALONGADO, onde o supino fica mais fácil — treinar na posição alongada tende a render igual ou mais que o contrário (Wolf 2023). Completa os dois supinos com um ângulo e um perfil de carga diferentes.",
           "comoExecutar": "Polias na altura do ombro ou um pouco acima. Braços quase estendidos, cotovelo levemente dobrado e FIXO. Feche em arco cruzando um pouco as mãos à frente e aperte 1 segundo. Abra em 3 segundos até sentir o peito esticar bem — sem deixar o ombro rolar pra frente no fim da abertura.",
           "quandoSubirCarga": "Quando as 5 séries fecharem 20 repetições com RIR 1. Sobe 1 kg por lado e volta pra 12.",
           "atencao": "Não deixe o ombro se antecipar. Se o ombro vai pra frente na abertura, você trocou peito por cápsula anterior do ombro — exatamente o que a sua postura não precisa. Amplitude confortável, não máxima.",
@@ -843,7 +822,7 @@
         },
         {
           "ordem": 3,
-          "exercicioId": "rosca_martelo_halteres",
+          "exercicioId": "rosca_inclinada_halteres",
           "series": 3,
           "repeticoes": {
             "min": 10,
@@ -853,10 +832,10 @@
           "descansoSegundos": 75,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Segunda dose de martelo na semana. Bíceps é prioridade e o braquial responde bem a frequência 2x — além de puxar o antebraço junto, que também está no programa hoje.",
-          "comoExecutar": "Igual ao dia 2: palmas viradas uma pra outra, cotovelos fixos, descida de 3 segundos até esticar.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 15 repetições. Sobe 2 kg por halter e volta pra 10.",
-          "atencao": "Se o antebraço estiver muito fatigado do treino, faça a rosca de punho depois e não antes — a ordem já está assim de propósito.",
+          "porqueEstaAqui": "Substituiu a segunda rosca martelo da semana. Bíceps é prioridade e o martelo aparecia 2 vezes — 6 das 12 séries diretas no exercício menos específico pro bíceps. Com a palma pra cima o bíceps trabalha mais (Coratella 2023), e com o banco inclinado o braço fica atrás do corpo, alongando a cabeça longa. O martelo continua no dia 2.",
+          "comoExecutar": "Banco a 45–60°, costas apoiadas, braços pendurados atrás da linha do tronco, palmas pra frente. Suba sem trazer o cotovelo pra frente e desça em 3 segundos até esticar o braço. Sem banco livre, faça sentado ou em pé alternando os braços, sempre com a palma pra cima.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições. Sobe 1 kg por halter e volta pra 10.",
+          "atencao": "A carga é bem menor que a da rosca em pé — é normal. Não deixe o ombro rolar pra frente na subida.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -889,23 +868,24 @@
             "pausaBase": 0,
             "verboSubida": "subindo",
             "verboDescida": "descendo"
-          }
+          },
+          "corte": 2
         },
         {
           "ordem": 5,
           "exercicioId": "rosca_punho_barra",
-          "series": 3,
+          "series": 2,
           "repeticoes": {
             "min": 15,
             "max": 25
           },
-          "rirAlvo": 0,
+          "rirAlvo": 1,
           "descansoSegundos": 60,
           "tempo": "2s subindo · 2s descendo",
           "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Antebraço estava na sua spec original e nunca tinha sido cadastrado no app. Fecha o braço e melhora a pegada, que é o que costuma falhar antes das costas na remada e na puxada.",
+          "porqueEstaAqui": "Opcional. Fortalece a pegada e o antebraço, que já trabalham na rosca martelo e em todas as remadas e puxadas. Primeira a sair se faltar tempo.",
           "comoExecutar": "Sentado, antebraços apoiados nas coxas ou no banco, punhos pra fora da borda, palmas pra cima. Deixe a barra ROLAR até a ponta dos dedos, feche a mão trazendo de volta e suba só flexionando o punho. Amplitude é pequena — isso é normal.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 25 repetições. Sobe 1 kg e volta pra 15.",
+          "quandoSubirCarga": "Quando as 2 séries fecharem 25 repetições. Sobe 1 kg e volta pra 15.",
           "atencao": "Carga leve e repetições altas. Antebraço é músculo de resistência, não adianta carregar.",
           "cadencia": {
             "concentrica": 2,
@@ -914,69 +894,86 @@
             "pausaBase": 0,
             "verboSubida": "subindo",
             "verboDescida": "descendo"
-          }
+          },
+          "opcional": true,
+          "corte": 1
         }
       ]
     }
   ],
   "mesociclo": {
-    "duracaoSemanas": 4,
-    "maisDeload": true,
-    "comoUsar": "As séries e exercícios da ficha são a base (semana 1). O que muda semana a semana é o RIR-alvo e, na semana 3, uma série a mais nos músculos prioritários. Os exercícios NÃO mudam.",
+    "duracaoSemanas": 7,
+    "comoUsar": "Bloco de 7 semanas que recomeça sozinho: 6 de treino e 1 de deload. Os exercícios não mudam. O que muda: na semana 1 o RIR-alvo de cada exercício sobe 1 e ninguém vai à falha; das semanas 4 a 6 peito e bíceps ganham +1 série (se o desempenho não estiver caindo); a semana 7 é deload.",
     "semanas": [
       {
         "semana": 1,
-        "rirAlvo": 3,
+        "rirAlvo": "do exercício + 1",
         "volume": "base da ficha",
-        "objetivo": "Semana de entrada. Encontre as cargas de cada exercício e registre tudo. Não force — três dos exercícios são novos pra você (hack, stiff, face pull) e a prioridade é aprender o movimento.",
-        "esperado": "Você vai terminar as sessões achando que podia ter feito mais. É pra ser assim."
+        "objetivo": "Semana de entrada. Ache as cargas e registre tudo, sem falha.",
+        "esperado": "Você vai terminar achando que podia mais. É pra ser assim."
       },
       {
         "semana": 2,
-        "rirAlvo": 2,
+        "rirAlvo": "do exercício",
         "volume": "base da ficha",
-        "objetivo": "Mesmas cargas ou um pouco acima, chegando mais perto da falha. Aqui a progressão dupla começa pra valer: tente ganhar repetição em cada exercício.",
-        "esperado": "Alguma dor muscular nos exercícios novos é normal e não é indicador de nada."
+        "objetivo": "A dupla progressão começa pra valer: tente ganhar repetição em cada exercício.",
+        "esperado": "Alguma dor muscular nos exercícios novos é normal e não indica nada."
       },
       {
         "semana": 3,
-        "rirAlvo": 2,
-        "volume": "+1 série em peito e bíceps",
-        "objetivo": "Supino inclinado, supino reto e crucifixo vão pra 6 séries; roscas vão pra 4. O resto fica igual. É a semana de maior volume do bloco.",
-        "esperado": "Sessões dos dias 1, 3 e 5 ficam ~8 minutos mais longas."
+        "rirAlvo": "do exercício",
+        "volume": "base da ficha",
+        "objetivo": "Continue a progressão.",
+        "esperado": ""
       },
       {
         "semana": 4,
-        "rirAlvo": 1,
-        "volume": "mantém o da semana 3",
-        "objetivo": "Semana mais dura do bloco. Mesmo volume da semana 3, mas indo mais perto da falha. É aqui que você deve bater os melhores números.",
-        "esperado": "Fadiga acumulada real. Se o desempenho cair em 2 sessões seguidas, antecipe o deload — não espere a semana 5."
+        "rirAlvo": "do exercício",
+        "volume": "+1 série em peito e bíceps",
+        "objetivo": "Supino inclinado, supino reto e crucifixo vão pra 6 séries; roscas vão pra 4. Se o app detectar queda de desempenho, a série extra não entra.",
+        "esperado": "Sessões dos dias 1, 2, 3 e 5 ficam ~5 min mais longas."
       },
       {
         "semana": 5,
-        "rirAlvo": 4,
-        "volume": "50% das séries, mesma carga",
-        "objetivo": "Deload. Corte as séries pela metade em todos os exercícios e mantenha a carga. Mantenha o aquecimento postural e o cardio normais.",
-        "esperado": "Você vai se sentir bem e vai querer pular. Não pule — é o deload que faz o bloco seguinte começar melhor que este."
+        "rirAlvo": "do exercício",
+        "volume": "+1 série em peito e bíceps",
+        "objetivo": "Mesmo da semana 4.",
+        "esperado": ""
+      },
+      {
+        "semana": 6,
+        "rirAlvo": "do exercício",
+        "volume": "+1 série em peito e bíceps",
+        "objetivo": "Última semana antes do deload — é aqui que costumam sair os melhores números.",
+        "esperado": "Fadiga acumulada real. Se o app sugerir deload antes, aceite."
+      },
+      {
+        "semana": 7,
+        "rirAlvo": "do exercício + 2 (mínimo 3)",
+        "volume": "metade das séries, arredondando pra cima, mesma carga",
+        "objetivo": "Deload. Mantenha aquecimento postural e cardio normais.",
+        "esperado": "Você vai se sentir bem e querer pular. Não pule — na semana seguinte o bloco recomeça sozinho."
       }
     ],
-    "deloadReativo": "Se aparecerem 2 sessões seguidas com desempenho caindo no mesmo exercício, ou dor articular persistente, ou RIR subindo sem mudar a carga — antecipe o deload, mesmo que seja na semana 2. O calendário perde pro corpo."
+    "deloadReativo": "Se o desempenho cair em 2 sessões seguidas (reps ou RIR caindo com a mesma carga) em 2 ou mais exercícios, ou houver dor articular persistente, ou bem-estar baixo por 3 check-ins seguidos — antecipe o deload em Config > Bloco de treino. O app avisa quando isso acontece. Atenção: RIR SUBINDO com a mesma carga é o contrário — é sinal de que você ficou mais forte."
   },
   "quandoTrocarAFicha": {
     "respostaCurta": "Não troque toda semana. Mantenha estes mesmos exercícios por 8 a 12 semanas.",
     "porque": "Trocar exercício toda semana impede medir progressão — se o exercício muda, você não sabe se ficou mais forte ou só mudou de movimento. A progressão de carga só existe se houver comparação com a sessão anterior no MESMO exercício. A literatura sustenta manter exercícios por 6 a 12 semanas e variar quando o progresso estagnar.",
-    "oQueMudaSemanalmente": "RIR-alvo e, na semana 3, uma série a mais nos prioritários. Isso é o mesociclo, e já está definido acima.",
-    "oQueMudaAoFimDoBloco": "Depois da semana 5 (deload), rode o MESMO bloco de novo com as cargas novas que você conquistou. Só na terceira rodada — por volta da semana 12 — vale trocar exercícios.",
+    "oQueMudaSemanalmente": "O RIR na semana de entrada e no deload, e +1 série em peito e bíceps nas semanas 4 a 6. Isso é o mesociclo, e o app aplica sozinho.",
+    "oQueMudaAoFimDoBloco": "Depois da semana 7 (deload), o bloco recomeça sozinho na semana 1 com as cargas novas que você conquistou. Só depois de ~12 semanas vale pensar em trocar exercícios.",
     "trocarAntesDisso": [
       "Dor articular persistente em um exercício específico — troque só esse, imediatamente",
       "Um exercício sem progressão nenhuma por 4 semanas seguidas, com sono e dieta em ordem",
       "Equipamento indisponível na sua academia"
     ],
-    "oQueNuncaMuda": "A estrutura: peito primeiro nos dias 1, 3 e 5; a proporção puxar ≥ empurrar; o aquecimento postural. Isso é o esqueleto do bloco e só muda quando os objetivos mudarem."
+    "oQueNuncaMuda": "A estrutura: peito primeiro nos dias 1, 3 e 5, e o aquecimento postural. Isso só muda quando os objetivos mudarem."
   },
   "avisos": [
     "Se a sua postura tiver assimetria real entre os lados — um ombro mais alto ou mais à frente que o outro — isso pede avaliação de fisioterapeuta. O treino aqui trata o padrão simétrico (ombros e pescoço pra frente); assimetria estrutural é outra conversa e nenhum app diagnostica isso. A remada serrote unilateral ajuda, mas não substitui avaliação.",
     "Este material é estrutura e lógica, não supervisão profissional. Não substitui nutricionista nem personal trainer.",
-    "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra."
-  ]
+    "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
+    "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
+  ],
+  "revisao": "2026-09-24"
 }

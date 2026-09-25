@@ -53,7 +53,7 @@ export function calcularContadorPorMusculo(todasAsSeries, hoje) {
   return contador;
 }
 
-export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha = null, semanaDoBloco = 1 }) {
+export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha = null, semanaDoBloco = 1, fadigaDetectada = false }) {
   const exerciciosDoGrupo = todosExercicios.filter((e) => {
     return diaInfo.musculos.includes(e.musculoPrimario) || !TODOS_MUSCULOS_MAPEADOS.has(e.musculoPrimario);
   });
@@ -64,7 +64,7 @@ export function prepararSessaoDoDia({ todosExercicios, protocolo, todasAsSeries,
   if (daFicha) {
     return {
       exerciciosDoGrupo,
-      exerciciosHoje: aplicarSemanaDoMesociclo(daFicha.exercicios, semanaDoBloco),
+      exerciciosHoje: aplicarSemanaDoMesociclo(daFicha.exercicios, semanaDoBloco, { fadigaDetectada }),
       diaDaFicha: daFicha.dia,
       origem: "ficha",
     };

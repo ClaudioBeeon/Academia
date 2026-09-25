@@ -1,4 +1,13 @@
 // js/engine/graficos.js
+// 1RM estimado (Epley) só com séries de até 12 reps e carga > 0: acima
+// disso a fórmula erra bastante (Reynolds 2006) e isometria/peso corporal
+// ("prancha 5 kg × 60") gerava números sem sentido.
+const REPS_MAX_PARA_1RM = 12;
+
+export function serveParaEstimar1RM(serie) {
+  return serie.carga > 0 && serie.reps > 0 && serie.reps <= REPS_MAX_PARA_1RM;
+}
+
 function estimativa1RM(serie) {
   return serie.carga * (1 + serie.reps / 30);
 }
@@ -7,6 +16,7 @@ export function calcularProgressao1RM(seriesDoExercicio) {
   const porDia = new Map();
   for (const serie of seriesDoExercicio) {
     if (serie.tipoSerie === "aquecimento") continue;
+    if (!serveParaEstimar1RM(serie)) continue;
     const valor = estimativa1RM(serie);
     const atual = porDia.get(serie.data);
     if (atual === undefined || valor > atual) {
@@ -15,6 +25,20 @@ export function calcularProgressao1RM(seriesDoExercicio) {
   }
   return [...porDia.entries()]
     .map(([data, carga1RM]) => ({ data, carga1RM }))
+    .sort((a, b) => a.data.localeCompare(b.data));
+}
+
+// Plano B do gráfico de evolução pra isoladores de 12–25 reps, que não
+// geram 1RM estimado confiável: maior carga de trabalho de cada dia.
+export function calcularProgressaoCarga(seriesDoExercicio) {
+  const porDia = new Map();
+  for (const serie of seriesDoExercicio) {
+    if (serie.tipoSerie === "aquecimento" || !(serie.carga > 0)) continue;
+    const atual = porDia.get(serie.data);
+    if (atual === undefined || serie.carga > atual) porDia.set(serie.data, serie.carga);
+  }
+  return [...porDia.entries()]
+    .map(([data, carga]) => ({ data, carga }))
     .sort((a, b) => a.data.localeCompare(b.data));
 }
 

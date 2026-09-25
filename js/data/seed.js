@@ -217,6 +217,48 @@ export async function migrarOpcaoIogurteCafeDaTarde(db) {
   return { migrado: !jaTem, jaFeita: false };
 }
 
+// Revisão da auditoria científica de 2026-09-24: ficha e protocolo são
+// dados pessoais (o seed não regrava), então a revisão só chega a quem já
+// tem o app por esta migração. Substitui a ficha/protocolo INTEIROS pelos
+// do repositório, mas só quando o que está no banco é reconhecidamente a
+// versão anterior do mesmo bloco (pelo nome da ficha / pela nota da
+// auditoria de 23/08 no protocolo) — nunca toca a ficha de outro perfil
+// (ex.: a de manutenção do Francesco) nem uma ficha editada à mão. Os
+// ajustes de cadência feitos pela pessoa ficam em outra store
+// (ajustesCadencia) e sobrevivem à troca.
+const CHAVE_REVISAO_20260924 = "revisaoAuditoria20260924";
+const NOME_FICHA_ANTERIOR = "Bloco 1 — Peito, bíceps e correção postural";
+
+export async function migrarRevisaoAuditoria20260924(db, fetchImpl = globalThis.fetch) {
+  const marcador = await get(db, "config", CHAVE_REVISAO_20260924);
+  if (marcador?.valor) return { ficha: false, protocolo: false, jaFeita: true };
+
+  let fichaMigrada = false;
+  let protocoloMigrado = false;
+
+  const fichaAtual = await get(db, "ficha", "1.0");
+  if (fichaAtual?.nome === NOME_FICHA_ANTERIOR && !fichaAtual.revisao) {
+    const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
+    if (nova?.revisao === "2026-09-24" && nova.versao === fichaAtual.versao) {
+      await put(db, "ficha", nova);
+      fichaMigrada = true;
+    }
+  }
+
+  const protocolos = await getAll(db, "protocolo");
+  const anterior = protocolos.find((p) => p.notaDaAuditoria && !p.notaDaAuditoria20260924);
+  if (anterior) {
+    const novo = await fetchImpl(ARQUIVOS_PESSOAIS.protocolo).then((r) => r.json());
+    if (novo?.notaDaAuditoria20260924 && novo.versao === anterior.versao) {
+      await put(db, "protocolo", novo);
+      protocoloMigrado = true;
+    }
+  }
+
+  await put(db, "config", { chave: CHAVE_REVISAO_20260924, valor: true });
+  return { ficha: fichaMigrada, protocolo: protocoloMigrado, jaFeita: false };
+}
+
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const [storesPessoaisSemeadas, bibliotecaAtualizada] = await Promise.all([
     semearPessoaisSeVazias(db, fetchImpl),
@@ -228,6 +270,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const cadencia = await migrarCadenciaDaFicha(db);
   const substituicoes = await migrarSubstituicoesFicha(db);
   const opcaoCafeDaTarde = await migrarOpcaoIogurteCafeDaTarde(db);
+  const revisao20260924 = await migrarRevisaoAuditoria20260924(db, fetchImpl);
 
   return {
     seeded: storesPessoaisSemeadas.length > 0 || bibliotecaAtualizada,
@@ -236,6 +279,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
     cadenciaMigrada: cadencia.migrados,
     substituicoesMigradas: substituicoes.migrados,
     opcaoCafeDaTardeMigrada: opcaoCafeDaTarde.migrado,
+    revisaoAuditoria20260924: revisao20260924,
   };
 }
 

@@ -6,7 +6,7 @@ test("agrupa por dia e mantém o maior 1RM estimado do dia", () => {
   const series = [
     { data: "2026-08-01", carga: 90, reps: 3, tipoSerie: "normal" },
     { data: "2026-08-01", carga: 80, reps: 9, tipoSerie: "normal" },
-    { data: "2026-08-03", carga: 60, reps: 15, tipoSerie: "normal" },
+    { data: "2026-08-03", carga: 75, reps: 6, tipoSerie: "normal" },
   ];
   const resultado = calcularProgressao1RM(series);
   assert.deepEqual(resultado, [
@@ -34,7 +34,7 @@ test("array vazio ou só aquecimento retorna array vazio", () => {
 
 test("ordena o resultado por data ascendente mesmo com entrada fora de ordem", () => {
   const series = [
-    { data: "2026-08-03", carga: 60, reps: 15, tipoSerie: "normal" },
+    { data: "2026-08-03", carga: 75, reps: 6, tipoSerie: "normal" },
     { data: "2026-08-01", carga: 80, reps: 9, tipoSerie: "normal" },
   ];
   const resultado = calcularProgressao1RM(series);
@@ -90,4 +90,25 @@ test("músculo sem série no período não aparece nas chaves do resultado", () 
 
 test("array vazio retorna objeto vazio", () => {
   assert.deepEqual(calcularVolumeSemanalPorMusculo([]), {});
+});
+
+test("1RM estimado ignora séries acima de 12 reps e carga zero", () => {
+  const series = [
+    { data: "2026-08-01", carga: 10, reps: 20, tipoSerie: "normal" },
+    { data: "2026-08-01", carga: 0, reps: 60, tipoSerie: "normal" },
+    { data: "2026-08-02", carga: 30, reps: 10, tipoSerie: "normal" },
+  ];
+  const r = calcularProgressao1RM(series);
+  assert.deepEqual(r.map((p) => p.data), ["2026-08-02"]);
+});
+
+test("calcularProgressaoCarga devolve a maior carga de trabalho de cada dia", async () => {
+  const { calcularProgressaoCarga } = await import("./graficos.js");
+  const r = calcularProgressaoCarga([
+    { data: "2026-08-02", carga: 10, reps: 20, tipoSerie: "normal" },
+    { data: "2026-08-01", carga: 8, reps: 20, tipoSerie: "normal" },
+    { data: "2026-08-01", carga: 9, reps: 18, tipoSerie: "normal" },
+    { data: "2026-08-01", carga: 20, reps: 10, tipoSerie: "aquecimento" },
+  ]);
+  assert.deepEqual(r, [{ data: "2026-08-01", carga: 9 }, { data: "2026-08-02", carga: 10 }]);
 });

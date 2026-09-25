@@ -9,8 +9,12 @@ import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
-import { getFicha, getInicioDoBloco } from "../data/ficha.js";
-import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
+import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco, inicioParaDeloadAgora, SEMANA_DELOAD } from "../engine/fichaFixa.js";
+import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
+import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
+import { getCheckinsRecentes } from "../data/checkin.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
 import { calcularSequenciaDias } from "../engine/consistencia.js";
 import { calcularReadiness } from "../engine/readiness.js";
@@ -105,8 +109,16 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const ultimoCardioGeral = cardioRecente[0] ?? null;
   const cardioDeHojeLogado = ultimoCardioGeral?.data === hoje ? ultimoCardioGeral : null;
   const semanaDoBloco = calcularSemanaDoBloco(inicioDoBloco, hoje);
+  const estadoTreino = avaliarEstadoDoTreino({ todasAsSeries, checkinsRecentes: await getCheckinsRecentes(db), hoje });
+  // Com queda de desempenho, aponta a causa mais provável antes de culpar
+  // o programa (sono e álcool primeiro — js/engine/autorregulacao.js).
+  if (estadoTreino.alertasDesempenho.length > 0) {
+    const habitosRecentes = (await getAll(db, "habitos")).sort((a, b) => b.data.localeCompare(a.data));
+    estadoTreino.causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes });
+  }
+  const { fadigaDetectada } = estadoTreino;
   const { exerciciosHoje } = prepararSessaoDoDia({
-    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco,
+    todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco, fadigaDetectada,
   });
   const controladorHabitos = criarControladorHabitos(db, hoje, habito ?? {});
 
@@ -157,6 +169,17 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   root.appendChild(main);
 
   main.appendChild(montarCardReadiness(readiness));
+  const cardAlertas = montarCardAlertasTreino(estadoTreino, todosExercicios, semanaDoBloco, async () => {
+    const confirmou = await confirmarAcao({
+      titulo: "Fazer deload agora?",
+      mensagem: "Esta semana vira a semana de deload (metade das séries, mesma carga, RIR mais alto). Depois de 7 dias o bloco recomeça sozinho na semana 1.",
+      textoConfirmar: "Começar deload",
+    });
+    if (!confirmou) return;
+    await definirInicioDoBloco(db, inicioParaDeloadAgora(hoje));
+    if (onAtividadeAdicionada) onAtividadeAdicionada();
+  });
+  if (cardAlertas) main.appendChild(cardAlertas);
   main.appendChild(montarChipsHabitos(controladorHabitos));
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
@@ -202,7 +225,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
     const { exerciciosHoje: exerciciosDoDiaFuturo } = prepararSessaoDoDia({
-      todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo, ficha, semanaDoBloco,
+      todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo, ficha, semanaDoBloco, fadigaDetectada,
     });
     carrossel.appendChild(montarCardProximoDia(diaFuturoInfo, exerciciosDoDiaFuturo, () => {
       if (onAbrirDia) onAbrirDia(numero);
@@ -219,6 +242,63 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   main.appendChild(montarCardHabitos(controladorHabitos));
 
   return root;
+}
+
+// Alertas do treino (auditoria 2026-09-24): os motores de queda de
+// desempenho, estagnação e recuperação existiam mas nenhuma tela mostrava.
+// Só aparece quando há algo a dizer. Nunca aplica nada sozinho — o deload
+// antecipado só acontece se a pessoa confirmar.
+function montarCardAlertasTreino(estado, todosExercicios, semanaDoBloco, aoIniciarDeload) {
+  const nomePorId = new Map(todosExercicios.map((e) => [e.id, e.nome]));
+  const linhas = [];
+  for (const a of estado.alertasDesempenho) linhas.push(`${nomePorId.get(a.exercicioId) ?? a.exercicioId}: ${a.mensagem}`);
+  for (const a of estado.alertasVolume) {
+    if (a.tipo === "sem_progressao_exercicio") linhas.push(`${nomePorId.get(a.exercicioId) ?? a.exercicioId}: ${a.mensagem}`);
+  }
+  for (const a of estado.alertasRecuperacao) linhas.push(a.mensagem);
+  if (estado.causaProvavel) linhas.push(estado.causaProvavel.mensagem);
+  const sugerirDeload = estado.sugestaoDeload.sugerir && semanaDoBloco !== SEMANA_DELOAD;
+  if (linhas.length === 0 && !sugerirDeload) return null;
+
+  const card = document.createElement("section");
+  card.className = "exercise-card card-alertas-treino";
+  card.innerHTML = `
+    <div class="exercise-head">
+      <div>
+        <div class="exercise-name">Sinais do treino</div>
+        <div class="exercise-meta"></div>
+      </div>
+    </div>
+    <div class="alertas-corpo" style="padding:0 18px 18px;"></div>
+  `;
+  card.querySelector(".exercise-meta").textContent = sugerirDeload
+    ? `Sugestão de deload: ${estado.sugestaoDeload.motivos.join(", ")}`
+    : `${linhas.length} ponto${linhas.length === 1 ? "" : "s"} de atenção`;
+  const corpo = card.querySelector(".alertas-corpo");
+  for (const texto of linhas.slice(0, 5)) {
+    const p = document.createElement("p");
+    p.className = "prev-hint";
+    p.style.padding = "0 0 8px";
+    p.textContent = texto;
+    corpo.appendChild(p);
+  }
+  if (estado.fadigaDetectada && semanaDoBloco >= 4 && semanaDoBloco < SEMANA_DELOAD) {
+    const p = document.createElement("p");
+    p.className = "prev-hint";
+    p.style.padding = "0 0 8px";
+    p.textContent = "Por causa da queda de desempenho, a série extra de peito e bíceps desta semana foi suspensa.";
+    corpo.appendChild(p);
+  }
+  if (sugerirDeload) {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "swap-pill";
+    botao.style.width = "100%";
+    botao.textContent = "Fazer deload agora";
+    botao.addEventListener("click", aoIniciarDeload);
+    corpo.appendChild(botao);
+  }
+  return card;
 }
 
 // Estado compartilhado dos hábitos do dia entre os chips do topo e o card

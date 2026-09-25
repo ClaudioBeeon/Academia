@@ -11,6 +11,7 @@ import { registrarCardio, getCardioDesde } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
 import { getFicha } from "../data/ficha.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
+import { expandirContribuicoes } from "../engine/volume.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
 import { abrirDetalheDia } from "./historicoSessoes.js";
 
@@ -76,7 +77,7 @@ export async function montarTelaDivisao(db, { onAbrirHistoricoTreinos } = {}) {
 
   const [
     todasAsSeries, seriesUltimos7Dias,
-    ficha, perfil, cardioTodos, sessoesAgrupadas, protocolos,
+    ficha, perfil, cardioTodos, sessoesAgrupadas, protocolos, catalogo,
   ] = await Promise.all([
     getAll(db, "historicoSeries"),
     getSeriesDesde(db, subtrairDias(hoje, 6)),
@@ -85,6 +86,7 @@ export async function montarTelaDivisao(db, { onAbrirHistoricoTreinos } = {}) {
     getAll(db, "registrosCardio"),
     getSessoesAgrupadasPorDia(db, 6),
     getAll(db, "protocolo"),
+    getAll(db, "exercicios"),
   ]);
   const protocolo = protocolos[0] ?? null;
   const pesoKg = perfil?.dadosBasicos?.peso_kg;
@@ -92,7 +94,7 @@ export async function montarTelaDivisao(db, { onAbrirHistoricoTreinos } = {}) {
   main.appendChild(montarFaixaDias(todasAsSeries, cardioTodos, hoje));
 
   const definicaoFase = protocolo?.volumeSemanalPorFase?.[perfil?.fase?.atual ?? "definicao"];
-  const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias, definicaoFase });
+  const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias: expandirContribuicoes(seriesUltimos7Dias, catalogo), definicaoFase });
   main.appendChild(montarParRelatorioECobertura(seriesUltimos7Dias, ficha, cobertura));
 
   // Editar um dia no detalhe (js/screens/historicoSessoes.js, aberto daqui

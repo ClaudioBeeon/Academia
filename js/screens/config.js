@@ -19,6 +19,9 @@ import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { TEMAS_VALIDOS, obterTemaSalvo, salvarTema } from "../lib/tema.js";
+import { getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco, inicioParaDeloadAgora, descreverSemana, DURACAO_BLOCO_SEMANAS, SEMANA_DELOAD } from "../engine/fichaFixa.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 
 export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   const root = document.createElement("div");
@@ -58,6 +61,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
 
   main.appendChild(criarSecaoBolhaFlutuante(db));
   main.appendChild(await criarSecaoDiaDoCiclo(db));
+  main.appendChild(await criarSecaoBlocoDeTreino(db));
   main.appendChild(await criarSecaoPerfil(db));
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
@@ -185,6 +189,58 @@ async function criarSecaoDiaDoCiclo(db) {
     // sessão de hoje já foi feita.
     await registrarDiaDaSessao(db, novoDia, hoje, false);
     status.textContent = `Corrigido — "hoje" agora é o dia ${novoDia}.`;
+  });
+  return card;
+}
+
+// Bloco de treino (auditoria 2026-09-24). A semana do mesociclo sai da data
+// de início do bloco; antes ela travava na semana 5 e o app ficava em deload
+// pra sempre, sem nenhum jeito de recomeçar. Agora o bloco (6 semanas + 1 de
+// deload) recomeça sozinho, e aqui dá pra recomeçar na mão ou antecipar o
+// deload quando os gatilhos aparecem.
+async function criarSecaoBlocoDeTreino(db) {
+  const hoje = dataDeHoje();
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Bloco de treino</div></div>
+    <div class="sets" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:8px;">
+      <div class="prev-hint bloco-status" style="padding:0;"></div>
+      <button type="button" class="swap-pill bloco-recomecar" style="width:100%;">Recomeçar bloco (semana 1)</button>
+      <button type="button" class="swap-pill bloco-deload" style="width:100%;">Fazer deload agora</button>
+    </div>
+  `;
+  const status = card.querySelector(".bloco-status");
+
+  async function atualizar() {
+    const inicio = await getInicioDoBloco(db);
+    const semana = calcularSemanaDoBloco(inicio, hoje);
+    status.textContent = inicio
+      ? `Semana ${semana} de ${DURACAO_BLOCO_SEMANAS} (${descreverSemana(semana)}). Depois da semana ${SEMANA_DELOAD} (deload) o bloco recomeça sozinho.`
+      : "O bloco começa no primeiro treino que você abrir.";
+    card.querySelector(".bloco-deload").disabled = semana === SEMANA_DELOAD;
+  }
+  await atualizar();
+
+  card.querySelector(".bloco-recomecar").addEventListener("click", async () => {
+    const confirmou = await confirmarAcao({
+      titulo: "Recomeçar o bloco?",
+      mensagem: "Hoje vira a semana 1 (entrada: RIR um pouco mais alto e sem falha). As cargas e o histórico não mudam.",
+      textoConfirmar: "Recomeçar",
+    });
+    if (!confirmou) return;
+    await definirInicioDoBloco(db, hoje);
+    await atualizar();
+  });
+  card.querySelector(".bloco-deload").addEventListener("click", async () => {
+    const confirmou = await confirmarAcao({
+      titulo: "Fazer deload agora?",
+      mensagem: "Esta semana vira o deload: metade das séries, mesma carga, RIR mais alto. Use quando o desempenho cair em vários exercícios, houver dor articular ou cansaço acumulado. Depois de 7 dias o bloco recomeça na semana 1.",
+      textoConfirmar: "Começar deload",
+    });
+    if (!confirmou) return;
+    await definirInicioDoBloco(db, inicioParaDeloadAgora(hoje));
+    await atualizar();
   });
   return card;
 }

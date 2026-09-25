@@ -31,3 +31,25 @@ test("reps diminuem ao longo da escada", () => {
     assert.ok(escada[i].reps <= escada[i - 1].reps);
   }
 });
+
+test("gerarAquecimentoComposto: 50% × 8 e 70% × 4, no incremento do exercício", async () => {
+  const { gerarAquecimentoComposto } = await import("./aquecimento.js");
+  assert.deepEqual(gerarAquecimentoComposto(40, 2.5), [
+    { percentual: 50, peso: 20, reps: 8 },
+    { percentual: 70, peso: 27.5, reps: 4 },
+  ]);
+});
+
+test("gerarAquecimentoComposto descarta passos repetidos, zerados ou iguais à carga de trabalho", async () => {
+  const { gerarAquecimentoComposto } = await import("./aquecimento.js");
+  assert.deepEqual(gerarAquecimentoComposto(2, 2), []);
+  assert.deepEqual(gerarAquecimentoComposto(0, 2), []);
+});
+
+test("precisaDeAquecimento: compostos e máquinas multiarticulares sim, isoladores não", async () => {
+  const { precisaDeAquecimento } = await import("./aquecimento.js");
+  assert.equal(precisaDeAquecimento({ tipo: "composto_moderado" }), true);
+  assert.equal(precisaDeAquecimento({ tipo: "maquina", musculosSecundarios: [{ musculo: "triceps" }] }), true);
+  assert.equal(precisaDeAquecimento({ tipo: "maquina", musculosSecundarios: [] }), false);
+  assert.equal(precisaDeAquecimento({ tipo: "isolador" }), false);
+});

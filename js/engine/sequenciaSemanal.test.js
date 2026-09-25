@@ -15,11 +15,11 @@ import {
 test("DIAS_SEQUENCIA tem 5 dias na ordem e composição corretas", () => {
   assert.equal(DIAS_SEQUENCIA.length, 5);
   assert.deepEqual(DIAS_SEQUENCIA[0].musculos, ["peito", "costas", "deltoide_posterior", "triceps"]);
-  assert.deepEqual(DIAS_SEQUENCIA[1].musculos, ["costas", "biceps", "deltoide_posterior"]);
-  assert.deepEqual(DIAS_SEQUENCIA[2].musculos, ["peito", "ombro", "triceps", "abdomen"]);
+  assert.deepEqual(DIAS_SEQUENCIA[1].musculos, ["costas", "biceps"]);
+  assert.deepEqual(DIAS_SEQUENCIA[2].musculos, ["peito", "ombro", "deltoide_posterior", "triceps", "abdomen"]);
   assert.deepEqual(DIAS_SEQUENCIA[3].musculos, ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"]);
   assert.deepEqual(DIAS_SEQUENCIA[4].musculos, ["peito", "biceps", "ombro", "antebraco"]);
-  assert.equal(DIAS_SEQUENCIA[0].titulo, "Peito (inclinado) + Costas + Deltoide posterior");
+  assert.equal(DIAS_SEQUENCIA[0].titulo, "Peito (inclinado) + Costas + Deltoide posterior + Tríceps");
   assert.equal(DIAS_SEQUENCIA[3].titulo, "Pernas");
 });
 
@@ -30,7 +30,7 @@ test("peito abre os dias 1, 3 e 5 — é a prioridade e vem sempre primeiro", ()
 });
 
 test("obterDiaPorNumero retorna o dia certo, e cai no dia 1 pra número inválido", () => {
-  assert.equal(obterDiaPorNumero(3).titulo, "Peito (horizontal) + Ombro + Tríceps + Abdômen");
+  assert.equal(obterDiaPorNumero(3).titulo, "Peito (horizontal) + Ombros + Tríceps + Abdômen");
   assert.equal(obterDiaPorNumero(99).numero, 1);
 });
 

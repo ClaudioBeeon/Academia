@@ -2,6 +2,8 @@
 
 **Este arquivo é a fonte de verdade acumulada.** Junta a base científica original, todas as correções feitas durante o desenvolvimento, e a estrutura de treino final. Deve ser consultado pelo Claude Code sempre que houver dúvida sobre por que uma regra existe.
 
+> **Atualização de 24/09/2026:** auditoria científica corrigiu o motor (deload permanente, sugestão de carga invertida, RIR pré-preenchido, alertas desligados) e fez ajustes pontuais na ficha. Também há erratas de afirmações deste documento e do de 23/08 — ver `atualizacao-2026-09-24-auditoria-cientifica.md` antes de usar qualquer número daqui.
+>
 > **Atualização de 23/08/2026:** a divisão de 5 dias descrita na seção 4 abaixo foi substituída por uma ficha prescrita (`data/ficha.json`), depois de uma auditoria encontrar prioridade invertida e desequilíbrio empurra-puxa no gerador. Ver `atualizacao-2026-08-23-auditoria-e-ficha-prescrita.md` pro pacote completo — o que mudou, por quê, e o que a literatura mais recente trouxe de novo. Este arquivo continua valendo como histórico de decisões e princípios; a estrutura de dias em números está desatualizada.
 
 ---
@@ -48,7 +50,7 @@ Fonte: meta-análises, revisões sistemáticas e posicionamentos ACSM. Nível de
 1. **Bug de volume de peito:** o sistema tinha uma tag de "manutenção" que nunca restringia nada de fato — gerava 2 exercícios de peito/dia (18 séries/semana), volume de hipertrofia disfarçado de manutenção. **Correção:** número de exercícios/séries por músculo deve ser calculado a partir da faixa-alvo de volume da fase ativa no protocolo.json (fórmula: volume-alvo ÷ frequência ÷ séries-por-exercício), nunca um número fixo hardcoded no código.
 2. **Bug de repetição de ângulo:** os 3 dias de peito estavam repetindo o mesmo exercício (ex: crucifixo no cabo nos 3 dias), sem rotacionar pelos 3 ângulos (inclinado/horizontal/alongado). **Correção:** contador único e sincronizado entre os 3 dias de peito, aplicado na ordem em que os dias aparecem na semana.
 3. **Bug de ordenação:** exercícios de peito e tríceps intercalados (peito-tríceps-peito-tríceps) em vez de agrupados. **Correção:** quando um músculo prioritário tem 2+ exercícios no mesmo dia com um secundário, a ordem correta é todos os do prioritário primeiro, depois o secundário — nunca intercalado. Base: o estudo que embasa "ordem não importa" (Nunes 2021) é sobre hipertrofia; o mesmo estudo mostra que força é sensível a ordem, e foi esse achado que motivou a regra.
-4. **Teto por sessão (P3) coexiste com a fórmula de volume, não compete com ela:** máximo de ~2 exercícios por músculo por sessão é um limite de qualidade (a pesquisa mostra queda de qualidade depois disso), independente de quanto volume semanal ainda falta bater. Se um músculo precisar de mais séries do que cabe com qualidade numa sessão, a resposta é replanejar frequência (mais dias), não estourar o teto por sessão.
+4. **Teto por sessão (P3) coexiste com a fórmula de volume, não compete com ela:** máximo de ~2 exercícios por músculo por sessão é uma heurística de tempo e fadiga (errata 24/09: a pesquisa não mostra uma queda clara de qualidade nesse ponto — estudos com 10–16 séries por sessão não tiveram prejuízo), independente de quanto volume semanal ainda falta bater. Se um músculo precisar de mais séries do que cabe com qualidade numa sessão, a resposta é replanejar frequência (mais dias), não estourar o teto por sessão.
 
 ---
 
@@ -193,7 +195,7 @@ Usuário migrando para **déficit moderado**, com adições: batata-doce, salada
 - **PWA no GitHub Pages** (não app nativo) — decisão fechada. App nativo exigiria Mac + Xcode + conta de desenvolvedor Apple (US$99/ano), sem ganho relevante pro caso de uso pessoal
 - Três camadas: pesquisa (`base-cientifica-hipertrofia-forca.md`, o porquê) → protocolo (`protocolo.json`, as regras em números, versionado) → código (só executa o que o protocolo manda)
 - Arquivos de estado: `perfil.json` (fase ativa, dados pessoais), `protocolo.json` (regras de treino), `cargas.json` (memória de carga por exercício), `dieta.json` (dieta base e exceções)
-- Mesociclo de 5 semanas: volume subindo e RIR descendo da semana 1 à 4, deload na 5. Deload reativo tem prioridade sobre o calendário se desempenho cair antes
+- Mesociclo (revisado em 24/09): bloco de 7 semanas que recomeça sozinho — semana 1 de entrada (RIR +1), +1 série em peito e bíceps nas semanas 4–6, deload na 7. Deload reativo tem prioridade sobre o calendário se desempenho cair antes
 - Cada regra do protocolo deve apontar pra seção da pesquisa que a justifica — nada sem explicação rastreável
 - Construção em 3 níveis (essencial → diferencial → autorregulação e nutrição adaptativa), inspirado em padrões de mercado (Hevy, Strong, RP Hypertrophy, MacroFactor) mas com lógica auditável — nunca caixa-preta
 - Memória de carga por exercício: cada relato de peso+dificuldade vira ponto numa curva esforço×carga pessoal; sugestões pra exercícios novos usam semelhança de padrão de movimento/grupo muscular, sempre marcadas com nível de confiança (baixa/média/alta), nunca como número definitivo

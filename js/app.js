@@ -3,7 +3,7 @@ import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded } from "./data/seed.js";
 import { carregarCacheDeChaves } from "./data/chavesApi.js";
 import { initAutoSync } from "./data/sync.js";
-import { isConfigured as supabaseConfigurado } from "./data/supabaseClient.js";
+import { isConfigured as supabaseConfigurado, veioDoLinkDeNovaSenha, erroDoLinkDeLogin } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
 import { getCheckin } from "./data/checkin.js";
 import { getSeriesDoDia } from "./data/historico.js";
@@ -65,7 +65,10 @@ async function bootstrap() {
   // atrasa a abertura do app: initAutoSync() não é awaited.
   if (supabaseConfigurado()) initAutoSync(db);
 
-  const { renderTab, obterTabAtual } = renderShell(db);
+  // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
+  // a Config, onde fica o campo da senha nova.
+  const abaInicial = veioDoLinkDeNovaSenha() || erroDoLinkDeLogin() ? "config" : "hoje";
+  const { renderTab, obterTabAtual } = renderShell(db, { abaInicial });
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
 
   // Lembrete de treino: diferente dos outros, depende da hora — então
@@ -154,7 +157,7 @@ async function verificarLembreteTreino(db) {
   await put(db, "config", { chave: "lembreteTreinoEnviadoEm", valor: hoje });
 }
 
-function renderShell(db) {
+function renderShell(db, { abaInicial = "hoje" } = {}) {
   const content = document.getElementById("tab-content");
   const tabs = document.querySelectorAll("#tab-bar button");
   let tabAtual = "hoje";
@@ -364,7 +367,7 @@ function renderShell(db) {
     });
   })();
 
-  renderTab("hoje");
+  renderTab(abaInicial);
   return { renderTab, obterTabAtual: () => tabAtual };
 }
 

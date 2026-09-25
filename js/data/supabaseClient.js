@@ -21,6 +21,31 @@ const ANON_KEY_PADRAO = "sb_publishable_fE28T99MB-_mqqRRtMp87A_FoFTPpeT";
 
 let clientePromise = null;
 
+// Link de "esqueci a senha" (e-mail do Supabase): volta pro app com
+// #...type=recovery no endereço. Lido na carga do módulo, ANTES de o SDK
+// processar e limpar o endereço — é o que faz a Config abrir pedindo a
+// senha nova. Link vencido volta com #error=...
+const HASH_INICIAL = typeof location !== "undefined" ? location.hash : "";
+const VEIO_DO_LINK_DE_SENHA = /type=recovery/.test(HASH_INICIAL);
+const ERRO_DO_LINK = /error_code=([^&]+)/.exec(HASH_INICIAL)?.[1] ?? null;
+
+export function veioDoLinkDeNovaSenha() {
+  return VEIO_DO_LINK_DE_SENHA;
+}
+
+export function erroDoLinkDeLogin() {
+  if (!ERRO_DO_LINK) return null;
+  return ERRO_DO_LINK === "otp_expired"
+    ? "O link do e-mail venceu ou já foi usado. Peça um novo em \"Esqueci a senha\"."
+    : "Não deu pra entrar pelo link do e-mail. Peça um novo em \"Esqueci a senha\".";
+}
+
+// Endereço do app sem #/? — é pra onde o Supabase manda de volta depois do
+// Google ou do link de senha.
+function enderecoDoApp() {
+  return `${location.origin}${location.pathname}`;
+}
+
 export function getUrl() {
   try {
     return localStorage.getItem(CHAVE_URL) || URL_PADRAO;
@@ -99,8 +124,25 @@ export async function entrarComGoogle() {
   if (!client) throw new Error("Configure a sincronização com o Supabase antes.");
   const { error } = await client.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: window.location.href },
+    options: { redirectTo: enderecoDoApp() },
   });
+  if (error) throw error;
+}
+
+// "Esqueci a senha": o Supabase manda um e-mail com link que volta pro app
+// (veioDoLinkDeNovaSenha). Quem digita a senha nova é a pessoa, na Config.
+export async function pedirLinkDeNovaSenha(email) {
+  const client = await getClient();
+  if (!client) throw new Error("Configure a sincronização com o Supabase antes.");
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: enderecoDoApp() });
+  if (error) throw error;
+}
+
+// Chamado depois do link: o SDK já abriu a sessão de recuperação.
+export async function definirNovaSenha(senha) {
+  const client = await getClient();
+  if (!client) throw new Error("Configure a sincronização com o Supabase antes.");
+  const { error } = await client.auth.updateUser({ password: senha });
   if (error) throw error;
 }
 

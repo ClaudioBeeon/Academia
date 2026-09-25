@@ -8,6 +8,7 @@ import { salvarGeminiApiKey, salvarGeminiModelo } from "../data/chavesApi.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
+  pedirLinkDeNovaSenha, definirNovaSenha, veioDoLinkDeNovaSenha, erroDoLinkDeLogin,
 } from "../data/supabaseClient.js";
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
 import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
@@ -376,6 +377,7 @@ async function criarSecaoSupabase(db) {
   function montarFormAuth() {
     authSecao.innerHTML = `
       <button type="button" class="swap-pill google-btn" style="width:100%;">Entrar com Google</button>
+      <div class="prev-hint" style="text-align:center; margin:6px 0 0;">No iPhone, com o app instalado na tela de início, prefira e-mail e senha: o Google termina o login no Safari, não no app.</div>
       <div class="prev-hint" style="text-align:center; margin:8px 0;">ou com e-mail e senha</div>
       <form class="auth-form" style="display:grid; gap:10px;">
         <div class="set-field">
@@ -388,11 +390,30 @@ async function criarSecaoSupabase(db) {
           <button type="submit" class="swap-pill entrar-btn" style="flex:1;">Entrar</button>
           <button type="button" class="swap-pill cadastrar-btn" style="flex:1;">Criar conta</button>
         </div>
+        <button type="button" class="pular-treino-btn esqueci-btn" style="margin:0 auto;">Esqueci a senha</button>
         <div class="prev-hint auth-erro"></div>
       </form>
     `;
     const formAuth = authSecao.querySelector(".auth-form");
     const erro = authSecao.querySelector(".auth-erro");
+    const erroDoLink = erroDoLinkDeLogin();
+    if (erroDoLink) erro.textContent = erroDoLink;
+
+    authSecao.querySelector(".esqueci-btn").addEventListener("click", async () => {
+      const email = formAuth.email.value.trim();
+      if (!email) {
+        erro.textContent = "Digite o seu e-mail no campo acima e toque em \"Esqueci a senha\" de novo.";
+        formAuth.email.focus();
+        return;
+      }
+      erro.textContent = "Enviando o link...";
+      try {
+        await pedirLinkDeNovaSenha(email);
+        erro.textContent = `Pronto: mandamos um link pra ${email} (veja também o spam). Toque nele e crie a senha nova. Se o link abrir no Safari, crie a senha lá mesmo e depois entre aqui com o e-mail e a senha nova.`;
+      } catch (err) {
+        erro.textContent = err.message ?? "Não foi possível mandar o link.";
+      }
+    });
 
     // signInWithOAuth redireciona a página inteira pro Google e volta —
     // não há nada pra atualizar aqui depois do clique, só tratar se o
@@ -426,6 +447,45 @@ async function criarSecaoSupabase(db) {
         erro.textContent = "Conta criada. Se o projeto exigir confirmação por e-mail, confirme antes de entrar.";
       } catch (err) {
         erro.textContent = err.message ?? "Não foi possível criar a conta.";
+      }
+    });
+  }
+
+  // Chegou pelo link de "esqueci a senha": a sessão de recuperação já está
+  // aberta, falta a pessoa escolher a senha nova.
+  function montarFormNovaSenha() {
+    authSecao.innerHTML = `
+      <form class="nova-senha-form" style="display:grid; gap:10px;">
+        <div class="prev-hint" style="padding:0;"><b>Crie a sua senha nova.</b> Depois é só usar o e-mail e essa senha pra entrar, aqui ou no app instalado.</div>
+        <div class="set-field">
+          <label>Senha nova<input name="senha" type="password" autocomplete="new-password" minlength="6" /></label>
+        </div>
+        <div class="set-field">
+          <label>Repita a senha nova<input name="confirmacao" type="password" autocomplete="new-password" minlength="6" /></label>
+        </div>
+        <button type="submit" class="swap-pill" style="width:100%; background:var(--accent); color:var(--accent-ink);">Salvar senha nova</button>
+        <div class="prev-hint nova-senha-msg" style="padding:0;"></div>
+      </form>
+    `;
+    const form = authSecao.querySelector(".nova-senha-form");
+    const msg = authSecao.querySelector(".nova-senha-msg");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (form.senha.value.length < 6) {
+        msg.textContent = "A senha precisa ter pelo menos 6 caracteres.";
+        return;
+      }
+      if (form.senha.value !== form.confirmacao.value) {
+        msg.textContent = "As duas senhas não são iguais.";
+        return;
+      }
+      msg.textContent = "Salvando...";
+      try {
+        await definirNovaSenha(form.senha.value);
+        msg.textContent = "Senha trocada.";
+        await aposLogin();
+      } catch (err) {
+        msg.textContent = `Não deu pra trocar a senha (${err.message ?? "erro"}). Peça um novo link em "Esqueci a senha".`;
       }
     });
   }
@@ -481,7 +541,8 @@ async function criarSecaoSupabase(db) {
 
   if (isConfigured()) {
     const usuario = await getUsuario();
-    if (usuario) montarBotaoSair(usuario);
+    if (veioDoLinkDeNovaSenha() && usuario) montarFormNovaSenha();
+    else if (usuario) montarBotaoSair(usuario);
     else montarFormAuth();
   }
   await atualizarStatus();

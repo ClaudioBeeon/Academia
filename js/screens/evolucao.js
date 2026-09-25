@@ -4,6 +4,7 @@ import { calcularProgressao1RM, calcularProgressaoCarga, calcularVolumeSemanalPo
 import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
+import { listarRecordesPorExercicio } from "../engine/recordes.js";
 import { expandirContribuicoes } from "../engine/volume.js";
 import { montarCardPostura } from "./postura.js";
 
@@ -134,12 +135,41 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     main.appendChild(montarHeatmapCobertura(cobertura));
 
     montarSecaoCarga(main, exercicios, todasAsSeries);
+    montarSecaoRecordes(main, exercicios, todasAsSeries);
     montarSecaoVolume(main, expandirContribuicoes(todasAsSeries, exercicios));
   }
 
   montarSecaoMedidas(main, db, linhasMedidas);
 
   return root;
+}
+
+// Recordes pessoais por exercício — lista fixa, que antes só existia como
+// aviso passageiro na hora da série e no resumo do dia.
+function montarSecaoRecordes(main, exercicios, todasAsSeries) {
+  const recordes = listarRecordesPorExercicio(todasAsSeries, exercicios);
+  if (recordes.length === 0) return;
+  const kg = (v) => String(v).replace(".", ",");
+  const dataCurta = (iso) => iso.split("-").reverse().slice(0, 2).join("/");
+
+  const card = document.createElement("details");
+  card.className = "exercise-card recordes-card";
+  card.innerHTML = `<summary class="exercise-head"><div class="exercise-name">Recordes pessoais</div><div class="exercise-meta"></div></summary><div class="recordes-lista"></div>`;
+  card.querySelector(".exercise-meta").textContent = `${recordes.length} exercícios`;
+  const lista = card.querySelector(".recordes-lista");
+  for (const r of recordes) {
+    const item = document.createElement("div");
+    item.className = "recorde-item";
+    const partes = [];
+    if (r.maiorCarga) partes.push(`maior carga ${kg(r.maiorCarga.carga)} kg × ${r.maiorCarga.reps} (${dataCurta(r.maiorCarga.data)})`);
+    if (r.melhor1RM) partes.push(`1RM est. ${kg(r.melhor1RM.valor)} kg`);
+    if (r.maisReps) partes.push(`mais reps ${r.maisReps.reps}${r.maisReps.carga > 0 ? ` com ${kg(r.maisReps.carga)} kg` : ""}`);
+    item.innerHTML = `<b></b><span></span>`;
+    item.querySelector("b").textContent = r.nome;
+    item.querySelector("span").textContent = partes.join(" · ");
+    lista.appendChild(item);
+  }
+  main.appendChild(card);
 }
 
 function montarSecaoCarga(main, exercicios, todasAsSeries) {

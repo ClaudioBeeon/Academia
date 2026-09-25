@@ -90,3 +90,15 @@ test("pausasPendentes conta as vencidas que ainda não foram marcadas", () => {
 test("pausasPendentes nunca fica negativo se marcar mais que o vencido", () => {
   assert.equal(pausasPendentes(["10:30", "13:30"], "11:00", 5), 0);
 });
+
+test("deveLembrarTreino: só depois do horário, nos dias marcados, sem treino e uma vez por dia", async () => {
+  const { deveLembrarTreino } = await import("./lembretes.js");
+  const config = { ativo: true, horario: "18:15", dias: [1, 2, 3, 4, 5] };
+  const base = { config, agoraHHMM: "18:20", diaSemana: 3, treinouHoje: false, jaLembradoHoje: false };
+  assert.equal(deveLembrarTreino(base), true);
+  assert.equal(deveLembrarTreino({ ...base, agoraHHMM: "18:00" }), false, "antes do horário");
+  assert.equal(deveLembrarTreino({ ...base, diaSemana: 0 }), false, "domingo não está marcado");
+  assert.equal(deveLembrarTreino({ ...base, treinouHoje: true }), false);
+  assert.equal(deveLembrarTreino({ ...base, jaLembradoHoje: true }), false);
+  assert.equal(deveLembrarTreino({ ...base, config: { ...config, ativo: false } }), false);
+});

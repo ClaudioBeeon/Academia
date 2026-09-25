@@ -13,6 +13,7 @@ import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.
 import { calcularSemanaDoBloco, inicioParaDeloadAgora, SEMANA_DELOAD } from "../engine/fichaFixa.js";
 import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
 import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
+import { resumirSemana } from "../engine/resumoSemana.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
 import { confirmarAcao } from "./confirmarAcao.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
@@ -180,6 +181,10 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     if (onAtividadeAdicionada) onAtividadeAdicionada();
   });
   if (cardAlertas) main.appendChild(cardAlertas);
+  const idsDaFicha = new Set((ficha?.dias ?? []).flatMap((d) => d.exercicios.map((e) => e.exercicioId)));
+  const musculosDaFicha = [...new Set(todosExercicios.filter((e) => idsDaFicha.has(e.id)).map((e) => e.musculoPrimario))];
+  const cardSemana = montarCardResumoSemana(resumirSemana({ todasAsSeries, catalogo: todosExercicios, musculosDaFicha, hoje }));
+  if (cardSemana) main.appendChild(cardSemana);
   main.appendChild(montarChipsHabitos(controladorHabitos));
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
@@ -242,6 +247,45 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   main.appendChild(montarCardHabitos(controladorHabitos));
 
   return root;
+}
+
+// Resumo dos últimos 7 dias contra os 7 anteriores. Fechado por padrão —
+// é leitura de acompanhamento, não algo pra agir na hora.
+const NOME_MUSCULO_CURTO = {
+  peito: "peito", costas: "costas", biceps: "bíceps", triceps: "tríceps", ombro: "ombro lateral",
+  deltoide_posterior: "deltoide posterior", quadriceps: "quadríceps", posterior_coxa: "posterior de coxa",
+  gluteo: "glúteo", panturrilha: "panturrilha", abdomen: "abdômen", antebraco: "antebraço", ombro_anterior: "ombro anterior",
+};
+
+function montarCardResumoSemana(resumo) {
+  if (resumo.treinos === 0 && resumo.treinosAnterior === 0) return null;
+  const kg = (v) => String(v).replace(".", ",");
+  const card = document.createElement("details");
+  card.className = "exercise-card resumo-semana-card";
+  card.innerHTML = `
+    <summary class="exercise-head"><div><div class="exercise-name">Resumo da semana</div><div class="exercise-meta"></div></div></summary>
+    <div class="resumo-semana-corpo" style="padding:0 18px 18px;"></div>
+  `;
+  card.querySelector(".exercise-meta").textContent =
+    `${resumo.treinos} treino${resumo.treinos === 1 ? "" : "s"} · ${resumo.series} séries (semana anterior: ${resumo.treinosAnterior} · ${resumo.seriesAnterior})`;
+  const corpo = card.querySelector(".resumo-semana-corpo");
+  const linha = (texto) => {
+    const p = document.createElement("p");
+    p.className = "prev-hint";
+    p.style.padding = "0 0 8px";
+    p.textContent = texto;
+    corpo.appendChild(p);
+  };
+  if (resumo.subiram.length > 0) {
+    linha(`Subiu de carga: ${resumo.subiram.map((x) => `${x.nome} (${kg(x.de)} → ${kg(x.para)} kg)`).join(", ")}.`);
+  } else {
+    linha("Nenhuma carga subiu nesta semana — normal em semanas de ganhar repetição.");
+  }
+  if (resumo.recordes > 0) linha(`Recorde de carga em ${resumo.recordes} exercício${resumo.recordes === 1 ? "" : "s"}.`);
+  if (resumo.semTreinoDireto.length > 0) {
+    linha(`Sem série direta nos últimos 7 dias: ${resumo.semTreinoDireto.map((m) => NOME_MUSCULO_CURTO[m] ?? m).join(", ")}.`);
+  }
+  return card;
 }
 
 // Alertas do treino (auditoria 2026-09-24): os motores de queda de

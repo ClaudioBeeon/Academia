@@ -127,3 +127,9 @@ test("capacidadeDaSerie soma reps e RIR", () => {
   assert.equal(capacidadeDaSerie({ reps: 8, rir: null }), 8);
   assert.equal(capacidadeDaSerie({}), null);
 });
+
+test("mini-séries de drop-set e rest-pause não entram na decisão de carga", () => {
+  const r = sugerirProximaCarga({ ...FAIXA, historicoSessoes: [sessao("d", [s(20, 12), s(20, 12), s(14, 6, 0, { tipoSerie: "drop" })])] });
+  assert.equal(r.acao, "aumentar");
+  assert.equal(r.carga, 22);
+});

@@ -1289,3 +1289,64 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .rs-dica { margin: 12px 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--ink-faint); text-align: center; }
 .exec-sugestao { margin: 0 0 6px; }
 .exec-sugestao b { color: var(--ink); }
+
+/* "Já fiz" no rodapé da execução — registra a série sem ter dado play. */
+.exec-footer-secundario { flex: 0 0 auto; min-height: 52px; padding: 0 18px; border: none; border-radius: 999px; background: var(--card-2); color: var(--ink-dim); font-family: inherit; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+.exec-footer-secundario[hidden] { display: none; }
+.exec-footer-secundario:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fila-linha.pulado { opacity: 0.55; }
+
+.exec-ver-video { text-decoration: none; margin-top: 4px; width: 100%; }
+
+/* Execução: "última vez", série feita editável e anotação por exercício */
+.exec-lt-marca.editavel { cursor: pointer; }
+.exec-lt-marca.editavel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.exec-lt-marca .rir { white-space: nowrap; }
+.exec-ultima-vez { color: var(--ink-dim); }
+.exec-anotacao { margin: 4px 0 16px; }
+.exec-anotacao-anterior { margin: 0 0 8px; font-size: 0.8rem; line-height: 1.4; color: var(--ink-dim); background: var(--card-2); border-radius: 12px; padding: 8px 12px; }
+.exec-anotacao-rot { display: block; font-size: 0.72rem; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.exec-anotacao-rot textarea { display: block; width: 100%; margin-top: 6px; background: var(--card-2); border: 1px solid var(--line); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-family: var(--font-display); font-size: 16px; resize: none; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.exec-anotacao-rot textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.rs-extras { display: flex; gap: 8px; margin: 12px 0 0; }
+.rs-extra { flex: 1; min-height: 40px; border-radius: 999px; border: 1px dashed var(--line); background: transparent; color: var(--ink-dim); font: 700 0.8rem var(--font-display); cursor: pointer; }
+.rs-extra.ativo { border-style: solid; border-color: var(--accent); color: var(--ink); background: var(--card-2); }
+.rs-extra:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.exec-superset-aviso { color: var(--ink); font-weight: 700; }
+
+.fila-acoes { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 12px; }
+.fila-acoes .swap-pill { min-height: 38px; font-size: 0.8rem; }
+
+/* Recordes pessoais (Evolução) */
+.recordes-card summary { list-style: none; cursor: pointer; }
+.recordes-card summary::-webkit-details-marker { display: none; }
+.recordes-lista { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+.recorde-item { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.recorde-item:last-child { border-bottom: none; padding-bottom: 0; }
+.recorde-item b { font-size: 0.86rem; color: var(--ink); }
+.recorde-item span { font-size: 0.78rem; color: var(--ink-dim); line-height: 1.4; }
+
+/* Calendário com navegação por mês e resumo do mês (aba Treinos) */
+.calendario-mes-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.calendario-titulo { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.calendario-seta { width: 40px; height: 40px; border-radius: 999px; border: none; background: var(--card-2); color: var(--ink); font-size: 1rem; font-weight: 800; cursor: pointer; }
+.calendario-seta:disabled { opacity: 0.35; cursor: default; }
+.calendario-seta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.calendario-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 18px 12px; }
+.calendario-resumo div { display: flex; flex-direction: column; align-items: center; background: var(--card-2); border-radius: 12px; padding: 8px 4px; }
+.calendario-resumo b { font-family: var(--font-mono); font-size: 0.95rem; color: var(--ink); }
+.calendario-resumo span { font-size: 0.66rem; color: var(--ink-faint); }
+
+.resumo-semana-card summary { list-style: none; cursor: pointer; }
+.resumo-semana-card summary::-webkit-details-marker { display: none; }
+
+/* Lembrete de treino (Config) */
+.lembrete-treino { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.lembrete-treino-ativo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+.lembrete-treino-ativo input { width: 20px; height: 20px; accent-color: var(--accent); }
+.lt-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.lt-dia { min-height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-2); color: var(--ink-dim); font: 800 0.85rem var(--font-display); cursor: pointer; }
+.lt-dia.ativo { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.lt-dia:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

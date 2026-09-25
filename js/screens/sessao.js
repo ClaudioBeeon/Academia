@@ -2,7 +2,11 @@
 import { getAll } from "../data/db.js";
 import { getEquipamento } from "../data/equipamento.js";
 import { excluirSeriesDoDia, getSeriesDoDia } from "../data/historico.js";
-import { getSubstituicoesDoDia, salvarSubstituicao, getAdiamentosDoDia, adiarExercicio, aplicarAjustesSessaoDoDia } from "../data/ajustesSessao.js";
+import {
+  getSubstituicoesDoDia, salvarSubstituicao, getAdiamentosDoDia, adiarExercicio, aplicarAjustesSessaoDoDia,
+  getPuladosDoDia, pularExercicioHoje, desfazerPuloHoje, getExtrasDoDia, adicionarExtraHoje,
+  getSupersetsDoDia, criarSupersetHoje, desfazerSupersetHoje,
+} from "../data/ajustesSessao.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
@@ -79,13 +83,16 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   // muda, senão substituir o substituto ou adiar duas vezes bagunçaria.
   let exerciciosHoje = exerciciosBase;
   async function recarregarAjustesDoDia() {
-    const [substituicoes, adiamentos, seriesHoje] = await Promise.all([
+    const [substituicoes, adiamentos, seriesHoje, pulados, extras, supersets] = await Promise.all([
       getSubstituicoesDoDia(db, hoje),
       getAdiamentosDoDia(db, hoje),
       modoPreview ? [] : getSeriesDoDia(db, hoje),
+      getPuladosDoDia(db, hoje),
+      getExtrasDoDia(db, hoje),
+      getSupersetsDoDia(db, hoje),
     ]);
     const exerciciosComSerieHoje = new Set(seriesHoje.map((s) => s.exercicioId));
-    exerciciosHoje = aplicarAjustesSessaoDoDia(exerciciosBase, todosExercicios, substituicoes, adiamentos, exerciciosComSerieHoje);
+    exerciciosHoje = aplicarAjustesSessaoDoDia(exerciciosBase, todosExercicios, substituicoes, adiamentos, exerciciosComSerieHoje, { pulados, extras, supersets });
   }
   if (!modoPreview) await recarregarAjustesDoDia();
 
@@ -93,6 +100,9 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   let estadoAtual = "fila";
   let indiceExercicioAtual = 0;
   let explicacaoJaMostrada = false;
+  // Descanso que a próxima tela de execução deve começar sozinha — usado no
+  // superset (depois do exercício B, o descanso acontece já na tela do A).
+  let descansoPendenteSegundos = 0;
   let telaAtual = null;
   const prsDaSessao = [];
   // Sessão de verdade (não preview): o cronômetro da fila conta a partir
@@ -134,7 +144,18 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
 
     telaAtual = await trocarConteudo(root, async () => {
       if (estadoAtual === "fila") {
-        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco, inicioSessaoTs, musculosTreinadosHaPouco }, {
+        return montarTelaFila(db, { diaInfo, exerciciosHoje, hoje, diaDaFicha, ficha, semanaDoBloco, inicioSessaoTs, musculosTreinadosHaPouco, todosExercicios }, {
+          onTreinoRapido: modoPreview ? null : async (ids) => {
+            for (const id of ids) await pularExercicioHoje(db, hoje, id);
+            await persistirDiaSeNecessario();
+            await recarregarAjustesDoDia();
+            await renderizar("trocarAba");
+          },
+          onAdicionarExtra: modoPreview ? null : async (id) => {
+            await adicionarExtraHoje(db, hoje, id);
+            await recarregarAjustesDoDia();
+            await renderizar("trocarAba");
+          },
           onExecutar: async (indice) => {
             indiceExercicioAtual = indice;
             estadoAtual = "execucao";
@@ -145,6 +166,11 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
           onPular: modoPreview ? null : async () => {
             await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
             if (onVoltarParaHoje) onVoltarParaHoje();
+          },
+          onDesfazerPulo: modoPreview ? null : async (exercicioId) => {
+            await desfazerPuloHoje(db, hoje, exercicioId);
+            await recarregarAjustesDoDia();
+            await renderizar("trocarAba");
           },
           onReiniciar: async () => {
             await excluirSeriesDoDia(db, exerciciosHoje.map((e) => e.id), hoje);
@@ -170,14 +196,42 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
           hoje,
           mostrarExplicacaoAberta,
           semanaDoBloco,
+          descansoInicialSegundos: (() => { const d = descansoPendenteSegundos; descansoPendenteSegundos = 0; return d; })(),
+          outrosExerciciosHoje: exerciciosHoje.filter((e) => e.id !== exercicio.id && !e.puladoHoje).map((e) => ({ id: e.id, nome: e.nome })),
         }, {
+          // Superset: vai direto pro par (sem descanso depois do A; com o
+          // descanso do B já rodando na tela do A).
+          onIrParaExercicio: async (exercicioId, { descansoSegundos = 0 } = {}) => {
+            const indice = exerciciosHoje.findIndex((e) => e.id === exercicioId);
+            if (indice < 0) return;
+            indiceExercicioAtual = indice;
+            descansoPendenteSegundos = descansoSegundos;
+            await renderizar("avancar");
+          },
+          onCriarSuperset: async (outroId) => {
+            const atualId = exerciciosHoje[indiceExercicioAtual].id;
+            await criarSupersetHoje(db, hoje, atualId, outroId);
+            await recarregarAjustesDoDia();
+            indiceExercicioAtual = Math.max(0, exerciciosHoje.findIndex((e) => e.id === atualId));
+            await renderizar("trocarAba");
+          },
+          onDesfazerSuperset: async () => {
+            const atualId = exerciciosHoje[indiceExercicioAtual].id;
+            await desfazerSupersetHoje(db, hoje, atualId);
+            await recarregarAjustesDoDia();
+            indiceExercicioAtual = Math.max(0, exerciciosHoje.findIndex((e) => e.id === atualId));
+            await renderizar("trocarAba");
+          },
           onFechar: async () => {
             estadoAtual = "fila";
             await renderizar("voltar");
           },
           onProximoExercicio: async () => {
-            if (indiceExercicioAtual < exerciciosHoje.length - 1) {
-              indiceExercicioAtual++;
+            // Pula os marcados como "não vou fazer hoje".
+            let proximo = indiceExercicioAtual + 1;
+            while (proximo < exerciciosHoje.length && exerciciosHoje[proximo].puladoHoje) proximo++;
+            if (proximo < exerciciosHoje.length) {
+              indiceExercicioAtual = proximo;
               await renderizar("avancar");
             } else {
               await irParaRelatorioOuPerguntarCardio();
@@ -200,6 +254,15 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
             await recarregarAjustesDoDia();
             if (indiceExercicioAtual >= exerciciosHoje.length) indiceExercicioAtual = Math.max(0, exerciciosHoje.length - 1);
             await renderizar("avancar");
+          },
+          // "Não vou fazer hoje": marca só pra hoje e volta pra fila, que
+          // já mostra o próximo pendente.
+          onExercicioPulado: modoPreview ? null : async (exercicioId) => {
+            await pularExercicioHoje(db, hoje, exercicioId);
+            await persistirDiaSeNecessario();
+            await recarregarAjustesDoDia();
+            estadoAtual = "fila";
+            await renderizar("voltar");
           },
           onSerieRegistrada: persistirDiaSeNecessario,
           onPrsDetectados: (prs) => { prsDaSessao.push(...prs); },
@@ -230,7 +293,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
         await registrarDiaDaSessao(db, diaDaSessao, hoje, true);
         diaPersistido = true;
       }
-      return montarTelaRelatorio(db, { hoje, prsDaSessao }, {
+      return montarTelaRelatorio(db, { hoje, prsDaSessao, inicioSessaoTs }, {
         onConcluir: onVoltarParaHoje,
       });
     }, { direcao });

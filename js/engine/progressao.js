@@ -19,6 +19,8 @@
 // Sessões de deload (semana 7) são ignoradas: carga igual com volume e
 // esforço menores não diz nada sobre progresso.
 
+import { ehSerieDeTrabalho } from "./volume.js";
+
 const FOLGA_RIR_PARA_SUBIR = 1;
 const MINIMO_SERIES_NA_BASE = 2;
 
@@ -27,7 +29,7 @@ const kg = (valor) => String(valor).replace(".", ",");
 const REDUCAO_PERCENTUAL = 0.05;
 
 function seriesDeTrabalho(sessao) {
-  return (sessao?.series ?? []).filter((s) => s.tipoSerie !== "aquecimento" && s.carga != null && s.reps != null);
+  return (sessao?.series ?? []).filter((s) => ehSerieDeTrabalho(s) && s.carga != null && s.reps != null);
 }
 
 function ehSessaoDeDeload(sessao) {

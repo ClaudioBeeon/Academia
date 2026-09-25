@@ -52,3 +52,37 @@ export function detectarPRs(novaSerie, seriesAnteriores) {
 
   return prs;
 }
+
+// Lista permanente de recordes por exercício (tela Evolução). Só séries de
+// trabalho: aquecimento e mini-séries de drop-set/rest-pause ficam fora.
+// 1RM estimado só com séries de até 12 reps (graficos.serveParaEstimar1RM).
+export function listarRecordesPorExercicio(series, catalogo = []) {
+  const nomePorId = new Map(catalogo.map((e) => [e.id, e.nome]));
+  const porExercicio = new Map();
+  for (const serie of series) {
+    if (serie.tipoSerie && serie.tipoSerie !== "normal") continue;
+    if (!(serie.reps > 0)) continue;
+    if (!porExercicio.has(serie.exercicioId)) porExercicio.set(serie.exercicioId, []);
+    porExercicio.get(serie.exercicioId).push(serie);
+  }
+
+  const resultado = [];
+  for (const [exercicioId, lista] of porExercicio) {
+    const comCarga = lista.filter((s) => s.carga > 0);
+    const maiorCarga = comCarga.reduce((melhor, s) => (!melhor || s.carga > melhor.carga || (s.carga === melhor.carga && s.reps > melhor.reps) ? s : melhor), null);
+    const maisReps = lista.reduce((melhor, s) => (!melhor || s.reps > melhor.reps || (s.reps === melhor.reps && s.carga > melhor.carga) ? s : melhor), null);
+    const validas1RM = lista.filter(serveParaEstimar1RM);
+    const melhor1RM = validas1RM.reduce((melhor, s) => {
+      const valor = estimativa1RM(s);
+      return !melhor || valor > melhor.valor ? { valor: Math.round(valor * 10) / 10, data: s.data } : melhor;
+    }, null);
+    resultado.push({
+      exercicioId,
+      nome: nomePorId.get(exercicioId) ?? exercicioId,
+      maiorCarga: maiorCarga ? { carga: maiorCarga.carga, reps: maiorCarga.reps, data: maiorCarga.data } : null,
+      maisReps: maisReps ? { reps: maisReps.reps, carga: maisReps.carga, data: maisReps.data } : null,
+      melhor1RM,
+    });
+  }
+  return resultado.sort((a, b) => a.nome.localeCompare(b.nome));
+}

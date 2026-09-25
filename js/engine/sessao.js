@@ -14,3 +14,19 @@ export function calcularEstatisticasSessao(seriesDoDia) {
     musculosTreinados: [...musculos].sort(),
   };
 }
+
+// Duração da sessão em minutos, pro resumo final. Começa no que vier
+// primeiro: o toque em "Começar treino" (inicioSessaoTs, só existe
+// enquanto o app não é fechado) ou a primeira série registrada hoje
+// (registradaEm, gravado nas séries desde 24/09/2026). Acima de 4 h é
+// sinal de que a sessão foi aberta e abandonada — melhor não mostrar.
+const DURACAO_MAXIMA_MIN = 240;
+
+export function calcularDuracaoSessaoMin({ inicioSessaoTs = null, seriesDoDia = [], agoraMs = Date.now() }) {
+  const horarios = seriesDoDia.map((s) => s.registradaEm).filter((t) => Number.isFinite(t));
+  const candidatos = [inicioSessaoTs, ...horarios].filter((t) => Number.isFinite(t));
+  if (candidatos.length === 0) return null;
+  const minutos = Math.round((agoraMs - Math.min(...candidatos)) / 60000);
+  if (minutos < 0 || minutos > DURACAO_MAXIMA_MIN) return null;
+  return minutos;
+}

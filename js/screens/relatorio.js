@@ -2,13 +2,13 @@
 import { get } from "../data/db.js";
 import { getSeriesDoDia } from "../data/historico.js";
 import { getCardioDoDia } from "../data/cardio.js";
-import { calcularEstatisticasSessao } from "../engine/sessao.js";
+import { calcularEstatisticasSessao, calcularDuracaoSessaoMin } from "../engine/sessao.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
 import { getObservacaoTreino, salvarObservacaoTreino } from "../data/observacoesTreino.js";
 import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
 
 export async function montarTelaRelatorio(db, contexto, callbacks) {
-  const { hoje, prsDaSessao } = contexto;
+  const { hoje, prsDaSessao, inicioSessaoTs = null } = contexto;
   const { onConcluir } = callbacks;
 
   const [seriesDoDia, registrosCardioDoDia, perfil, observacaoExistente] = await Promise.all([
@@ -45,6 +45,7 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
       <div class="stat-tile"><b></b><span>Séries feitas</span></div>
       <div class="stat-tile"><b></b><span>Volume (kg)</span></div>
       <div class="stat-tile"><b></b><span>Exercícios</span></div>
+      <div class="stat-tile"><b></b><span>Duração</span></div>
       <div class="stat-tile"><b class="stat-tile-texto"></b><span>Músculos treinados</span></div>
     </div>
   `;
@@ -52,7 +53,9 @@ export async function montarTelaRelatorio(db, contexto, callbacks) {
   tiles[0].textContent = stats.totalSeries;
   tiles[1].textContent = stats.volumeTotal;
   tiles[2].textContent = stats.exerciciosTreinados;
-  tiles[3].textContent = stats.musculosTreinados.length > 0 ? stats.musculosTreinados.join(", ") : "—";
+  const duracaoMin = calcularDuracaoSessaoMin({ inicioSessaoTs, seriesDoDia });
+  tiles[3].textContent = duracaoMin == null ? "—" : duracaoMin >= 60 ? `${Math.floor(duracaoMin / 60)}h${String(duracaoMin % 60).padStart(2, "0")}` : `${duracaoMin} min`;
+  tiles[4].textContent = stats.musculosTreinados.length > 0 ? stats.musculosTreinados.join(", ") : "—";
   main.appendChild(statsCard);
 
   if (pesoKg > 0) {

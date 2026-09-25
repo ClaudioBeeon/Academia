@@ -9,7 +9,7 @@ import { getCheckin } from "./data/checkin.js";
 import { getSeriesDoDia } from "./data/historico.js";
 import { montarPopupPerguntasDiarias } from "./screens/perguntasDiarias.js";
 import { getMedidas } from "./data/medidas.js";
-import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida } from "./engine/lembretes.js";
+import { deveLembrarCreatina, deveLembrarFotosMedidas, devePedirReavaliacaoFase, calcularDataReavaliacaoSugerida, deveLembrarTreino } from "./engine/lembretes.js";
 import { permissaoConcedida, mostrarNotificacao } from "./lib/notificacoes.js";
 import { montarTelaTreino } from "./screens/treino.js";
 import { montarFluxoSessao } from "./screens/sessao.js";
@@ -67,6 +67,13 @@ async function bootstrap() {
   const { renderTab, obterTabAtual } = renderShell(db);
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
 
+  // Lembrete de treino: diferente dos outros, depende da hora — então
+  // checa na abertura, ao voltar pro app e a cada 5 min com ele aberto.
+  const checarLembreteTreino = () => verificarLembreteTreino(db).catch((err) => console.error("Falha no lembrete de treino:", err));
+  checarLembreteTreino();
+  setInterval(checarLembreteTreino, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checarLembreteTreino(); });
+
   // Dispara uma vez por abertura do app (não por troca de aba), com o que
   // ainda não foi respondido hoje. Reaparece na próxima abertura enquanto
   // sobrar pergunta, e recomeça sozinho quando o registro do dia muda à
@@ -123,6 +130,27 @@ async function verificarEEnviarLembretes(db) {
   }
 
   await put(db, "config", { chave: "lembretesEnviadosEm", valor: hoje });
+}
+
+async function verificarLembreteTreino(db) {
+  if (!permissaoConcedida()) return;
+  const hoje = obterDataLocal();
+  const agora = new Date();
+  const [config, marcador, seriesDeHoje] = await Promise.all([
+    get(db, "config", "lembreteTreino"),
+    get(db, "config", "lembreteTreinoEnviadoEm"),
+    getSeriesDoDia(db, hoje),
+  ]);
+  const deve = deveLembrarTreino({
+    config: config?.valor,
+    agoraHHMM: `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`,
+    diaSemana: agora.getDay(),
+    treinouHoje: seriesDeHoje.length > 0,
+    jaLembradoHoje: marcador?.valor === hoje,
+  });
+  if (!deve) return;
+  await mostrarNotificacao("Hora do treino", { body: "Ainda não tem série registrada hoje. Pouco tempo? Use o treino rápido na fila.", tag: "lembrete-treino" });
+  await put(db, "config", { chave: "lembreteTreinoEnviadoEm", valor: hoje });
 }
 
 function renderShell(db) {

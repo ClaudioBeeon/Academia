@@ -65,3 +65,20 @@ test("série acima de 12 reps não gera recorde de 1RM estimado", () => {
   const prs = detectarPRs({ carga: 10, reps: 25 }, [{ carga: 20, reps: 10 }]);
   assert.equal(prs.some((p) => p.tipo === "1rm"), false);
 });
+
+test("listarRecordesPorExercicio junta maior carga, mais reps e melhor 1RM de cada exercício", async () => {
+  const { listarRecordesPorExercicio } = await import("./recordes.js");
+  const series = [
+    { exercicioId: "supino", data: "2026-09-01", carga: 20, reps: 12, tipoSerie: "normal" },
+    { exercicioId: "supino", data: "2026-09-08", carga: 24, reps: 8, tipoSerie: "normal" },
+    { exercicioId: "supino", data: "2026-09-08", carga: 30, reps: 5, tipoSerie: "aquecimento" },
+    { exercicioId: "supino", data: "2026-09-09", carga: 16, reps: 15, tipoSerie: "drop" },
+    { exercicioId: "prancha", data: "2026-09-02", carga: 0, reps: 60, tipoSerie: "normal" },
+  ];
+  const [prancha, supino] = listarRecordesPorExercicio(series, [{ id: "supino", nome: "Supino" }, { id: "prancha", nome: "Prancha" }]);
+  assert.deepEqual(supino.maiorCarga, { carga: 24, reps: 8, data: "2026-09-08" });
+  assert.deepEqual(supino.maisReps, { reps: 12, carga: 20, data: "2026-09-01" });
+  assert.equal(supino.melhor1RM.valor, 30.4);
+  assert.equal(prancha.maiorCarga, null, "sem carga não tem recorde de carga");
+  assert.equal(prancha.maisReps.reps, 60);
+});

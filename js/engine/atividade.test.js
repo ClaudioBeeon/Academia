@@ -66,3 +66,20 @@ test("diasSeguidos conta a partir de ontem quando hoje ainda não tem série", (
   const resultado = calcularAtividadeMensal(series, "2026-08-20");
   assert.equal(resultado.diasSeguidos, 2);
 });
+
+test("resumirMes conta dias, séries de trabalho, volume e cardio só do mês pedido", async () => {
+  const { resumirMes } = await import("./atividade.js");
+  const r = resumirMes({
+    todasAsSeries: [
+      { data: "2026-08-03", carga: 10, reps: 10, tipoSerie: "normal" },
+      { data: "2026-08-03", carga: 10, reps: 10, tipoSerie: "normal" },
+      { data: "2026-08-05", carga: 5, reps: 10, tipoSerie: "aquecimento" },
+      { data: "2026-08-07", carga: 20, reps: 5 },
+      { data: "2026-09-01", carga: 50, reps: 10, tipoSerie: "normal" },
+    ],
+    cardios: [{ data: "2026-08-10" }, { data: "2026-09-10" }],
+    ano: 2026,
+    mes: 8,
+  });
+  assert.deepEqual(r, { diasDeTreino: 2, series: 3, volumeKg: 300, cardios: 1 });
+});

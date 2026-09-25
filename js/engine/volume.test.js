@@ -44,3 +44,13 @@ test("expandirContribuicoes mantém como gravada a série de exercício fora do 
   assert.equal(r.length, 1);
   assert.equal(r[0].musculo, "peito");
 });
+
+test("drop-set e rest-pause contam meia série no volume", async () => {
+  const { expandirContribuicoes } = await import("./volume.js");
+  const catalogo = [{ id: "rosca", musculoPrimario: "biceps", musculosSecundarios: [] }];
+  const series = [
+    { exercicioId: "rosca", tipoSerie: "normal" },
+    { exercicioId: "rosca", tipoSerie: "drop" },
+  ];
+  assert.deepEqual(calcularVolumeSemanal(expandirContribuicoes(series, catalogo)).porMusculo, { biceps: 1.5 });
+});

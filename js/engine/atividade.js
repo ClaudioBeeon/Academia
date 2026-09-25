@@ -34,3 +34,17 @@ function subtrairUmDia(dataISO) {
   const dia = String(d.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
 }
+
+// Resumo de um mês (calendário da aba Treinos): dias com treino de
+// musculação, séries de trabalho, volume (carga × reps) e sessões de
+// cardio. `ano` e `mes` como números (mes 1–12).
+export function resumirMes({ todasAsSeries = [], cardios = [], ano, mes }) {
+  const prefixo = `${ano}-${String(mes).padStart(2, "0")}`;
+  const doMes = todasAsSeries.filter((s) => s.data?.startsWith(prefixo) && (!s.tipoSerie || s.tipoSerie === "normal"));
+  return {
+    diasDeTreino: new Set(doMes.map((s) => s.data)).size,
+    series: doMes.length,
+    volumeKg: Math.round(doMes.reduce((soma, s) => soma + (s.carga ?? 0) * (s.reps ?? 0), 0)),
+    cardios: cardios.filter((c) => c.data?.startsWith(prefixo)).length,
+  };
+}

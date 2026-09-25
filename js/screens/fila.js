@@ -1,6 +1,8 @@
 // js/screens/fila.js
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { descreverSemana, ordemDeCorte } from "../engine/fichaFixa.js";
+import { ehSerieDeTrabalho } from "../engine/volume.js";
+import { animarSpring } from "../lib/spring.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
@@ -209,6 +211,8 @@ function partesDaPrescricao(exercicio) {
   if (p?.rirAlvo != null) partes.push(`RIR ${p.rirAlvo}`);
   if (p?.descansoSegundos) partes.push(`${p.descansoSegundos}s`);
   if (p?.opcional) partes.push("opcional");
+  if (exercicio.extraDoDia) partes.push("extra de hoje");
+  if (exercicio.supersetCom) partes.push(`superset c/ ${exercicio.supersetCom.nome}`);
   return partes;
 }
 
@@ -265,6 +269,62 @@ function montarLinhaExercicio(exercicio, indice, seriesFeitas, feito, aoAbrir) {
   return linha;
 }
 
+// Folha com o catálogo inteiro, agrupado por músculo, pra acrescentar um
+// exercício só hoje. Mesmo esqueleto das outras folhas.
+function escolherExercicioExtra(exercicios) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "carga-sheet-overlay";
+    overlay.innerHTML = `
+      <div class="carga-sheet substituir-sheet">
+        <div class="carga-sheet-handle"></div>
+        <h3>Exercício extra (só hoje)</h3>
+        <p class="substituir-nota">Entra no fim da fila, com 3 séries e a faixa padrão do tipo de exercício. A ficha não muda.</p>
+        <div class="substituir-lista"></div>
+        <div class="carga-sheet-acoes"><button type="button" class="carga-sheet-cancelar">Cancelar</button></div>
+      </div>
+    `;
+    const lista = overlay.querySelector(".substituir-lista");
+    const porMusculo = new Map();
+    for (const e of exercicios) {
+      if (!porMusculo.has(e.musculoPrimario)) porMusculo.set(e.musculoPrimario, []);
+      porMusculo.get(e.musculoPrimario).push(e);
+    }
+    const musculos = [...porMusculo.keys()].sort((a, b) => nomeDoMusculo(a).localeCompare(nomeDoMusculo(b)));
+    for (const musculo of musculos) {
+      const rotulo = document.createElement("div");
+      rotulo.className = "fila-sec";
+      rotulo.textContent = nomeDoMusculo(musculo);
+      lista.appendChild(rotulo);
+      for (const exercicio of porMusculo.get(musculo).sort((a, b) => a.nome.localeCompare(b.nome))) {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.className = "substituir-item";
+        botao.innerHTML = `<span class="nm"></span>`;
+        botao.querySelector(".nm").textContent = exercicio.nome;
+        botao.addEventListener("click", () => fechar(exercicio));
+        lista.appendChild(botao);
+      }
+    }
+    document.body.appendChild(overlay);
+    const sheetEl = overlay.querySelector(".carga-sheet");
+    sheetEl.style.transform = "translate3d(0, 100%, 0)";
+    animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 420 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
+    requestAnimationFrame(() => overlay.classList.add("aberta"));
+    let fechada = false;
+    function fechar(resultado) {
+      if (fechada) return;
+      fechada = true;
+      overlay.classList.remove("aberta");
+      const altura = sheetEl.getBoundingClientRect().height || 420;
+      animarSpring(sheetEl, { y: 0 }, { y: altura }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => overlay.remove());
+      resolve(resultado);
+    }
+    overlay.querySelector(".carga-sheet-cancelar").addEventListener("click", () => fechar(null));
+    overlay.addEventListener("click", (evento) => { if (evento.target === overlay) fechar(null); });
+  });
+}
+
 function montarRotuloSecao(texto) {
   const rotulo = document.createElement("div");
   rotulo.className = "fila-sec";
@@ -273,18 +333,25 @@ function montarRotuloSecao(texto) {
 }
 
 export async function montarTelaFila(db, contexto, callbacks) {
-  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1, inicioSessaoTs = null, musculosTreinadosHaPouco = [] } = contexto;
-  const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar } = callbacks;
+  const { diaInfo, exerciciosHoje, hoje, diaDaFicha = null, ficha = null, semanaDoBloco = 1, inicioSessaoTs = null, musculosTreinadosHaPouco = [], todosExercicios = [] } = contexto;
+  const { onExecutar, onFinalizarSessao, onVoltar, onPular, onReiniciar, onDesfazerPulo, onTreinoRapido, onAdicionarExtra } = callbacks;
 
-  // Séries de aquecimento não contam pra fechar um exercício.
+  // Só séries de trabalho fecham um exercício (aquecimento e mini-séries de
+  // drop-set/rest-pause não contam).
   const seriesPorExercicio = (await Promise.all(
     exerciciosHoje.map((e) => getSeriesDoExercicioNaData(db, e.id, hoje))
-  )).map((series) => series.filter((s) => s.tipoSerie !== "aquecimento"));
+  )).map((series) => series.filter(ehSerieDeTrabalho));
   const habitoHoje = (await getHabito(db, hoje)) ?? {};
 
   let totalSeriesFeitas = 0;
   let exerciciosConcluidos = 0;
   const estados = seriesPorExercicio.map((series, indice) => {
+    // "Não vou fazer hoje" conta como resolvido: sai dos pendentes e não
+    // trava o próximo exercício nem a barra de progresso.
+    if (exerciciosHoje[indice].puladoHoje) {
+      exerciciosConcluidos++;
+      return "pulado";
+    }
     const seriesAlvo = exerciciosHoje[indice].seriesAlvo ?? 3;
     totalSeriesFeitas += series.length;
     if (series.length >= seriesAlvo) {
@@ -382,13 +449,51 @@ export async function montarTelaFila(db, contexto, callbacks) {
     main.appendChild(notaCorte);
   }
 
+  // "Treino rápido": pula de uma vez os opcionais e os 2 primeiros da ordem
+  // de corte que ainda não foram começados. Cada um pode ser desfeito na
+  // seção "Pulados hoje".
+  const ainda = (e) => !e.puladoHoje && (seriesPorExercicio[exerciciosHoje.indexOf(e)]?.length ?? 0) === 0;
+  const opcionais = corte.filter((e) => e.prescricao?.opcional && ainda(e));
+  const obrigatoriosCortaveis = corte.filter((e) => !e.prescricao?.opcional && ainda(e)).slice(0, 2);
+  const paraTreinoRapido = [...opcionais, ...obrigatoriosCortaveis];
+  const barraAcoes = document.createElement("div");
+  barraAcoes.className = "fila-acoes";
+  if (onTreinoRapido && paraTreinoRapido.length > 0) {
+    const rapidoBtn = document.createElement("button");
+    rapidoBtn.type = "button";
+    rapidoBtn.className = "swap-pill";
+    rapidoBtn.textContent = "Treino rápido";
+    rapidoBtn.addEventListener("click", async () => {
+      const confirmou = await confirmarAcao({
+        titulo: "Fazer o treino rápido?",
+        mensagem: `Sai da lista de hoje: ${paraTreinoRapido.map((e) => e.nome).join(", ")}. Peito e bíceps ficam. Dá pra desfazer cada um em "Pulados hoje".`,
+        textoConfirmar: "Treino rápido",
+      });
+      if (confirmou) await onTreinoRapido(paraTreinoRapido.map((e) => e.id));
+    });
+    barraAcoes.appendChild(rapidoBtn);
+  }
+  if (onAdicionarExtra && todosExercicios.length > 0) {
+    const extraBtn = document.createElement("button");
+    extraBtn.type = "button";
+    extraBtn.className = "swap-pill";
+    extraBtn.textContent = "+ Exercício extra";
+    extraBtn.addEventListener("click", async () => {
+      const idsHoje = new Set(exerciciosHoje.map((e) => e.id));
+      const escolhido = await escolherExercicioExtra(todosExercicios.filter((e) => !idsHoje.has(e.id)));
+      if (escolhido) await onAdicionarExtra(escolhido.id);
+    });
+    barraAcoes.appendChild(extraBtn);
+  }
+  if (barraAcoes.childElementCount > 0) main.appendChild(barraAcoes);
+
   const aquecimentoTemMovimentos = (ficha?.aquecimento?.exercicios?.length ?? 0) > 0;
   main.appendChild(montarChecklistAquecimento(db, hoje, ficha?.aquecimento, habitoHoje));
 
   // O exercício da vez é o primeiro que ainda não fechou as séries previstas.
   // A partição é por estado, não por posição: quem foi concluído desce pro
   // fim mesmo que o usuário tenha pulado a ordem da ficha.
-  const indiceAtual = estados.findIndex((e) => e !== "concluido");
+  const indiceAtual = estados.findIndex((e) => e !== "concluido" && e !== "pulado");
   const abrir = (indice) => () => { if (onExecutar) onExecutar(indice); };
 
   if (indiceAtual !== -1) {
@@ -401,9 +506,11 @@ export async function montarTelaFila(db, contexto, callbacks) {
 
   const adiantar = [];
   const concluidos = [];
+  const pulados = [];
   exerciciosHoje.forEach((exercicio, indice) => {
     if (indice === indiceAtual) return;
-    (estados[indice] === "concluido" ? concluidos : adiantar).push({ exercicio, indice });
+    if (estados[indice] === "pulado") pulados.push({ exercicio, indice });
+    else (estados[indice] === "concluido" ? concluidos : adiantar).push({ exercicio, indice });
   });
 
   if (adiantar.length > 0) {
@@ -421,6 +528,24 @@ export async function montarTelaFila(db, contexto, callbacks) {
       main.appendChild(montarLinhaExercicio(
         exercicio, indice, seriesPorExercicio[indice].length, true, abrir(indice)
       ));
+    }
+  }
+
+  if (pulados.length > 0) {
+    main.appendChild(montarRotuloSecao("Pulados hoje"));
+    for (const { exercicio, indice } of pulados) {
+      const linha = montarLinhaExercicio(exercicio, indice, 0, true, async () => {
+        if (!onDesfazerPulo) return;
+        const confirmou = await confirmarAcao({
+          titulo: "Voltar com este exercício?",
+          mensagem: `${exercicio.nome} volta pra lista de hoje.`,
+          textoConfirmar: "Voltar pra lista",
+        });
+        if (confirmou) await onDesfazerPulo(exercicio.id);
+      });
+      linha.classList.add("pulado");
+      linha.querySelector(".pr").textContent = "Não vai fazer hoje — toque pra desfazer";
+      main.appendChild(linha);
     }
   }
 

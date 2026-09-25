@@ -12,7 +12,7 @@ import {
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
 import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
 import { getMedidas } from "../data/medidas.js";
-import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas } from "../engine/lembretes.js";
+import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas, LEMBRETE_TREINO_PADRAO } from "../engine/lembretes.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
 import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
@@ -66,7 +66,7 @@ export async function montarTelaConfig(db, { onAbrirBiblioteca } = {}) {
   main.appendChild(await criarSecaoEquipamento(db));
   main.appendChild(await criarSecaoSupabase(db));
   main.appendChild(criarSecaoGemini(db));
-  main.appendChild(criarSecaoLembretes());
+  main.appendChild(await criarSecaoLembretes(db));
   main.appendChild(await criarSecaoSugestoes(db));
 
   const importCard = document.createElement("section");
@@ -525,7 +525,7 @@ const TEXTO_STATUS_PERMISSAO = {
   indisponivel: "Notificações não são suportadas neste navegador.",
 };
 
-function criarSecaoLembretes() {
+async function criarSecaoLembretes(db) {
   const card = document.createElement("section");
   card.className = "exercise-card";
   card.innerHTML = `
@@ -534,8 +534,64 @@ function criarSecaoLembretes() {
       <div class="prev-hint">Creatina do dia, foto/medida a cada 2 semanas e reavaliação de fase — só chegam enquanto o app estiver aberto (ou for reaberto), sem servidor de push não dá pra garantir aviso com o app fechado.</div>
       <button type="button" class="swap-pill ativar-lembretes-btn"></button>
       <div class="prev-hint lembretes-status"></div>
+      <div class="lembrete-treino">
+        <label class="lembrete-treino-ativo"><input type="checkbox" class="lt-ativo" /> Lembrete de treino</label>
+        <div class="set-field"><label>Horário<input type="time" class="lt-horario" /></label></div>
+        <div class="lt-dias" role="group" aria-label="Dias do lembrete"></div>
+        <div class="prev-hint lt-status" style="padding:0;"></div>
+      </div>
     </div>
   `;
+
+  // Lembrete de treino (horário + dias). Guardado em config — fica só neste
+  // aparelho, igual ao dia do ciclo.
+  const registro = await get(db, "config", "lembreteTreino");
+  const lembrete = { ...LEMBRETE_TREINO_PADRAO, ...(registro?.valor ?? {}) };
+  const ativoEl = card.querySelector(".lt-ativo");
+  const horarioEl = card.querySelector(".lt-horario");
+  const diasEl = card.querySelector(".lt-dias");
+  const statusTreino = card.querySelector(".lt-status");
+  ativoEl.checked = lembrete.ativo;
+  horarioEl.value = lembrete.horario;
+  const NOMES_DIAS = ["D", "S", "T", "Q", "Q", "S", "S"];
+  const NOMES_DIAS_LONGOS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+  const salvarLembrete = async () => {
+    await put(db, "config", { chave: "lembreteTreino", valor: lembrete });
+    statusTreino.textContent = lembrete.ativo
+      ? `Às ${lembrete.horario}, se ainda não tiver treinado. Só chega com o app aberto ou quando você abrir.`
+      : "Desligado.";
+  };
+  for (let dia = 0; dia < 7; dia++) {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "lt-dia";
+    botao.textContent = NOMES_DIAS[dia];
+    botao.setAttribute("aria-label", NOMES_DIAS_LONGOS[dia]);
+    const desenhar = () => {
+      const marcado = lembrete.dias.includes(dia);
+      botao.classList.toggle("ativo", marcado);
+      botao.setAttribute("aria-pressed", String(marcado));
+    };
+    desenhar();
+    botao.addEventListener("click", async () => {
+      lembrete.dias = lembrete.dias.includes(dia) ? lembrete.dias.filter((d) => d !== dia) : [...lembrete.dias, dia].sort();
+      desenhar();
+      await salvarLembrete();
+    });
+    diasEl.appendChild(botao);
+  }
+  ativoEl.addEventListener("change", async () => {
+    lembrete.ativo = ativoEl.checked;
+    if (lembrete.ativo && statusPermissao() === "default") await pedirPermissaoNotificacao();
+    await salvarLembrete();
+    atualizar();
+  });
+  horarioEl.addEventListener("change", async () => {
+    if (!horarioEl.value) return;
+    lembrete.horario = horarioEl.value;
+    await salvarLembrete();
+  });
+  statusTreino.textContent = lembrete.ativo ? `Às ${lembrete.horario}, se ainda não tiver treinado.` : "Desligado.";
   const botao = card.querySelector(".ativar-lembretes-btn");
   const status = card.querySelector(".lembretes-status");
 

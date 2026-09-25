@@ -94,3 +94,17 @@ export function pausasPendentes(horarios, agoraHHMM, feitas = 0) {
   const jaVencidas = horarios.filter((h) => paraMinutos(h) <= agora).length;
   return Math.max(0, jaVencidas - feitas);
 }
+
+// --- Lembrete de treino ---
+//
+// Aviso no horário em que a pessoa costuma treinar, nos dias marcados, se
+// ainda não houver série registrada hoje. Mesma limitação dos outros: só
+// dispara com o app aberto ou quando ele é reaberto (sem servidor de push).
+// `config`: { ativo, horario: "HH:MM", dias: [0–6, domingo = 0] }.
+export const LEMBRETE_TREINO_PADRAO = { ativo: false, horario: "18:15", dias: [1, 2, 3, 4, 5] };
+
+export function deveLembrarTreino({ config, agoraHHMM, diaSemana, treinouHoje, jaLembradoHoje }) {
+  if (!config?.ativo || treinouHoje || jaLembradoHoje) return false;
+  if (!(config.dias ?? []).includes(diaSemana)) return false;
+  return paraMinutos(agoraHHMM) >= paraMinutos(config.horario ?? LEMBRETE_TREINO_PADRAO.horario);
+}

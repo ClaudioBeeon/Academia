@@ -1,9 +1,14 @@
 // js/screens/execucao.js
-import { registrarSerie, getSeriesDoExercicioNaData, getHistoricoCompletoDoExercicio } from "../data/historico.js";
+import { registrarSerie, getSeriesDoExercicioNaData, getHistoricoCompletoDoExercicio, atualizarSerie, excluirSerie } from "../data/historico.js";
+import { getNotaExercicio, salvarNotaExercicio, getUltimaNotaAnterior } from "../data/notasExercicio.js";
 import { sugerirSubstitutos } from "../engine/substituicao.js";
 import { sugerirProximaCarga } from "../engine/progressao.js";
 import { validarRir } from "../engine/rir.js";
-import { perguntarResultadoSerie } from "./resultadoSerie.js";
+import { perguntarResultadoSerie, perguntarExercicioInteiro, perguntarEdicaoSerie, perguntarMiniSerie } from "./resultadoSerie.js";
+import { ehSerieDeTrabalho, ehSerieExtra } from "../engine/volume.js";
+import { ativarAutoResize } from "../lib/autoResizeTextarea.js";
+import { confirmarAcao } from "./confirmarAcao.js";
+import { animarSpring } from "../lib/spring.js";
 import { calcularAnilhas } from "../engine/anilhas.js";
 import { gerarEscadaAquecimento, gerarAquecimentoComposto, precisaDeAquecimento } from "../engine/aquecimento.js";
 import { detectarPRs } from "../engine/recordes.js";
@@ -65,6 +70,11 @@ function agruparSessoesAnteriores(historico, hoje) {
     .map((data) => ({ data, series: porData.get(data).sort((a, b) => (a.serieNumero ?? 0) - (b.serieNumero ?? 0)) }));
 }
 
+function formatarDataCurta(dataISO) {
+  const [, mes, dia] = dataISO.split("-");
+  return `${dia}/${mes}`;
+}
+
 function formatarNumero(valor) {
   if (valor == null) return "—";
   return Number.isInteger(valor) ? String(valor) : valor.toFixed(1).replace(/\.0$/, "");
@@ -113,8 +123,8 @@ function montarVisualAnilhas(anilhasPorLado, pesoBarra) {
 }
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
-  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta, semanaDoBloco = null } = contexto;
-  const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onMinimizarSessao } = callbacks;
+  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta, semanaDoBloco = null, descansoInicialSegundos = 0, outrosExerciciosHoje = [] } = contexto;
+  const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onExercicioPulado, onMinimizarSessao, onIrParaExercicio, onCriarSuperset, onDesfazerSuperset } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
   const totalSeriesAlvo = exercicio.seriesAlvo ?? TOTAL_SERIES_ALVO_PADRAO;
@@ -127,9 +137,23 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   // Séries de aquecimento ficam à parte: não ocupam número de série, não
   // entram na progressão nem nos recordes (auditoria 2026-09-24).
   const todasHoje = await getSeriesDoExercicioNaData(db, exercicio.id, hoje);
-  const seriesHoje = todasHoje.filter((s) => s.tipoSerie !== "aquecimento");
+  // Numeração e linha do tempo só com séries de trabalho; as mini-séries
+  // de drop-set/rest-pause aparecem como "+drop"/"+rp" na série de origem.
+  const seriesHoje = todasHoje.filter(ehSerieDeTrabalho);
+  const extrasHoje = todasHoje.filter(ehSerieExtra);
   const historicoCompleto = await getHistoricoCompletoDoExercicio(db, exercicio.id);
   const sessoesAnteriores = agruparSessoesAnteriores(historicoCompleto, hoje);
+
+  // "Última vez": séries de trabalho da sessão anterior mais recente, pra
+  // mostrar série a série o que foi feito (ex.: 30×12 · 30×12 · 30×11).
+  const ultimaSessao = sessoesAnteriores
+    .map((sessao) => ({ data: sessao.data, series: sessao.series.filter((x) => x.tipoSerie !== "aquecimento") }))
+    .find((sessao) => sessao.series.length > 0) ?? null;
+  const ultimaPorNumero = new Map((ultimaSessao?.series ?? []).map((x) => [x.serieNumero, x]));
+  const [notaDeHoje, ultimaNota] = await Promise.all([
+    getNotaExercicio(db, exercicio.id, hoje),
+    getUltimaNotaAnterior(db, exercicio.id, hoje),
+  ]);
 
   // Dupla progressão (js/engine/progressao.js): carga base = maior carga de
   // trabalho da última sessão; sobe quando todas as séries bateram o topo
@@ -214,6 +238,15 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     });
     acoesHeader.appendChild(adiarBtn);
   }
+  // "Já fiz / pular": exercício feito sem o app acompanhar, ou que não vai
+  // ser feito hoje. Um botão só (abre as duas opções) pra não empilhar mais
+  // pílulas no cabeçalho.
+  const jaFizBtn = document.createElement("button");
+  jaFizBtn.type = "button";
+  jaFizBtn.className = "swap-pill jafiz-pill";
+  jaFizBtn.textContent = "Opções";
+  acoesHeader.appendChild(jaFizBtn);
+
   const diaCicloBtn = document.createElement("button");
   diaCicloBtn.type = "button";
   diaCicloBtn.className = "swap-pill dia-ciclo-pill";
@@ -337,6 +370,34 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const notaEl = document.createElement("p");
   notaEl.className = "exec-nota";
   main.appendChild(notaEl);
+
+  // Anotação por exercício (salva ao sair do campo). A de dias anteriores
+  // aparece em cima, pra lembrar de ajuste de máquina, incômodo etc.
+  const anotacaoEl = document.createElement("div");
+  anotacaoEl.className = "exec-anotacao";
+  anotacaoEl.innerHTML = `
+    <p class="exec-anotacao-anterior" hidden></p>
+    <label class="exec-anotacao-rot">Anotação de hoje
+      <textarea rows="1" maxlength="280" placeholder="ex.: banco no furo 3, ombro incomodou na 3ª"></textarea>
+    </label>
+  `;
+  if (ultimaNota) {
+    const anterior = anotacaoEl.querySelector(".exec-anotacao-anterior");
+    anterior.hidden = false;
+    anterior.textContent = `Da última vez (${formatarDataCurta(ultimaNota.data)}): ${ultimaNota.texto}`;
+  }
+  const campoAnotacao = anotacaoEl.querySelector("textarea");
+  campoAnotacao.value = notaDeHoje;
+  ativarAutoResize(campoAnotacao);
+  let anotacaoSalva = notaDeHoje;
+  const salvarAnotacao = async () => {
+    if (campoAnotacao.value.trim() === anotacaoSalva.trim()) return;
+    anotacaoSalva = campoAnotacao.value;
+    await salvarNotaExercicio(db, exercicio.id, hoje, campoAnotacao.value);
+  };
+  campoAnotacao.addEventListener("change", salvarAnotacao);
+  campoAnotacao.addEventListener("blur", salvarAnotacao);
+  main.appendChild(anotacaoEl);
 
   // Guia de cadência: mora no telão de tela cheia, que só existe enquanto a
   // série está em andamento — construído sob demanda em iniciarTrabalho().
@@ -493,6 +554,15 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       p.textContent = texto;
       corpoExplicacao.append(h, p);
     }
+    // "Ver vídeo": abre a busca do exercício no YouTube (sem chave de API
+    // nem vídeo embutido — o app continua funcionando offline).
+    const video = document.createElement("a");
+    video.className = "swap-pill exec-ver-video";
+    video.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${exercicio.nome} execução correta`)}`;
+    video.target = "_blank";
+    video.rel = "noopener";
+    video.textContent = "Ver vídeo da execução ↗";
+    corpoExplicacao.appendChild(video);
     explicacao.appendChild(corpoExplicacao);
     animarDetails(explicacao, corpoExplicacao);
     main.appendChild(explicacao);
@@ -536,14 +606,25 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       const feita = seriesHoje.find((s) => s.serieNumero === numero);
       const marca = document.createElement("div");
       marca.className = "exec-lt-marca";
+      const anterior = ultimaPorNumero.get(numero);
+      const textoAnterior = anterior ? `últ ${formatarNumero(anterior.carga)}×${anterior.reps}` : "\u00a0";
       if (feita) {
-        marca.innerHTML = `<div class="kg">${formatarNumero(feita.carga)}×${feita.reps}</div><div class="rir">RIR ${feita.rir}</div>`;
+        const extras = extrasHoje.filter((x) => x.serieNumero === numero).map((x) => (x.tipoSerie === "drop" ? "+drop" : "+rp"));
+        marca.innerHTML = `<div class="kg">${formatarNumero(feita.carga)}×${feita.reps}</div><div class="rir">RIR ${feita.rir ?? "—"}${extras.length ? " " + extras.join(" ") : ""}</div>`;
+        // Tocar numa série feita corrige ou apaga (desfazer).
+        marca.classList.add("editavel");
+        marca.setAttribute("role", "button");
+        marca.setAttribute("tabindex", "0");
+        marca.setAttribute("aria-label", `Corrigir série ${numero}`);
+        marca.addEventListener("click", () => editarSerie(feita));
       } else if (numero === pendente) {
         marca.classList.add("agora");
-        marca.innerHTML = `<div class="kg">agora</div><div class="rir">&nbsp;</div>`;
+        marca.innerHTML = `<div class="kg">agora</div><div class="rir"></div>`;
+        marca.querySelector(".rir").textContent = textoAnterior;
       } else {
         marca.classList.add("vazia");
-        marca.innerHTML = `<div class="kg">—</div><div class="rir">&nbsp;</div>`;
+        marca.innerHTML = `<div class="kg">—</div><div class="rir"></div>`;
+        marca.querySelector(".rir").textContent = textoAnterior;
       }
       marcasEl.appendChild(marca);
     }
@@ -589,6 +670,20 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         sug.textContent = sugestao.motivo;
         notaEl.append(sug, document.createElement("br"));
       }
+      if (exercicio.supersetCom) {
+        const sup = document.createElement("span");
+        sup.className = "exec-superset-aviso";
+        sup.textContent = exercicio.supersetPosicao === "A"
+          ? `Superset com ${exercicio.supersetCom.nome}: depois desta série, vá direto pra ele (sem descanso).`
+          : `Superset com ${exercicio.supersetCom.nome}: depois desta série vem o descanso, e aí volta pra ele.`;
+        notaEl.append(sup, document.createElement("br"));
+      }
+      if (ultimaSessao) {
+        const ultima = document.createElement("span");
+        ultima.className = "exec-ultima-vez";
+        ultima.textContent = `Última vez (${formatarDataCurta(ultimaSessao.data)}): ${ultimaSessao.series.map((x) => `${formatarNumero(x.carga)}×${x.reps}`).join(" · ")}`;
+        notaEl.append(ultima, document.createElement("br"));
+      }
       const alvo = document.createElement("span");
       alvo.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${formatarNumero(cfg.rirAlvo)}</b> sobrando.`;
       notaEl.appendChild(alvo);
@@ -609,6 +704,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   function renderizarFooter() {
     const pendente = numeroPendenteAtual();
+    jaFizSerieBtn.hidden = numeroEmAndamento != null || pendente == null;
     if (numeroEmAndamento != null) {
       primarioBtn.textContent = "Terminei — registrar";
     } else if (pendente == null) {
@@ -801,7 +897,47 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       await registrarAquecimento();
       return;
     }
-    await registrarSerieAtual(numero);
+    const cargaDaSerie = cargaSelecionada;
+    const par = await parSupersetPendente();
+    await registrarSerieAtual(numero, { comDescanso: !par });
+    if (resultado.extra) await registrarMiniSerie(resultado.extra, numero, cargaDaSerie, resultado.reps, { comDescanso: !par });
+    if (par) {
+      fecharTelaCheia();
+      // A → B sem descanso; B → A com o descanso do par.
+      await onIrParaExercicio(par.id, { descansoSegundos: exercicio.supersetPosicao === "B" ? cfg.descansoSegundos : 0 });
+    }
+  }
+
+  // O par do superset, se ainda tiver série por fazer hoje.
+  async function parSupersetPendente() {
+    const par = exercicio.supersetCom;
+    if (!par || !onIrParaExercicio) return null;
+    const feitas = (await getSeriesDoExercicioNaData(db, par.id, hoje)).filter(ehSerieDeTrabalho).length;
+    return feitas < (par.seriesAlvo ?? 3) ? par : null;
+  }
+
+  async function registrarMiniSerie(tipo, numero, carga, reps, { comDescanso = true } = {}) {
+    const mini = await perguntarMiniSerie({ tipo, carga, incremento: incrementoCarga, reps });
+    if (!mini) return;
+    const registro = {
+      exercicioId: exercicio.id,
+      data: hoje,
+      musculo: exercicio.musculoPrimario,
+      contribuicao: 0.5,
+      tipoSerie: tipo,
+      carga: mini.carga,
+      reps: mini.reps,
+      rir: 0,
+      serieNumero: numero,
+      registradaEm: Date.now(),
+      semanaBloco: semanaDoBloco,
+    };
+    registro.id = await registrarSerie(db, registro);
+    extrasHoje.push(registro);
+    renderizarTudo();
+    // O descanso conta a partir do fim da mini-série.
+    if (comDescanso) iniciarDescanso(cfg.descansoSegundos);
+    if (onSerieRegistrada) await onSerieRegistrada();
   }
 
   async function registrarAquecimento() {
@@ -902,7 +1038,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   cronoCtlEl.querySelector('[data-action="menos"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(-30));
   cronoCtlEl.querySelector('[data-action="mais"]').addEventListener("click", () => cronometroAtivo && cronometroAtivo.ajustar(30));
 
-  async function registrarSerieAtual(numero) {
+  async function registrarSerieAtual(numero, { comDescanso = true } = {}) {
     const carga = cargaSelecionada;
     const reps = repsAtual;
     const rir = rirAtual;
@@ -925,11 +1061,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       semanaBloco: semanaDoBloco,
     };
 
-    await registrarSerie(db, registro);
+    registro.id = await registrarSerie(db, registro);
     seriesHoje.push(registro);
 
     renderizarTudo();
-    iniciarDescanso(cfg.descansoSegundos);
+    if (comDescanso) iniciarDescanso(cfg.descansoSegundos);
 
     const prsRelevantes = prs.filter((p) => p.tipo !== "primeira_serie");
     if (prsRelevantes.length > 0) {
@@ -957,6 +1093,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   rodape.className = "exec-footer";
   rodape.innerHTML = `
     <button type="button" class="exec-footer-sq historico-btn" aria-label="Histórico">${ICONE_RELOGIO}</button>
+    <button type="button" class="exec-footer-secundario jafiz-serie-btn">Já fiz</button>
     <button type="button" class="exec-footer-primary primario-btn"></button>
   `;
   // Abre por cima, sem trocar de tela — histórico é informativo, não pode
@@ -971,6 +1108,135 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     document.body.appendChild(overlayHistorico);
   });
   const primarioBtn = rodape.querySelector(".primario-btn");
+  const jaFizSerieBtn = rodape.querySelector(".jafiz-serie-btn");
+
+  // Esqueceu de dar play: a série já aconteceu, só falta registrar. Vai
+  // direto pra folha "Como foi a série?" e, ao registrar, o descanso começa
+  // normalmente.
+  let jaFizEmAndamento = false;
+  jaFizSerieBtn.addEventListener("click", async () => {
+    if (jaFizEmAndamento || numeroEmAndamento != null) return;
+    const pendente = numeroPendenteAtual();
+    if (pendente == null) return;
+    jaFizEmAndamento = true;
+    try {
+      numeroEmAndamento = pendente;
+      const iniciais = valoresIniciaisParaSerie();
+      repsAtual = iniciais.reps;
+      rirAtual = iniciais.rir;
+      await finalizarTrabalhoERegistrar();
+      if (numeroEmAndamento === pendente) {
+        // Cancelou a folha: nada foi registrado.
+        numeroEmAndamento = null;
+        renderizarTudo();
+      }
+    } finally {
+      jaFizEmAndamento = false;
+    }
+  });
+
+  async function registrarExercicioInteiro() {
+    if (numeroEmAndamento != null) return;
+    const pendentes = [];
+    for (let numero = 1; numero <= totalSeriesAlvo; numero++) {
+      if (!seriesHoje.some((serie) => serie.serieNumero === numero)) pendentes.push(numero);
+    }
+    if (pendentes.length === 0) return;
+    const resultado = await perguntarExercicioInteiro({
+      nome: exercicio.nome,
+      carga: cargaSelecionada,
+      incremento: incrementoCarga,
+      series: pendentes.length,
+      reps: repsAtual,
+      rirAlvo: cfg.rirAlvo,
+      repsMin: cfg.repsMin,
+      repsMax: cfg.repsMax,
+    });
+    if (!resultado) return;
+
+    // Registrou mais séries que o previsto: numera depois da última.
+    const numeros = [...pendentes];
+    let proximo = Math.max(totalSeriesAlvo, ...seriesHoje.map((serie) => serie.serieNumero ?? 0));
+    while (numeros.length < resultado.series) numeros.push(++proximo);
+    const usados = numeros.slice(0, resultado.series);
+    const agora = Date.now();
+    for (const [i, numero] of usados.entries()) {
+      const registro = {
+        exercicioId: exercicio.id,
+        data: hoje,
+        musculo: exercicio.musculoPrimario,
+        contribuicao: 1.0,
+        tipoSerie: "normal",
+        carga: resultado.carga,
+        reps: resultado.reps,
+        rir: i === usados.length - 1 ? resultado.rir : null,
+        serieNumero: numero,
+        registradaEm: agora,
+        semanaBloco: semanaDoBloco,
+        registradaDepois: true,
+      };
+      registro.id = await registrarSerie(db, registro);
+      seriesHoje.push(registro);
+    }
+    cargaSelecionada = resultado.carga;
+    renderizarTudo();
+    if (onSerieRegistrada) await onSerieRegistrada();
+    if (onProximoExercicio) await onProximoExercicio();
+  }
+
+  async function editarSerie(feita) {
+    if (numeroEmAndamento != null || feita.id == null) return;
+    const resultado = await perguntarEdicaoSerie({
+      numero: feita.serieNumero, carga: feita.carga, reps: feita.reps, rir: feita.rir, incremento: incrementoCarga,
+    });
+    if (!resultado) return;
+    if (resultado.acao === "apagar") {
+      const confirmou = await confirmarAcao({
+        titulo: "Apagar esta série?",
+        mensagem: `Série ${feita.serieNumero}: ${formatarNumero(feita.carga)} kg × ${feita.reps}. Ela volta a ficar pendente.`,
+        textoConfirmar: "Apagar",
+        destrutivo: true,
+      });
+      if (!confirmou) return;
+      await excluirSerie(db, feita.id);
+      const indice = seriesHoje.indexOf(feita);
+      if (indice >= 0) seriesHoje.splice(indice, 1);
+      // Desfez a série que acabou de fazer: o descanso dela não vale mais.
+      if (cronometroAtivo && !telaCheiaAtual) pararDescanso();
+      renderizarTudo();
+      return;
+    }
+    const patch = { carga: resultado.carga, reps: resultado.reps, rir: resultado.rir };
+    await atualizarSerie(db, feita.id, patch);
+    Object.assign(feita, patch);
+    renderizarTudo();
+  }
+
+  async function pularExercicioHoje() {
+    const confirmou = await confirmarAcao({
+      titulo: "Não vai fazer hoje?",
+      mensagem: "O exercício sai da lista de hoje — dá pra desfazer na fila. Nenhuma série é registrada, e a ficha não muda. Se for por dor, vale anotar nas observações do treino.",
+      textoConfirmar: "Não vou fazer hoje",
+    });
+    if (confirmou && onExercicioPulado) await onExercicioPulado(exercicio.id);
+  }
+
+  jaFizBtn.addEventListener("click", async () => {
+    if (numeroEmAndamento != null) return;
+    const escolha = await escolherJaFizOuPular({
+      podePular: Boolean(onExercicioPulado),
+      temPendente: numeroPendenteAtual() != null,
+      podeSuperset: Boolean(onCriarSuperset) && outrosExerciciosHoje.length > 0,
+      emSuperset: Boolean(exercicio.supersetCom),
+    });
+    if (escolha === "jaFiz") await registrarExercicioInteiro();
+    if (escolha === "pular") await pularExercicioHoje();
+    if (escolha === "desfazerSuperset" && onDesfazerSuperset) await onDesfazerSuperset();
+    if (escolha === "superset") {
+      const outro = await escolherParSuperset(outrosExerciciosHoje);
+      if (outro) await onCriarSuperset(outro.id);
+    }
+  });
   // Sem essa trava, um segundo toque rápido em "Concluir exercício" — bem
   // fácil de acontecer, é o botão mais tocado da tela — disparava
   // onProximoExercicio() de novo antes do primeiro terminar de montar a
@@ -1000,10 +1266,70 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   root.appendChild(rodape);
 
   renderizarTudo();
+  if (descansoInicialSegundos > 0) iniciarDescanso(descansoInicialSegundos);
 
   root._dispose = pararTudo;
 
   return root;
+}
+
+// Folhinha com as duas opções de "Já fiz / pular". Mesmo esqueleto das
+// outras folhas (js/screens/substituirExercicio.js).
+function escolherParSuperset(outros) {
+  return escolherJaFizOuPular({
+    titulo: "Superset com qual?",
+    itens: outros.map((o) => [o, o.nome, "alternar"]),
+  });
+}
+
+function escolherJaFizOuPular({ podePular, temPendente, podeSuperset = false, emSuperset = false, titulo = null, itens = null }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "carga-sheet-overlay";
+    overlay.innerHTML = `
+      <div class="carga-sheet substituir-sheet">
+        <div class="carga-sheet-handle"></div>
+        <h3></h3>
+        <div class="substituir-lista"></div>
+        <div class="carga-sheet-acoes"><button type="button" class="carga-sheet-cancelar">Cancelar</button></div>
+      </div>
+    `;
+    overlay.querySelector("h3").textContent = titulo ?? "Este exercício";
+    const lista = overlay.querySelector(".substituir-lista");
+    const opcoes = itens ?? [];
+    if (!itens) {
+      if (temPendente) opcoes.push(["jaFiz", "Já fiz — registrar tudo de uma vez", "fiz sem o app"]);
+      if (podePular) opcoes.push(["pular", "Não vou fazer hoje", "sai da lista"]);
+      if (emSuperset) opcoes.push(["desfazerSuperset", "Desfazer o superset", "volta ao normal"]);
+      else if (podeSuperset) opcoes.push(["superset", "Fazer em superset com…", "alternado"]);
+    }
+    for (const [valor, texto, detalhe] of opcoes) {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "substituir-item";
+      botao.innerHTML = `<span class="nm"></span><span class="eq"></span>`;
+      botao.querySelector(".nm").textContent = texto;
+      botao.querySelector(".eq").textContent = detalhe;
+      botao.addEventListener("click", () => fechar(valor));
+      lista.appendChild(botao);
+    }
+    document.body.appendChild(overlay);
+    const sheetEl = overlay.querySelector(".carga-sheet");
+    sheetEl.style.transform = "translate3d(0, 100%, 0)";
+    animarSpring(sheetEl, { y: sheetEl.getBoundingClientRect().height || 260 }, { y: 0 }, { rigidez: 340, amortecimento: 30 });
+    requestAnimationFrame(() => overlay.classList.add("aberta"));
+    let fechada = false;
+    function fechar(resultado) {
+      if (fechada) return;
+      fechada = true;
+      overlay.classList.remove("aberta");
+      const altura = sheetEl.getBoundingClientRect().height || 260;
+      animarSpring(sheetEl, { y: 0 }, { y: altura }, { rigidez: 420, amortecimento: 36 }).finalizado.then(() => overlay.remove());
+      resolve(resultado);
+    }
+    overlay.querySelector(".carga-sheet-cancelar").addEventListener("click", () => fechar(null));
+    overlay.addEventListener("click", (evento) => { if (evento.target === overlay) fechar(null); });
+  });
 }
 
 function mostrarToast(rotulo, mensagem) {

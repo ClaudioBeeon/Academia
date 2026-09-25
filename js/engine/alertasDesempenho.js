@@ -13,12 +13,13 @@
 // deload e aquecimento. Média por série não é afetada por sessão parcial
 // nem pela série extra das semanas 4–6.
 import { capacidadeDaSerie } from "./progressao.js";
+import { ehSerieDeTrabalho } from "./volume.js";
 
 const QUEDA_MINIMA = 0.5; // reps de capacidade média por série
 const SESSOES_NECESSARIAS = 3;
 
 function trabalho(sessao) {
-  return (sessao?.series ?? []).filter((s) => s.tipoSerie !== "aquecimento" && s.carga != null && s.reps != null);
+  return (sessao?.series ?? []).filter((s) => ehSerieDeTrabalho(s) && s.carga != null && s.reps != null);
 }
 
 function ehDeload(sessao) {

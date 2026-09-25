@@ -9,12 +9,14 @@
 //   série de trabalho) — mais reps com a mesma carga conta como progresso.
 //   Serve só pra comparar o exercício com ele mesmo ao longo do tempo.
 // Volume semanal abaixo/acima da faixa fica com js/engine/cobertura.js.
+import { ehSerieDeTrabalho } from "./volume.js";
+
 const MAX_SERIES_DIRETAS_POR_SESSAO = 8;
 const DIAS_PARA_ALERTA_PROGRESSAO = 28;
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
 function indiceDaSessao(sessao) {
-  const trabalho = (sessao.series ?? []).filter((s) => s.tipoSerie !== "aquecimento" && s.carga > 0 && s.reps > 0);
+  const trabalho = (sessao.series ?? []).filter((s) => ehSerieDeTrabalho(s) && s.carga > 0 && s.reps > 0);
   if (trabalho.length === 0) return null;
   return Math.max(...trabalho.map((s) => s.carga * (1 + s.reps / 30)));
 }

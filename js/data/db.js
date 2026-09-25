@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 10;
+const DB_VERSION = 11;
 
 const STORES = {
   perfil: "versao",
@@ -16,6 +16,10 @@ const STORES = {
   habitos: "data",
   fotosPostura: { keyPath: "id", autoIncrement: true },
   observacoesTreino: "data",
+  // Anotação por exercício num dia (ex.: "banco no furo 3", "ombro
+  // incomodou") — chave "exercicioId|data". Aparece de novo da próxima vez
+  // que o exercício for aberto.
+  notasExercicio: "chave",
   // Fila de escritas pendentes de sincronização com o Supabase (js/data/sync.js).
   // Fica no mesmo banco local por simplicidade — não é lida/gravada por
   // nenhuma tela, só pelo módulo de sync.

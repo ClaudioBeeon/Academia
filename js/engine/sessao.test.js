@@ -51,3 +51,19 @@ test("musculosTreinados vem sem duplicatas e ordenado", () => {
   const resultado = calcularEstatisticasSessao(series);
   assert.deepEqual(resultado.musculosTreinados, ["peito", "triceps"]);
 });
+
+test("calcularDuracaoSessaoMin usa o que veio primeiro: início da sessão ou primeira série", async () => {
+  const { calcularDuracaoSessaoMin } = await import("./sessao.js");
+  const agoraMs = Date.parse("2026-09-24T19:00:00");
+  const inicio = Date.parse("2026-09-24T18:05:00");
+  const primeiraSerie = Date.parse("2026-09-24T18:10:00");
+  assert.equal(calcularDuracaoSessaoMin({ inicioSessaoTs: inicio, seriesDoDia: [{ registradaEm: primeiraSerie }], agoraMs }), 55);
+  assert.equal(calcularDuracaoSessaoMin({ inicioSessaoTs: null, seriesDoDia: [{ registradaEm: primeiraSerie }], agoraMs }), 50);
+});
+
+test("calcularDuracaoSessaoMin não inventa: sem horário, ou mais de 4 h, devolve null", async () => {
+  const { calcularDuracaoSessaoMin } = await import("./sessao.js");
+  const agoraMs = Date.parse("2026-09-24T19:00:00");
+  assert.equal(calcularDuracaoSessaoMin({ seriesDoDia: [{}], agoraMs }), null);
+  assert.equal(calcularDuracaoSessaoMin({ inicioSessaoTs: Date.parse("2026-09-24T09:00:00"), agoraMs }), null);
+});

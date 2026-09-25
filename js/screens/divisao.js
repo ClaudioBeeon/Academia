@@ -11,6 +11,7 @@ import { registrarCardio, getCardioDesde } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
 import { getFicha } from "../data/ficha.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
+import { resumirMes } from "../engine/atividade.js";
 import { expandirContribuicoes } from "../engine/volume.js";
 import { estimarCaloriasDaSessao } from "../engine/calorias.js";
 import { abrirDetalheDia } from "./historicoSessoes.js";
@@ -346,66 +347,110 @@ export function montarFormCardio(db, data, diaParaAviso, aoSalvar) {
 }
 
 // ═══════════════ Calendário do mês ═══════════════
+// Navega entre meses (← →, nunca além do mês atual) e mostra o resumo do
+// mês exibido: dias de treino, séries de trabalho, volume e cardio.
+const NOME_MES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
 function montarCardCalendario(db, todasAsSeries, cardioTodos, hoje, recarregarTudo) {
   const card = document.createElement("section");
   card.className = "exercise-card";
 
-  const [anoStr, mesStr] = hoje.split("-");
-  const ano = Number(anoStr);
-  const mes = Number(mesStr);
-  const diasNoMes = new Date(ano, mes, 0).getDate();
-  const diaSemanaDoPrimeiro = (new Date(ano, mes - 1, 1).getDay() + 6) % 7;
+  const [anoHoje, mesHoje] = hoje.split("-").map(Number);
+  let ano = anoHoje;
+  let mes = mesHoje;
 
   const datasComAtividade = new Set([
     ...todasAsSeries.filter((s) => s.tipoSerie !== "aquecimento").map((s) => s.data),
     ...cardioTodos.map((r) => r.data),
   ]);
 
-  const prefixo = `${anoStr}-${mesStr}`;
-  const diasTreinados = [...datasComAtividade].filter((d) => d.startsWith(prefixo)).length;
-
-  const NOME_MES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const cabecalho = document.createElement("div");
-  cabecalho.className = "calendario-mes";
-  cabecalho.innerHTML = `<b>${NOME_MES[mes - 1]}</b><span>${diasTreinados} de ${diasNoMes} dias</span>`;
+  cabecalho.className = "calendario-mes calendario-mes-nav";
+  cabecalho.innerHTML = `
+    <button type="button" class="calendario-seta" data-passo="-1" aria-label="Mês anterior">←</button>
+    <div class="calendario-titulo"><b></b><span></span></div>
+    <button type="button" class="calendario-seta" data-passo="1" aria-label="Próximo mês">→</button>
+  `;
   card.appendChild(cabecalho);
+
+  const resumoEl = document.createElement("div");
+  resumoEl.className = "calendario-resumo";
+  card.appendChild(resumoEl);
 
   const grade = document.createElement("div");
   grade.className = "calendario-grade";
-  for (const letra of ["S", "T", "Q", "Q", "S", "S", "D"]) {
-    const dh = document.createElement("div");
-    dh.className = "dh";
-    dh.textContent = letra;
-    grade.appendChild(dh);
-  }
-  for (let i = 0; i < diaSemanaDoPrimeiro; i++) {
-    const vazio = document.createElement("div");
-    vazio.className = "dia fora";
-    grade.appendChild(vazio);
-  }
-  for (let dia = 1; dia <= diasNoMes; dia++) {
-    const dataIso = `${prefixo}-${String(dia).padStart(2, "0")}`;
-    const el = document.createElement("div");
-    el.className = "dia";
-    if (datasComAtividade.has(dataIso)) el.classList.add("treinou");
-    if (dataIso === hoje) el.classList.add("hoje");
-    el.textContent = dia;
-    // Dia futuro não tem o que abrir — não faz sentido editar um treino que
-    // ainda não aconteceu. Passado e hoje abrem o detalhe (js/screens/
-    // historicoSessoes.js), mesmo sem nada registrado ainda: é dali que dá
-    // pra lançar um dia esquecido, não só corrigir um já existente.
-    if (dataIso <= hoje) {
-      el.classList.add("clicavel");
-      el.addEventListener("click", () => abrirDetalheDia(db, dataIso, { aoFechar: recarregarTudo }));
-    }
-    grade.appendChild(el);
-  }
   card.appendChild(grade);
 
   const legenda = document.createElement("div");
   legenda.className = "calendario-legenda";
   legenda.innerHTML = `<span><i></i>treinou</span><span><i class="vazio"></i>sem treino</span><span>contorno = hoje</span>`;
   card.appendChild(legenda);
+
+  function desenhar() {
+    const prefixo = `${ano}-${String(mes).padStart(2, "0")}`;
+    const diasNoMes = new Date(ano, mes, 0).getDate();
+    const diaSemanaDoPrimeiro = (new Date(ano, mes - 1, 1).getDay() + 6) % 7;
+    const diasAtivos = [...datasComAtividade].filter((d) => d.startsWith(prefixo)).length;
+    const ehMesAtual = ano === anoHoje && mes === mesHoje;
+
+    cabecalho.querySelector(".calendario-titulo b").textContent = ano === anoHoje ? NOME_MES[mes - 1] : `${NOME_MES[mes - 1]} ${ano}`;
+    cabecalho.querySelector(".calendario-titulo span").textContent = `${diasAtivos} de ${diasNoMes} dias`;
+    cabecalho.querySelector('[data-passo="1"]').disabled = ehMesAtual;
+
+    const resumo = resumirMes({ todasAsSeries, cardios: cardioTodos, ano, mes });
+    resumoEl.innerHTML = `
+      <div><b></b><span>treinos</span></div>
+      <div><b></b><span>séries</span></div>
+      <div><b></b><span>kg volume</span></div>
+      <div><b></b><span>cardios</span></div>
+    `;
+    const valores = resumoEl.querySelectorAll("b");
+    valores[0].textContent = resumo.diasDeTreino;
+    valores[1].textContent = resumo.series;
+    valores[2].textContent = resumo.volumeKg.toLocaleString("pt-BR");
+    valores[3].textContent = resumo.cardios;
+
+    grade.innerHTML = "";
+    for (const letra of ["S", "T", "Q", "Q", "S", "S", "D"]) {
+      const dh = document.createElement("div");
+      dh.className = "dh";
+      dh.textContent = letra;
+      grade.appendChild(dh);
+    }
+    for (let i = 0; i < diaSemanaDoPrimeiro; i++) {
+      const vazio = document.createElement("div");
+      vazio.className = "dia fora";
+      grade.appendChild(vazio);
+    }
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+      const dataIso = `${prefixo}-${String(dia).padStart(2, "0")}`;
+      const el = document.createElement("div");
+      el.className = "dia";
+      if (datasComAtividade.has(dataIso)) el.classList.add("treinou");
+      if (dataIso === hoje) el.classList.add("hoje");
+      el.textContent = dia;
+      // Dia futuro não tem o que abrir. Passado e hoje abrem o detalhe
+      // (js/screens/historicoSessoes.js), mesmo sem nada registrado — é dali
+      // que dá pra lançar um dia esquecido.
+      if (dataIso <= hoje) {
+        el.classList.add("clicavel");
+        el.addEventListener("click", () => abrirDetalheDia(db, dataIso, { aoFechar: recarregarTudo }));
+      }
+      grade.appendChild(el);
+    }
+  }
+
+  for (const seta of cabecalho.querySelectorAll(".calendario-seta")) {
+    seta.addEventListener("click", () => {
+      const passo = Number(seta.dataset.passo);
+      const alvo = new Date(ano, mes - 1 + passo, 1);
+      if (alvo.getFullYear() > anoHoje || (alvo.getFullYear() === anoHoje && alvo.getMonth() + 1 > mesHoje)) return;
+      ano = alvo.getFullYear();
+      mes = alvo.getMonth() + 1;
+      desenhar();
+    });
+  }
+  desenhar();
 
   return card;
 }

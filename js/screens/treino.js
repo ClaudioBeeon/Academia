@@ -14,6 +14,9 @@ import { calcularSemanaDoBloco, inicioParaDeloadAgora, SEMANA_DELOAD } from "../
 import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
 import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
 import { resumirSemana } from "../engine/resumoSemana.js";
+import { getSessoesVolei, getInicioVolei } from "../data/volei.js";
+import { calcularSemanaVolei } from "../engine/volei.js";
+import { SEMANAS_VOLEI } from "../data/programaVolei.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
 import { confirmarAcao } from "./confirmarAcao.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
@@ -56,7 +59,7 @@ function obterDataLocal() {
   return `${ano}-${mes}-${dia}`;
 }
 
-export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, onIniciarAtividadeAgora, onComecarTreino, onAbrirDia, onAtividadeAdicionada } = {}) {
+export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, onIniciarAtividadeAgora, onComecarTreino, onAbrirDia, onAtividadeAdicionada, onAbrirVolei } = {}) {
   const hoje = obterDataLocal();
   const todosExercicios = await getAll(db, "exercicios");
   const protocolos = await getAll(db, "protocolo");
@@ -78,7 +81,9 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   // Sequência de dias seguidos com pelo menos uma atividade — treino,
   // cardio ou refeição marcada na dieta — mesmo reforço de consistência
   // que qualquer app de hábito usa (Duolingo, Strava).
+  const [sessoesVolei, inicioVolei] = await Promise.all([getSessoesVolei(db), getInicioVolei(db)]);
   const datasComAtividade = new Set([
+    ...sessoesVolei.map((s) => s.data),
     ...todasAsSeries.filter((s) => s.tipoSerie !== "aquecimento").map((s) => s.data),
     ...todosCardios.map((c) => c.data),
     ...todosRegistrosDiarios.filter((r) => r.refeicoes && Object.keys(r.refeicoes).length > 0).map((r) => r.data),
@@ -240,6 +245,7 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   main.appendChild(montarDotsCarrossel(carrossel));
 
   main.appendChild(montarCardAtividade(atividade));
+  if (onAbrirVolei) main.appendChild(montarCardVolei(sessoesVolei, inicioVolei, hoje, onAbrirVolei));
 
   const cardPausa = await montarCardPausaPostural(db, hoje, ficha?.pausaPostural);
   if (cardPausa) main.appendChild(cardPausa);
@@ -247,6 +253,33 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   main.appendChild(montarCardHabitos(controladorHabitos));
 
   return root;
+}
+
+// Treino de levantamento de vôlei (js/screens/volei.js): semana do
+// programa, foco e se já foi feito hoje.
+function montarCardVolei(sessoesVolei, inicioVolei, hoje, aoAbrir) {
+  const { semana, concluido } = calcularSemanaVolei(inicioVolei ?? hoje, hoje);
+  const plano = SEMANAS_VOLEI.find((s) => s.semana === semana);
+  const feitoHoje = sessoesVolei.some((s) => s.data === hoje);
+  const limite = new Date(`${hoje}T00:00:00`);
+  limite.setDate(limite.getDate() - 6);
+  const limiteISO = `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, "0")}-${String(limite.getDate()).padStart(2, "0")}`;
+  const seteDias = sessoesVolei.filter((s) => s.data >= limiteISO && s.data <= hoje).length;
+  const card = document.createElement("section");
+  card.className = "exercise-card clicavel volei-card-home";
+  card.innerHTML = `
+    <div class="exercise-head">
+      <div><div class="exercise-name"></div><div class="exercise-meta"></div></div>
+      <button type="button" class="swap-pill"></button>
+    </div>
+  `;
+  card.querySelector(".exercise-name").textContent = feitoHoje ? "✓ Vôlei — levantamento" : "Vôlei — levantamento";
+  card.querySelector(".exercise-meta").textContent = inicioVolei
+    ? `Semana ${semana} de 6${concluido ? " (concluído)" : ""} · ${plano.foco} · ${seteDias} sessão${seteDias === 1 ? "" : "ões"} nos últimos 7 dias (meta 3–4)`
+    : "Programa de 6 semanas pra toque e direção, em casa · 20–25 min";
+  card.querySelector("button").textContent = feitoHoje ? "Ver" : "Começar";
+  card.addEventListener("click", aoAbrir);
+  return card;
 }
 
 // Resumo dos últimos 7 dias contra os 7 anteriores. Fechado por padrão —

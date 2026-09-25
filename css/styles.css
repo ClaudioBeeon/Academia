@@ -1350,3 +1350,23 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .lt-dia { min-height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-2); color: var(--ink-dim); font: 800 0.85rem var(--font-display); cursor: pointer; }
 .lt-dia.ativo { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .lt-dia:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Treino de levantamento de vôlei (js/screens/volei.js) */
+.volei-corpo { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+.volei-corpo .prev-hint { padding: 0; }
+.volei-meta { color: var(--ink); font-weight: 600; }
+.volei-contador { padding: 6px 8px 6px 14px; }
+.volei-contador .rs-ctl button { width: 40px; height: 40px; }
+.volei-contador .rs-reps { font-size: 1.4rem; }
+.volei-sorteio { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.volei-sorteio b { font-size: 1.05rem; text-align: center; color: var(--ink); min-height: 1.4em; }
+.volei-guia summary, .volei-testes summary { list-style: none; cursor: pointer; }
+.volei-guia summary::-webkit-details-marker, .volei-testes summary::-webkit-details-marker { display: none; }
+.volei-guia-corpo { padding: 0 18px 18px; }
+.volei-guia-corpo h5 { margin: 8px 0 4px; font-size: 0.8rem; color: var(--ink); }
+.volei-guia-corpo ul { margin: 0; padding-left: 18px; font-size: 0.8rem; line-height: 1.5; color: var(--ink-dim); }
+.volei-teste { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.volei-teste:last-child { border-bottom: none; }
+.volei-teste b { font-size: 0.86rem; color: var(--ink); }
+.volei-dedos { width: 100%; accent-color: var(--accent); margin-top: 8px; }
+.volei-card-home .exercise-head { cursor: pointer; }

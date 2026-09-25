@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 11;
+const DB_VERSION = 12;
 
 const STORES = {
   perfil: "versao",
@@ -20,6 +20,8 @@ const STORES = {
   // incomodou") — chave "exercicioId|data". Aparece de novo da próxima vez
   // que o exercício for aberto.
   notasExercicio: "chave",
+  // Sessões do treino de levantamento de vôlei (js/data/volei.js).
+  sessoesVolei: "data",
   // Fila de escritas pendentes de sincronização com o Supabase (js/data/sync.js).
   // Fica no mesmo banco local por simplicidade — não é lida/gravada por
   // nenhuma tela, só pelo módulo de sync.

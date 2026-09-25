@@ -42,7 +42,7 @@ test("um banco academiaDB criado na v1 (sem índices) ganha os índices ao abrir
   assert.deepEqual(nomes, [
     "cargas", "chavesApi", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "notasExercicio", "observacoesTreino", "perfil", "protocolo",
-    "registrosCardio", "registrosDiarios", "syncOutbox",
+    "registrosCardio", "registrosDiarios", "sessoesVolei", "syncOutbox",
   ]);
   dbNovo.close();
 });
@@ -53,7 +53,7 @@ test("openDatabase creates all expected object stores", async () => {
   assert.deepEqual(names, [
     "cargas", "chavesApi", "config", "dietaBase", "exercicios", "ficha", "fotosPostura", "habitos",
     "historicoSeries", "medidasCorporais", "notasExercicio", "observacoesTreino", "perfil", "protocolo",
-    "registrosCardio", "registrosDiarios", "syncOutbox",
+    "registrosCardio", "registrosDiarios", "sessoesVolei", "syncOutbox",
   ]);
   db.close();
 });

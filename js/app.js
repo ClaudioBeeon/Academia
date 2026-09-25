@@ -19,6 +19,7 @@ import { montarTelaEvolucao } from "./screens/evolucao.js";
 import { montarTelaHistoricoSessoes } from "./screens/historicoSessoes.js";
 import { montarTelaDivisao } from "./screens/divisao.js";
 import { montarTelaDieta } from "./screens/dieta.js";
+import { montarTelaVolei } from "./screens/volei.js";
 import { montarTelaCardio } from "./screens/cardioTimer.js";
 import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
@@ -260,6 +261,9 @@ function renderShell(db) {
             onVoltarParaHoje: () => renderTab("hoje", "voltar"),
           }),
           onAtividadeAdicionada: () => renderTab("hoje"),
+          onAbrirVolei: () => trocarConteudo(content, () => montarTelaVolei(db, {
+            aoVoltar: () => renderTab("hoje", "voltar"),
+          }), { direcao: "avancar" }),
           onIniciarCardio: (cardio) => abrirTelaCardio({
             hoje: obterDataLocal(),
             modalidade: cardio.modalidade,

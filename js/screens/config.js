@@ -8,7 +8,7 @@ import { salvarGeminiApiKey, salvarGeminiModelo } from "../data/chavesApi.js";
 import {
   getUrl, getAnonKey, salvarCredenciais, isConfigured,
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
-  pedirLinkDeNovaSenha, definirNovaSenha, veioDoLinkDeNovaSenha, erroDoLinkDeLogin,
+  pedirLinkDeNovaSenha, definirNovaSenha, veioDoLinkDeNovaSenha, erroDoLinkDeLogin, entrarComLinkDoEmail,
 } from "../data/supabaseClient.js";
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
 import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
@@ -393,7 +393,30 @@ async function criarSecaoSupabase(db) {
         <button type="button" class="pular-treino-btn esqueci-btn" style="margin:0 auto;">Esqueci a senha</button>
         <div class="prev-hint auth-erro"></div>
       </form>
+      <div class="colar-link" style="display:grid; gap:8px; margin-top:12px;">
+        <div class="prev-hint" style="padding:0;"><b>Recebeu o e-mail?</b> Não toque no link: no Gmail, <b>segure o dedo em cima do link</b>, escolha <b>Copiar link</b>, volte aqui e cole abaixo. Funciona dentro do app instalado.</div>
+        <div class="set-field"><label>Link do e-mail<textarea class="link-email" rows="2" placeholder="cole aqui o link inteiro"></textarea></label></div>
+        <button type="button" class="swap-pill entrar-link-btn" style="width:100%;">Entrar com o link</button>
+        <div class="prev-hint colar-msg" style="padding:0;"></div>
+      </div>
     `;
+    const colarMsg = authSecao.querySelector(".colar-msg");
+    authSecao.querySelector(".entrar-link-btn").addEventListener("click", async () => {
+      const texto = authSecao.querySelector(".link-email").value;
+      if (!texto.trim()) {
+        colarMsg.textContent = "Cole o link do e-mail no campo acima primeiro.";
+        return;
+      }
+      colarMsg.textContent = "Entrando...";
+      try {
+        const { recuperacao } = await entrarComLinkDoEmail(texto);
+        colarMsg.textContent = "";
+        if (recuperacao) montarFormNovaSenha();
+        else await aposLogin();
+      } catch (err) {
+        colarMsg.textContent = err.message ?? "Não foi possível entrar com esse link.";
+      }
+    });
     const formAuth = authSecao.querySelector(".auth-form");
     const erro = authSecao.querySelector(".auth-erro");
     const erroDoLink = erroDoLinkDeLogin();
@@ -409,7 +432,7 @@ async function criarSecaoSupabase(db) {
       erro.textContent = "Enviando o link...";
       try {
         await pedirLinkDeNovaSenha(email);
-        erro.textContent = `Pronto: mandamos um link pra ${email} (veja também o spam). Toque nele e crie a senha nova. Se o link abrir no Safari, crie a senha lá mesmo e depois entre aqui com o e-mail e a senha nova.`;
+        erro.textContent = `Pronto: mandamos um link pra ${email} (veja também o spam). NÃO toque nele: segure o dedo em cima, copie e cole no campo "Link do e-mail" logo abaixo.`;
       } catch (err) {
         erro.textContent = err.message ?? "Não foi possível mandar o link.";
       }

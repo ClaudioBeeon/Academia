@@ -138,6 +138,53 @@ export async function pedirLinkDeNovaSenha(email) {
   if (error) throw error;
 }
 
+// Lê um link do e-mail do Supabase colado pela pessoa. Dois formatos:
+// - o link do e-mail em si (.../auth/v1/verify?token=...&type=recovery);
+// - o endereço onde ele caiu depois de aberto (...#access_token=...&
+//   refresh_token=...&type=recovery), que é o que sobra quando o Supabase
+//   manda pra um endereço errado (localhost).
+// Puro, sem rede — testável.
+export function lerLinkDoEmail(texto) {
+  const achado = /https?:\/\/\S+/.exec(texto ?? "");
+  if (!achado) return null;
+  let url;
+  try {
+    url = new URL(achado[0].replace(/[)>\].,]+$/, ""));
+  } catch {
+    return null;
+  }
+  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+  if (hash.get("access_token") && hash.get("refresh_token")) {
+    return { formato: "sessao", accessToken: hash.get("access_token"), refreshToken: hash.get("refresh_token"), tipo: hash.get("type") };
+  }
+  const token = url.searchParams.get("token") ?? url.searchParams.get("token_hash");
+  const tipo = url.searchParams.get("type");
+  if (token && tipo) return { formato: "token", token, tipo };
+  return null;
+}
+
+// Entra com o link colado — funciona dentro do app instalado no iPhone, que
+// não recebe o login quando o link abre no Safari. Devolve { recuperacao }
+// pra quem chama saber se deve pedir a senha nova.
+export async function entrarComLinkDoEmail(texto) {
+  const lido = lerLinkDoEmail(texto);
+  if (!lido) throw new Error("Não achei um link do Supabase nesse texto. Copie o link inteiro do e-mail e cole de novo.");
+  const client = await getClient();
+  if (!client) throw new Error("Configure a sincronização com o Supabase antes.");
+  if (lido.formato === "sessao") {
+    const { error } = await client.auth.setSession({ access_token: lido.accessToken, refresh_token: lido.refreshToken });
+    if (error) throw error;
+  } else {
+    const { error } = await client.auth.verifyOtp({ token_hash: lido.token, type: lido.tipo });
+    if (error) {
+      throw new Error(/expired|invalid/i.test(error.message ?? "")
+        ? "Esse link já foi usado ou venceu. Peça outro em \"Esqueci a senha\" e cole sem tocar nele antes."
+        : error.message);
+    }
+  }
+  return { recuperacao: lido.tipo === "recovery" };
+}
+
 // Chamado depois do link: o SDK já abriu a sessão de recuperação.
 export async function definirNovaSenha(senha) {
   const client = await getClient();

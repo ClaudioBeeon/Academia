@@ -35,6 +35,14 @@ export const EXERCICIOS_VOLEI = {
     dose: "4 min",
     semContagem: true,
   },
+  semGiro: {
+    nome: "Toque sem girar (fita na bola)",
+    como: "Passe uma volta de fita isolante bem visível em volta da bola. Toques verticais contínuos, ~1 m acima da testa, olhando a fita: ela tem que subir parada. Girou = uma mão soltou antes ou com mais força (veja o desenho 4 do guia).",
+    dose: "3 × 30",
+    tentativas: 90,
+    meta: "30 seguidos com a fita parada",
+    contaSequencia: true,
+  },
   deitado: {
     nome: "Toque deitado",
     como: "De costas no chão, levante na vertical ~1 m acima das mãos. A bola deve voltar sozinha pro mesmo lugar, sem você mover as mãos.",
@@ -142,12 +150,12 @@ export const TESTES_VOLEI = {
 
 // Semanas: foco, lista de exercícios da sessão (na ordem) e testes do dia.
 export const SEMANAS_VOLEI = [
-  { semana: 1, foco: "Linha de base", nota: "Faça os testes T1, T2 e T3 na primeira sessão da semana.", blocos: ["aquecimento", "deitado", "joelhos", "paredeFixa", "faixa"], testes: ["T1", "T2", "T3"] },
-  { semana: 2, foco: "Direção", nota: "Entra o alvo sorteado, só com 2 alturas. Olhe o placar a cada 10 toques, não a cada toque.", blocos: ["aquecimento", "joelhos", "sorteado", "paredeFixa", "reforco"], testes: [] },
-  { semana: 3, foco: "Direção + distância", nota: "Alvo sorteado com 3 alturas e 2 distâncias. Entra o cesto.", blocos: ["aquecimento", "paredeFixa", "sorteado", "cesto", "reforco"], testes: [] },
-  { semana: 4, foco: "Costas", nota: "Levantamento de costas sorteado com o de frente (metade/metade). Refaça o T1 numa sessão.", blocos: ["aquecimento", "joelhos", "sorteado", "costas", "umaMao"], testes: ["T1"] },
-  { semana: 5, foco: "Bola ruim + pressão", nota: "A sessão só termina com 10 seguidos no círculo de 50 cm.", blocos: ["aquecimento", "paredeFixa", "deslocar", "passeRuim", "desafioSequencia", "reforco"], testes: [] },
-  { semana: 6, foco: "Reteste", nota: "Repita T1, T2 e T3. Depois de 3–4 dias sem treinar, faça o T1 de novo: mostra o que ficou aprendido de verdade.", blocos: ["aquecimento", "sorteado", "costas", "deslocar"], testes: ["T1", "T2", "T3", "T4"] },
+  { semana: 1, foco: "Linha de base", nota: "Faça os testes T1, T2 e T3 na primeira sessão da semana.", blocos: ["aquecimento", "semGiro", "deitado", "joelhos", "paredeFixa", "faixa"], testes: ["T1", "T2", "T3"] },
+  { semana: 2, foco: "Direção", nota: "Entra o alvo sorteado, só com 2 alturas. Olhe o placar a cada 10 toques, não a cada toque.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "paredeFixa", "reforco"], testes: [] },
+  { semana: 3, foco: "Direção + distância", nota: "Alvo sorteado com 3 alturas e 2 distâncias. Entra o cesto.", blocos: ["aquecimento", "semGiro", "paredeFixa", "sorteado", "cesto", "reforco"], testes: [] },
+  { semana: 4, foco: "Costas", nota: "Levantamento de costas sorteado com o de frente (metade/metade). Refaça o T1 numa sessão.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "costas", "umaMao"], testes: ["T1"] },
+  { semana: 5, foco: "Bola ruim + pressão", nota: "A sessão só termina com 10 seguidos no círculo de 50 cm.", blocos: ["aquecimento", "semGiro", "paredeFixa", "deslocar", "passeRuim", "desafioSequencia", "reforco"], testes: [] },
+  { semana: 6, foco: "Reteste", nota: "Repita T1, T2 e T3. Depois de 3–4 dias sem treinar, faça o T1 de novo: mostra o que ficou aprendido de verdade.", blocos: ["aquecimento", "semGiro", "sorteado", "costas", "deslocar"], testes: ["T1", "T2", "T3", "T4"] },
 ];
 
 // Opções do sorteio do "alvo sorteado".

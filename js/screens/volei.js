@@ -7,6 +7,7 @@
 // — "Concluir sessão" só grava a duração e volta.
 import { getSessaoVolei, salvarSessaoVolei, getSessoesVolei, getInicioVolei, definirInicioVolei } from "../data/volei.js";
 import { EXERCICIOS_VOLEI, TESTES_VOLEI, SEMANAS_VOLEI, PRINCIPIOS_VOLEI, MONTAGEM_VOLEI } from "../data/programaVolei.js";
+import { GUIA_TOQUE_VOLEI } from "../data/guiaToqueVolei.js";
 import { calcularSemanaVolei, sortearAlvo, taxaDeAcerto, serieDoTeste } from "../engine/volei.js";
 import { criarSvgLinha } from "../lib/graficoLinha.js";
 import { confirmarAcao } from "./confirmarAcao.js";
@@ -108,6 +109,27 @@ export async function montarTelaVolei(db, { aoVoltar } = {}) {
     guiaCorpo.append(h, ul);
   }
   main.appendChild(guia);
+
+  // Guia desenhado do toque: dedos, punho, corpo, giro e praia.
+  const desenhos = document.createElement("details");
+  desenhos.className = "exercise-card volei-guia volei-desenhos";
+  desenhos.innerHTML = `<summary class="exercise-head"><div class="exercise-name">Como tocar na bola (desenhos)</div></summary><div class="volei-guia-corpo"></div>`;
+  const desenhosCorpo = desenhos.querySelector(".volei-guia-corpo");
+  for (const painel of GUIA_TOQUE_VOLEI) {
+    const h = document.createElement("h5");
+    h.textContent = painel.titulo;
+    const figura = document.createElement("div");
+    figura.style.margin = "6px 0 8px";
+    figura.innerHTML = painel.svg;
+    const ul = document.createElement("ul");
+    for (const item of painel.pontos) {
+      const li = document.createElement("li");
+      li.textContent = item;
+      ul.appendChild(li);
+    }
+    desenhosCorpo.append(h, figura, ul);
+  }
+  main.appendChild(desenhos);
 
   for (const id of planoSemana.blocos) {
     const ex = EXERCICIOS_VOLEI[id];

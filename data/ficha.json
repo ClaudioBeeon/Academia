@@ -4,7 +4,7 @@
   "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
   "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa.",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote).",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
@@ -576,7 +576,7 @@
       "exercicios": [
         {
           "ordem": 1,
-          "exercicioId": "box_jump",
+          "exercicioId": "salto_vertical_alcance",
           "series": 3,
           "repeticoes": {
             "min": 3,
@@ -584,13 +584,13 @@
           },
           "rirAlvo": 4,
           "descansoSegundos": 90,
-          "tempo": "salto máximo · desce andando",
+          "tempo": "salto máximo · uns 10 s parado entre um salto e outro",
           "falhaNaUltimaSerie": false,
           "potencia": true,
-          "porqueEstaAqui": "Impulsão com pouco impacto: aterrissar no alto do caixote poupa o joelho em relação a cair no chão. Força pesada + saltos rende mais salto que qualquer um dos dois sozinho (Pagaduan 2020; Cormier 2020).",
-          "comoExecutar": "Caixote de 50–60 cm. Pés na largura do quadril, balança os braços e salta o mais alto que conseguir, aterrissando suave em cima, com o joelho dobrado e alinhado com o pé. Fica em pé em cima, desce andando — nunca pulando pra trás.",
-          "quandoSubirCarga": "Não tem carga. Quando os 3 saltos saírem fáceis e silenciosos, suba a altura do caixote um pouco.",
-          "atencao": "Qualidade acima de tudo: se o salto cair de altura ou a aterrissagem ficar pesada e barulhenta, pare a série. Jogou forte nas últimas 48 h: pule este exercício."
+          "porqueEstaAqui": "Impulsão sem precisar de caixote: é o mesmo salto do bloqueio e do levantamento em suspensão. Força pesada + saltos rende mais salto que qualquer um dos dois sozinho (Pagaduan 2020; Cormier 2020). São só 9 saltos, bem menos do que você dá num jogo.",
+          "comoExecutar": "No chão, perto de uma parede ou pilar. Pés na largura do quadril: desce rápido até mais ou menos 1/4 de agachamento, balançando os braços pra trás, e salta o mais alto que conseguir, esticando as duas mãos pro alto como no bloqueio e tentando encostar num ponto alto da parede. Aterrissa suave, primeiro na ponta dos pés e já dobrando o joelho, alinhado com o pé. Para, respira uns 10 s e faz o próximo — um salto de cada vez, sem emendar.",
+          "quandoSubirCarga": "Não tem carga. Marque na parede (fita ou giz) o ponto mais alto que você alcança e tente passar dele com o tempo.",
+          "atencao": "Se o salto cair de altura ou a aterrissagem ficar pesada e barulhenta, pare a série. Jogou forte nas últimas 48 h: pule este exercício."
         },
         {
           "ordem": 2,
@@ -765,7 +765,7 @@
         }
       ],
       "regrasImpulsao": {
-        "depoisDeJogo": "Jogou vôlei ou futebol forte nas últimas 48 h: pule box jump e agachamento com salto; faça só a força.",
+        "depoisDeJogo": "Jogou vôlei ou futebol forte nas últimas 48 h: pule o salto vertical e o agachamento com salto; faça só a força.",
         "qualidade": "Todo salto é no máximo. Se a altura cair ou a aterrissagem ficar barulhenta, a série acabou.",
         "joelho": "Dor no tendão abaixo da patela: tire os saltos e continue só com a força até passar.",
         "teste": "A cada 3 semanas, no começo da sessão e depois do aquecimento: 3 saltos com as mãos na cintura no app My Jump, 1 min de pausa, registre o melhor em Evolução → Salto vertical."
@@ -990,5 +990,5 @@
     "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
     "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
   ],
-  "revisao": "2026-09-26"
+  "revisao": "2026-09-26b"
 }

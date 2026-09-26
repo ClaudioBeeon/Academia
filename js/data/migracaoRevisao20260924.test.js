@@ -56,3 +56,24 @@ test("pernas + impulsão: troca só a ficha que ainda está na revisão de 24/09
   assert.equal((await migrarPernasImpulsao20260926(banco, buscar)).jaFeita, true, "roda uma vez só");
   banco.close();
 });
+
+test("salto sem caixote: troca só o box jump do dia 4 e mantém o resto", async () => {
+  const { migrarSaltoSemCaixote20260926 } = await import("./seed.js");
+  const banco = await openDatabase();
+  const salto = { ordem: 9, exercicioId: "salto_vertical_alcance", series: 3 };
+  const regras = { depoisDeJogo: "novo" };
+  const buscar = async () => ({ json: async () => ({ versao: "1.0", revisao: "2026-09-26b", dias: [{ numero: 4, regrasImpulsao: regras, exercicios: [salto] }] }) });
+  await put(banco, "ficha", {
+    versao: "1.0",
+    revisao: "2026-09-26",
+    dias: [{ numero: 4, regrasImpulsao: { depoisDeJogo: "velho" }, exercicios: [{ ordem: 1, exercicioId: "box_jump" }, { ordem: 2, exercicioId: "hack", series: 7 }] }],
+  });
+  const r = await migrarSaltoSemCaixote20260926(banco, buscar);
+  assert.equal(r.migrado, true);
+  const ficha = await get(banco, "ficha", "1.0");
+  assert.equal(ficha.revisao, "2026-09-26b");
+  assert.deepEqual(ficha.dias[0].exercicios, [{ ...salto, ordem: 1 }, { ordem: 2, exercicioId: "hack", series: 7 }]);
+  assert.deepEqual(ficha.dias[0].regrasImpulsao, regras);
+  assert.equal((await migrarSaltoSemCaixote20260926(banco, buscar)).jaFeita, true, "roda uma vez só");
+  banco.close();
+});

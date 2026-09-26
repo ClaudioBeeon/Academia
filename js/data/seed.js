@@ -271,12 +271,40 @@ export async function migrarPernasImpulsao20260926(db, fetchImpl = globalThis.fe
   const fichaAtual = await get(db, "ficha", "1.0");
   if (fichaAtual?.revisao === "2026-09-24") {
     const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
-    if (nova?.revisao === "2026-09-26" && nova.versao === fichaAtual.versao) {
+    if (nova?.revisao >= "2026-09-26" && nova.versao === fichaAtual.versao) {
       await put(db, "ficha", nova);
       migrado = true;
     }
   }
   await put(db, "config", { chave: CHAVE_PERNAS_IMPULSAO, valor: true });
+  return { migrado, jaFeita: false };
+}
+
+// Ainda em 26/09: a academia do dono não tem caixote, então o box jump do
+// dia 4 vira salto vertical com alcance, no chão. Troca só esse exercício
+// (e as regras do dia), sem mexer no resto da ficha que já está no banco.
+const CHAVE_SALTO_SEM_CAIXOTE = "saltoSemCaixote20260926";
+
+export async function migrarSaltoSemCaixote20260926(db, fetchImpl = globalThis.fetch) {
+  const marcador = await get(db, "config", CHAVE_SALTO_SEM_CAIXOTE);
+  if (marcador?.valor) return { migrado: false, jaFeita: true };
+  let migrado = false;
+  const fichaAtual = await get(db, "ficha", "1.0");
+  const dia = fichaAtual?.dias?.find((d) => d.numero === 4);
+  const indice = dia?.exercicios?.findIndex((e) => e.exercicioId === "box_jump") ?? -1;
+  if (indice >= 0) {
+    const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
+    const diaNovo = nova?.dias?.find((d) => d.numero === 4);
+    const salto = diaNovo?.exercicios?.find((e) => e.exercicioId === "salto_vertical_alcance");
+    if (salto && nova.versao === fichaAtual.versao) {
+      dia.exercicios[indice] = { ...salto, ordem: dia.exercicios[indice].ordem };
+      if (diaNovo.regrasImpulsao) dia.regrasImpulsao = diaNovo.regrasImpulsao;
+      fichaAtual.revisao = nova.revisao;
+      await put(db, "ficha", fichaAtual);
+      migrado = true;
+    }
+  }
+  await put(db, "config", { chave: CHAVE_SALTO_SEM_CAIXOTE, valor: true });
   return { migrado, jaFeita: false };
 }
 
@@ -293,6 +321,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const opcaoCafeDaTarde = await migrarOpcaoIogurteCafeDaTarde(db);
   const revisao20260924 = await migrarRevisaoAuditoria20260924(db, fetchImpl);
   const pernasImpulsao = await migrarPernasImpulsao20260926(db, fetchImpl);
+  const saltoSemCaixote = await migrarSaltoSemCaixote20260926(db, fetchImpl);
 
   return {
     seeded: storesPessoaisSemeadas.length > 0 || bibliotecaAtualizada,
@@ -303,6 +332,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
     opcaoCafeDaTardeMigrada: opcaoCafeDaTarde.migrado,
     revisaoAuditoria20260924: revisao20260924,
     pernasImpulsao20260926: pernasImpulsao.migrado,
+    saltoSemCaixote20260926: saltoSemCaixote.migrado,
   };
 }
 

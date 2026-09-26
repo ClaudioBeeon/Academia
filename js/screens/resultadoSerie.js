@@ -16,7 +16,7 @@ const OPCOES_RIR = [0, 1, 2, 3, 4, 5];
  * Resolve com { reps, rir, aquecimento: false }, { reps, rir: null,
  * aquecimento: true } ou null (voltar sem registrar).
  */
-export function perguntarResultadoSerie({ numero, reps, rirSugerido = null, rirAlvo, repsMin, repsMax, rotuloReps = "Repetições" }) {
+export function perguntarResultadoSerie({ numero, reps, rirSugerido = null, rirAlvo, repsMin, repsMax, rotuloReps = "Repetições", dica = null }) {
   return new Promise((resolve) => {
     let repsAtual = Math.max(0, reps ?? repsMin ?? 0);
 
@@ -49,7 +49,7 @@ export function perguntarResultadoSerie({ numero, reps, rirSugerido = null, rirA
     `;
     overlay.querySelector("#rs-titulo").textContent = `Série ${numero} — como foi?`;
     overlay.querySelector(".rs-rot").textContent = rotuloReps;
-    overlay.querySelector(".rs-dica").textContent =
+    overlay.querySelector(".rs-dica").textContent = dica ??
       `Meta: ${repsMin}–${repsMax}, parando com ${rirAlvo} sobrando. Responda o que aconteceu — é isso que decide quando a carga sobe.`;
 
     const repsEl = overlay.querySelector(".rs-reps");

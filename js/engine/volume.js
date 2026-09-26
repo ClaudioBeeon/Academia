@@ -29,8 +29,12 @@ export function expandirContribuicoes(series, catalogo = []) {
   const porId = new Map(catalogo.map((e) => [e.id, e]));
   const resultado = [];
   for (const serie of series) {
-    const fator = ehSerieExtra(serie) ? FRACAO_SERIE_EXTRA : 1;
     const exercicio = porId.get(serie.exercicioId);
+    // Exercício de potência (salto): poucas repetições longe da falha, não é
+    // estímulo de hipertrofia — o catálogo diz quanto ele conta (fatorVolume).
+    const fatorDoExercicio = exercicio?.fatorVolume ?? 1;
+    const fator = (ehSerieExtra(serie) ? FRACAO_SERIE_EXTRA : 1) * fatorDoExercicio;
+    if (fator === 0) continue;
     if (!exercicio) {
       resultado.push({ ...serie, contribuicao: (serie.contribuicao ?? 1) * fator, direta: true });
       continue;

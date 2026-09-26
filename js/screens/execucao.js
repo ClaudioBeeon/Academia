@@ -167,6 +167,19 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     incremento: incrementoCarga,
   });
 
+  // Exercício de potência (salto): não segue a dupla progressão de carga —
+  // o objetivo é velocidade e altura máximas com carga leve. Mantém a
+  // carga da última vez e o motivo explica o critério.
+  if (exercicio.prescricao?.potencia) {
+    const ultimaCarga = sessoesAnteriores[0]?.series.filter((s) => s.tipoSerie !== "aquecimento").reduce((max, s) => Math.max(max, s.carga ?? 0), 0);
+    Object.assign(sugestao, {
+      acao: "manter",
+      carga: sessoesAnteriores.length > 0 ? ultimaCarga : sugestao.carga,
+      repsAlvo: cfg.repsMax,
+      motivo: "Explosivo: toda repetição no máximo de velocidade e altura. Não é pra ficar pesado — pare a série se o salto cair.",
+    });
+  }
+
   // Primeira vez sem barra: começa em 0 e a nota pede pra ajustar — antes
   // entrava 5 kg sem perguntar (até na prancha).
   const cargaPadrao = sugestao.carga
@@ -685,7 +698,9 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         notaEl.append(ultima, document.createElement("br"));
       }
       const alvo = document.createElement("span");
-      alvo.innerHTML = `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${formatarNumero(cfg.rirAlvo)}</b> sobrando.`;
+      alvo.innerHTML = exercicio.prescricao?.potencia
+        ? `Alvo <b>${cfg.repsMax}</b> repetições por série, todas no máximo, com <b>${cfg.descansoSegundos} s</b> de pausa.`
+        : `Alvo <b>${cfg.repsMin}–${cfg.repsMax}</b> reps, parando com <b>${formatarNumero(cfg.rirAlvo)}</b> sobrando.`;
       notaEl.appendChild(alvo);
       // Rampa de aquecimento pra todo composto que não usa barra (barra já
       // tem a escada completa no painel "Ferramentas").
@@ -885,7 +900,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       rirAlvo: cfg.rirAlvo,
       repsMin: cfg.repsMin,
       repsMax: cfg.repsMax,
-      rotuloReps: incrementoCarga === 0 ? "Segundos / reps" : "Repetições",
+      rotuloReps: incrementoCarga === 0 && !exercicio.prescricao?.potencia ? "Segundos / reps" : "Repetições",
+      dica: exercicio.prescricao?.potencia
+        ? "Explosivo: conte só as repetições feitas no máximo. No RIR, marque quantas ainda sairiam com a mesma altura."
+        : null,
     });
     if (!resultado || numeroEmAndamento !== numero) return;
     pararAnimacaoTrabalho();

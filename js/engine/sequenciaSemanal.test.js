@@ -20,7 +20,7 @@ test("DIAS_SEQUENCIA tem 5 dias na ordem e composição corretas", () => {
   assert.deepEqual(DIAS_SEQUENCIA[3].musculos, ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"]);
   assert.deepEqual(DIAS_SEQUENCIA[4].musculos, ["peito", "biceps", "ombro", "antebraco"]);
   assert.equal(DIAS_SEQUENCIA[0].titulo, "Peito (inclinado) + Costas + Deltoide posterior + Tríceps");
-  assert.equal(DIAS_SEQUENCIA[3].titulo, "Pernas");
+  assert.equal(DIAS_SEQUENCIA[3].titulo, "Pernas + Impulsão");
 });
 
 test("peito abre os dias 1, 3 e 5 — é a prioridade e vem sempre primeiro", () => {

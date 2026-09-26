@@ -239,7 +239,7 @@ export async function migrarRevisaoAuditoria20260924(db, fetchImpl = globalThis.
   const fichaAtual = await get(db, "ficha", "1.0");
   if (fichaAtual?.nome === NOME_FICHA_ANTERIOR && !fichaAtual.revisao) {
     const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
-    if (nova?.revisao === "2026-09-24" && nova.versao === fichaAtual.versao) {
+    if (nova?.revisao >= "2026-09-24" && nova.versao === fichaAtual.versao) {
       await put(db, "ficha", nova);
       fichaMigrada = true;
     }
@@ -259,6 +259,27 @@ export async function migrarRevisaoAuditoria20260924(db, fetchImpl = globalThis.
   return { ficha: fichaMigrada, protocolo: protocoloMigrado, jaFeita: false };
 }
 
+// Dia de pernas virou Pernas + Impulsão (26/09/2026, pedido do dono,
+// levantador de vôlei). Mesma regra: só troca a ficha que ainda é a revisão
+// de 24/09 deste bloco — nunca a de outro perfil nem uma mais nova.
+const CHAVE_PERNAS_IMPULSAO = "pernasImpulsao20260926";
+
+export async function migrarPernasImpulsao20260926(db, fetchImpl = globalThis.fetch) {
+  const marcador = await get(db, "config", CHAVE_PERNAS_IMPULSAO);
+  if (marcador?.valor) return { migrado: false, jaFeita: true };
+  let migrado = false;
+  const fichaAtual = await get(db, "ficha", "1.0");
+  if (fichaAtual?.revisao === "2026-09-24") {
+    const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
+    if (nova?.revisao === "2026-09-26" && nova.versao === fichaAtual.versao) {
+      await put(db, "ficha", nova);
+      migrado = true;
+    }
+  }
+  await put(db, "config", { chave: CHAVE_PERNAS_IMPULSAO, valor: true });
+  return { migrado, jaFeita: false };
+}
+
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const [storesPessoaisSemeadas, bibliotecaAtualizada] = await Promise.all([
     semearPessoaisSeVazias(db, fetchImpl),
@@ -271,6 +292,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const substituicoes = await migrarSubstituicoesFicha(db);
   const opcaoCafeDaTarde = await migrarOpcaoIogurteCafeDaTarde(db);
   const revisao20260924 = await migrarRevisaoAuditoria20260924(db, fetchImpl);
+  const pernasImpulsao = await migrarPernasImpulsao20260926(db, fetchImpl);
 
   return {
     seeded: storesPessoaisSemeadas.length > 0 || bibliotecaAtualizada,
@@ -280,6 +302,7 @@ export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
     substituicoesMigradas: substituicoes.migrados,
     opcaoCafeDaTardeMigrada: opcaoCafeDaTarde.migrado,
     revisaoAuditoria20260924: revisao20260924,
+    pernasImpulsao20260926: pernasImpulsao.migrado,
   };
 }
 

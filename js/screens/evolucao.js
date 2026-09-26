@@ -5,6 +5,7 @@ import { getMedidas, registrarMedida } from "../data/medidas.js";
 import { prepararSerieTemporal } from "../engine/medidas.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
 import { criarSvgLinha } from "../lib/graficoLinha.js";
+import { salvarTesteSalto, getTestesSalto, diasAteProximoTeste, DIAS_ENTRE_TESTES } from "../data/testesSalto.js";
 import { listarRecordesPorExercicio } from "../engine/recordes.js";
 import { expandirContribuicoes } from "../engine/volume.js";
 import { montarCardPostura } from "./postura.js";
@@ -140,6 +141,7 @@ export async function montarTelaEvolucao(db, { onAbrirHistoricoTreinos } = {}) {
     montarSecaoVolume(main, expandirContribuicoes(todasAsSeries, exercicios));
   }
 
+  await montarSecaoSalto(main, db);
   montarSecaoMedidas(main, db, linhasMedidas);
 
   return root;
@@ -334,6 +336,85 @@ function criarSvgBarras(semanas) {
   svg.appendChild(rotuloUltima);
 
   return svg;
+}
+
+// Salto vertical (dia de Pernas + Impulsão): registro do teste do app My
+// Jump a cada 3 semanas e o gráfico da evolução.
+async function montarSecaoSalto(main, db) {
+  const hoje = obterDataLocal();
+  let testes = await getTestesSalto(db);
+
+  const card = document.createElement("section");
+  card.className = "exercise-card";
+  card.innerHTML = `
+    <div class="exercise-head"><div class="exercise-name">Salto vertical</div><div class="exercise-meta salto-proximo"></div></div>
+    <form class="sets salto-form" style="padding:0 18px 12px;">
+      <div class="set-field"><label>Data<input name="data" type="date" /></label></div>
+      <div class="set-field"><label>Salto, mãos na cintura (cm)<input name="cmj" type="text" inputmode="decimal" placeholder="ex.: 41,5" /></label></div>
+      <div class="set-field"><label>Com balanço dos braços (cm, opcional)<input name="cmjBracos" type="text" inputmode="decimal" placeholder="ex.: 48" /></label></div>
+      <button type="submit" class="swap-pill" style="grid-column:1/-1;">Registrar teste</button>
+      <div class="prev-hint salto-status" style="grid-column:1/-1;"></div>
+    </form>
+    <details class="salto-como" style="padding:0 18px 12px;">
+      <summary class="prev-hint" style="padding:0; cursor:pointer;">Como fazer o teste</summary>
+      <p class="prev-hint" style="padding:6px 0 0;">A cada 3 semanas, no começo do dia de pernas, depois do aquecimento. Use o app My Jump (validado contra plataforma de força): 3 saltos com as mãos na cintura, 1 min de pausa entre eles, registre o melhor. Sempre no mesmo lugar e com o mesmo tênis. Ganho esperado pra quem já é treinado: de 1 a 4 cm em umas 6 semanas.</p>
+    </details>
+    <div class="salto-grafico" style="padding:0 18px 18px;"></div>
+  `;
+  main.appendChild(card);
+
+  const form = card.querySelector(".salto-form");
+  form.data.value = hoje;
+  form.data.max = hoje;
+  const status = card.querySelector(".salto-status");
+  const proximoEl = card.querySelector(".salto-proximo");
+  const graficoEl = card.querySelector(".salto-grafico");
+
+  function desenhar() {
+    const faltam = diasAteProximoTeste(testes, hoje);
+    proximoEl.textContent = faltam === 0 ? "dia de teste" : `próximo teste em ${faltam} dia${faltam === 1 ? "" : "s"}`;
+    graficoEl.innerHTML = "";
+    if (testes.length === 0) {
+      graficoEl.innerHTML = `<p class="prev-hint" style="padding:0;">Faça o primeiro teste pra ter a linha de base.</p>`;
+      return;
+    }
+    graficoEl.appendChild(criarSvgLinha(testes.map((t) => ({ data: t.data, valor: t.cmjCm }))));
+    const primeiro = testes[0];
+    const ultimo = testes.at(-1);
+    const resumo = document.createElement("p");
+    resumo.className = "prev-hint";
+    resumo.style.padding = "8px 0 0";
+    const diferenca = Math.round((ultimo.cmjCm - primeiro.cmjCm) * 10) / 10;
+    resumo.textContent = testes.length > 1
+      ? `Do primeiro teste até agora: ${diferenca >= 0 ? "+" : ""}${String(diferenca).replace(".", ",")} cm.`
+      : `Linha de base: ${String(ultimo.cmjCm).replace(".", ",")} cm. Próximo teste daqui a ${DIAS_ENTRE_TESTES} dias.`;
+    graficoEl.appendChild(resumo);
+  }
+  desenhar();
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const cmj = Number(String(form.cmj.value).replace(",", "."));
+    const bracos = form.cmjBracos.value ? Number(String(form.cmjBracos.value).replace(",", ".")) : null;
+    if (!form.data.value || !(cmj > 0 && cmj < 150)) {
+      status.textContent = "Coloque a data e a altura do salto em centímetros (ex.: 41,5).";
+      return;
+    }
+    if (form.data.value > hoje) {
+      status.textContent = "A data do teste não pode ser no futuro.";
+      return;
+    }
+    if (bracos != null && !(bracos > 0 && bracos < 150)) {
+      status.textContent = "O salto com os braços precisa ser em centímetros (ex.: 48), ou deixe em branco.";
+      return;
+    }
+    await salvarTesteSalto(db, { data: form.data.value, cmjCm: cmj, cmjBracosCm: bracos });
+    testes = await getTestesSalto(db);
+    form.cmj.value = "";
+    form.cmjBracos.value = "";
+    status.textContent = "Teste registrado.";
+    desenhar();
+  });
 }
 
 function montarSecaoMedidas(main, db, linhasIniciais) {

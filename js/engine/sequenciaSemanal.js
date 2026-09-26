@@ -23,7 +23,7 @@ export const DIAS_SEQUENCIA = [
   { numero: 1, titulo: "Peito (inclinado) + Costas + Deltoide posterior + Tríceps", musculos: ["peito", "costas", "deltoide_posterior", "triceps"] },
   { numero: 2, titulo: "Costas + Bíceps", musculos: ["costas", "biceps"] },
   { numero: 3, titulo: "Peito (horizontal) + Ombros + Tríceps + Abdômen", musculos: ["peito", "ombro", "deltoide_posterior", "triceps", "abdomen"] },
-  { numero: 4, titulo: "Pernas", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"] },
+  { numero: 4, titulo: "Pernas + Impulsão", musculos: ["quadriceps", "posterior_coxa", "gluteo", "panturrilha"] },
   { numero: 5, titulo: "Peito (alongado) + Bíceps + Ombro + Antebraço", musculos: ["peito", "biceps", "ombro", "antebraco"] },
 ];
 

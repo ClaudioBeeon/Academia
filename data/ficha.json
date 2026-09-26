@@ -1,16 +1,16 @@
 {
   "versao": "1.0",
-  "dataAtualizacao": "2026-09-24",
+  "dataAtualizacao": "2026-09-26",
   "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
   "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min.",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa.",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
     "prioridade3": "hipertrofia de bíceps — 12 séries diretas/semana (~18 contando as remadas e puxadas)",
     "prioridade4": "equilibrar a frente e as costas do ombro — 12 séries diretas de costas (6 delas verticais) e 6 de deltoide posterior por semana. A mudança de postura em si depende mais das pausas no expediente do que do treino, e a evidência de que exercício corrige postura é modesta.",
-    "secundario": "melhorar coxas sem que perna vire prioridade — 8 séries de quadríceps, 6 de posterior (com a flexora sentada, que rende mais)",
+    "secundario": "coxas e impulsão pro vôlei, sem que perna vire prioridade — força pesada no hack + saltos no começo do dia, ~8 séries de quadríceps e 6 de posterior",
     "manutencao": "glúteo, panturrilha e abdômen em volume mínimo deliberado"
   },
   "balancoEmpurraPuxa": {
@@ -566,30 +566,66 @@
     },
     {
       "numero": 4,
-      "titulo": "Pernas",
-      "foco": "Coxas com volume moderado, resto em manutenção",
-      "duracaoEstimadaMin": 58,
-      "totalSeries": 17,
-      "notaDoDia": "Hack e stiff agora abrem o dia: são os mais técnicos e os de mais risco pra lombar, então vêm com você descansado. A mesa flexora deitada virou flexora sentada. Sem cardio — se sobrar tempo, caminhe 10 min.",
+      "titulo": "Pernas + Impulsão",
+      "foco": "Salto pro vôlei (potência + força) sem perder coxa",
+      "duracaoEstimadaMin": 55,
+      "totalSeries": 23,
+      "notaDoDia": "Os saltos vêm primeiro, com você descansado, e são poucos e no máximo: você já salta muito no vôlei. Se jogou vôlei ou futebol forte nas últimas 48 h, pule os dois primeiros exercícios e faça só a força. Pare uma série de salto se a altura cair ou a aterrissagem ficar barulhenta. Dor no tendão do joelho: tire os saltos e avise.",
       "cardio": null,
       "alongamentoFinal": "coluna",
       "exercicios": [
         {
           "ordem": 1,
-          "exercicioId": "agachamento_hack_maquina",
+          "exercicioId": "box_jump",
           "series": 3,
           "repeticoes": {
-            "min": 8,
-            "max": 12
+            "min": 3,
+            "max": 3
+          },
+          "rirAlvo": 4,
+          "descansoSegundos": 90,
+          "tempo": "salto máximo · desce andando",
+          "falhaNaUltimaSerie": false,
+          "potencia": true,
+          "porqueEstaAqui": "Impulsão com pouco impacto: aterrissar no alto do caixote poupa o joelho em relação a cair no chão. Força pesada + saltos rende mais salto que qualquer um dos dois sozinho (Pagaduan 2020; Cormier 2020).",
+          "comoExecutar": "Caixote de 50–60 cm. Pés na largura do quadril, balança os braços e salta o mais alto que conseguir, aterrissando suave em cima, com o joelho dobrado e alinhado com o pé. Fica em pé em cima, desce andando — nunca pulando pra trás.",
+          "quandoSubirCarga": "Não tem carga. Quando os 3 saltos saírem fáceis e silenciosos, suba a altura do caixote um pouco.",
+          "atencao": "Qualidade acima de tudo: se o salto cair de altura ou a aterrissagem ficar pesada e barulhenta, pare a série. Jogou forte nas últimas 48 h: pule este exercício."
+        },
+        {
+          "ordem": 2,
+          "exercicioId": "agachamento_salto_smith",
+          "series": 3,
+          "repeticoes": {
+            "min": 4,
+            "max": 4
+          },
+          "rirAlvo": 4,
+          "descansoSegundos": 90,
+          "tempo": "desce rápido · explode pra cima",
+          "falhaNaUltimaSerie": false,
+          "potencia": true,
+          "porqueEstaAqui": "Potência: treina o músculo a produzir força rápido, que é o que decide a altura do salto. A carga é leve de propósito — a potência máxima no salto acontece com pouco ou nenhum peso (Jiménez-Reyes 2015).",
+          "comoExecutar": "No Smith, com só a barra ou até ~25% do peso que você usa no agachamento. Desce rápido até mais ou menos 1/4 de agachamento e salta o mais alto possível, aterrissando suave com o joelho levemente dobrado, e já emenda a próxima.",
+          "quandoSubirCarga": "Não é pra subir carga como nos outros: se todas as repetições saírem rápidas e altas, pode subir um pouco, mas nunca a ponto de o salto ficar lento.",
+          "atencao": "Se a repetição ficar lenta ou baixa, a carga está alta demais. Jogou forte nas últimas 48 h: pule este exercício."
+        },
+        {
+          "ordem": 3,
+          "exercicioId": "agachamento_hack_maquina",
+          "series": 4,
+          "repeticoes": {
+            "min": 5,
+            "max": 6
           },
           "rirAlvo": 2,
-          "descansoSegundos": 150,
+          "descansoSegundos": 165,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Abre o dia: é o exercício mais técnico e o que mais carrega o quadríceps na posição alongada, então vem com você descansado — o leg press, mais estável e seguro, tolera melhor ir depois.",
+          "porqueEstaAqui": "A base da impulsão é a força: agachamento pesado melhora o salto mais que outros exercícios de quadril (Asghari 2025) e segura a coxa. Agora com carga mais alta e menos repetições (5–6) do que antes (8–12).",
           "comoExecutar": "Pés na largura do quadril, um pouco à frente do corpo. Desça em 3 segundos até a coxa passar da paralela, mantendo o lombar colado no apoio. Suba com intenção sem travar o joelho.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 2. Sobe 5 kg e volta pra 8.",
-          "atencao": "Como é exercício novo, use as duas primeiras semanas pra achar a carga e a profundidade confortável. Não tenha pressa de carregar.",
+          "quandoSubirCarga": "Quando as 4 séries fecharem 6 repetições com RIR 2. Sobe 5 kg e volta pra 5.",
+          "atencao": "Descida controlada, subida o mais rápida possível (com intenção de explodir). Não vá à falha: é força, não cansaço.",
           "cadencia": {
             "concentrica": 2,
             "pausaTopo": 0,
@@ -600,20 +636,20 @@
           }
         },
         {
-          "ordem": 2,
+          "ordem": 4,
           "exercicioId": "stiff_halteres",
           "series": 3,
           "repeticoes": {
-            "min": 8,
-            "max": 12
+            "min": 6,
+            "max": 8
           },
           "rirAlvo": 2,
-          "descansoSegundos": 150,
+          "descansoSegundos": 120,
           "tempo": "2s subindo · 3s descendo",
           "falhaNaUltimaSerie": false,
           "porqueEstaAqui": "Carrega o posterior de coxa alongado, pela extensão do quadril — o melhor estímulo pra cabeça longa do bíceps femoral (Bourne 2017). Subiu pra 2º: antes vinha depois de 8 séries de quadríceps, com glúteo, lombar e pegada já cansados, justamente no exercício do dia com mais risco pra lombar.",
           "comoExecutar": "Joelhos LEVEMENTE dobrados e travados nessa posição — eles não dobram mais durante o movimento. Empurre o quadril pra trás deixando os halteres deslizarem rente à perna. Desça em 3 segundos até sentir o alongamento atrás da coxa, e suba empurrando o quadril pra frente.",
-          "quandoSubirCarga": "Quando as 3 séries chegarem a 12 repetições com RIR 2. Sobe 2 kg por halter e volta pra 8.",
+          "quandoSubirCarga": "Quando as 3 séries chegarem a 8 repetições com RIR 2. Sobe 2 kg por halter e volta pra 6.",
           "atencao": "A coluna NÃO arredonda em nenhum momento. Se arredondou, você desceu além da sua mobilidade — pare antes. RIR 2; se a lombar começar a perder a posição antes disso, encerre a série ali.",
           "cadencia": {
             "concentrica": 2,
@@ -625,20 +661,20 @@
           }
         },
         {
-          "ordem": 3,
+          "ordem": 5,
           "exercicioId": "leg_press_45",
-          "series": 3,
+          "series": 2,
           "repeticoes": {
             "min": 10,
-            "max": 15
+            "max": 12
           },
-          "rirAlvo": 2,
-          "descansoSegundos": 150,
+          "rirAlvo": 1,
+          "descansoSegundos": 90,
           "tempo": "2s empurrando · 3s descendo",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Vem depois do hack e do stiff: é o mais estável e seguro dos três, então é o que melhor tolera fadiga. Além do quadríceps, trabalha bem glúteo e adutores — mas praticamente não trabalha o posterior de coxa, por isso a flexora vem logo depois.",
+          "porqueEstaAqui": "Volume de coxa depois da parte de força: é o exercício mais estável e seguro pra ir perto da falha com as pernas já cansadas.",
           "comoExecutar": "Pés na largura do quadril, no meio da plataforma. Desça em 3 segundos até o joelho chegar perto de 90°, SEM que o quadril saia do banco (é aí que a lombar arredonda). Empurre sem travar o joelho no topo.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições com RIR 2. Sobe 10 kg e volta pra 10.",
+          "quandoSubirCarga": "Quando as 2 séries fecharem 12 repetições. Sobe 10 kg e volta pra 10.",
           "atencao": "O ponto onde o quadril começa a rolar pra fora do banco é o seu limite de amplitude. Descer além disso não treina mais perna, só castiga a lombar.",
           "cadencia": {
             "concentrica": 2,
@@ -648,15 +684,15 @@
             "verboSubida": "empurrando",
             "verboDescida": "descendo"
           },
-          "corte": 3
+          "corte": 2
         },
         {
-          "ordem": 4,
+          "ordem": 6,
           "exercicioId": "cadeira_flexora_sentada",
           "series": 3,
           "repeticoes": {
-            "min": 10,
-            "max": 15
+            "min": 8,
+            "max": 12
           },
           "rirAlvo": 1,
           "descansoSegundos": 90,
@@ -664,7 +700,7 @@
           "falhaNaUltimaSerie": true,
           "porqueEstaAqui": "Substituiu a mesa flexora deitada. Sentado, o quadril fica dobrado e os isquiotibiais trabalham alongados: num estudo de 12 semanas a versão sentada fez o posterior crescer ~14% contra ~9% na deitada (Maeo 2021). Se a sua academia não tiver essa máquina, use 'Trocar' e escolha a mesa flexora — ela funciona, só rende um pouco menos.",
           "comoExecutar": "Ajuste o encosto pra o joelho ficar alinhado com o eixo da máquina e trave a coxa com o apoio de cima. Flexione levando o calcanhar pra baixo e pra trás até o fim e volte em 3 segundos até quase esticar a perna, sem deixar a placa bater.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 15 repetições. Sobe 2,5 kg e volta pra 10.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 12 repetições. Sobe 2,5 kg e volta pra 8.",
           "atencao": "Quadril encostado no banco o tempo todo. Pode ir à falha na última série.",
           "cadencia": {
             "concentrica": 2,
@@ -676,20 +712,46 @@
           }
         },
         {
-          "ordem": 5,
+          "ordem": 7,
+          "exercicioId": "panturrilha_em_pe_maquina",
+          "series": 3,
+          "repeticoes": {
+            "min": 8,
+            "max": 10
+          },
+          "rirAlvo": 1,
+          "descansoSegundos": 60,
+          "tempo": "1s subindo · 3s descendo · 1s de pausa embaixo",
+          "falhaNaUltimaSerie": true,
+          "porqueEstaAqui": "Pesada e lenta pra deixar o tendão de Aquiles mais rígido e forte — é ele que devolve a energia no salto (Bohm 2015). Mais carga e menos repetições do que antes.",
+          "comoExecutar": "Suba na ponta do pé o máximo possível e desça em 3 segundos até o calcanhar ficar abaixo do degrau, com PAUSA DE 2 SEGUNDOS no alongamento embaixo. Essa pausa é o exercício — panturrilha responde à posição alongada muito mais que à contração no topo.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 10 repetições com a pausa embaixo. Sobe 5 kg e volta pra 8.",
+          "atencao": "Sem pular. Se você quicar pra subir, a panturrilha não trabalha — o tendão trabalha.",
+          "cadencia": {
+            "concentrica": 1,
+            "pausaTopo": 0,
+            "excentrica": 3,
+            "pausaBase": 1,
+            "verboSubida": "subindo",
+            "verboDescida": "descendo"
+          },
+          "corte": 3
+        },
+        {
+          "ordem": 8,
           "exercicioId": "cadeira_extensora",
           "series": 2,
           "repeticoes": {
             "min": 12,
-            "max": 20
+            "max": 15
           },
-          "rirAlvo": 0,
-          "descansoSegundos": 75,
+          "rirAlvo": 1,
+          "descansoSegundos": 60,
           "tempo": "2s subindo · 3s descendo · 1s de aperto no topo",
           "falhaNaUltimaSerie": true,
           "porqueEstaAqui": "Fecha o quadríceps com o exercício de menor fadiga sistêmica do grupo, e é o único que trabalha bem o reto femoral — a parte da frente da coxa que o leg press quase não pega (Kinoshita 2026). São 2 séries porque o quadríceps já recebeu 6 do hack e do leg press: 8 por sessão é escolha de tempo e fadiga, não um limite fisiológico.",
           "comoExecutar": "Se o encosto regular, incline pra trás — com o quadril mais aberto o reto femoral trabalha mais (Larsen 2025). Costas apoiadas, encoste o rolo logo acima do tornozelo. Estenda até quase travar e APERTE 1 segundo no topo. Desça em 3s sem deixar a placa bater.",
-          "quandoSubirCarga": "Quando as 2 séries fecharem 20 repetições. Sobe 2,5 kg e volta pra 12.",
+          "quandoSubirCarga": "Quando as 2 séries fecharem 15 repetições. Sobe 2,5 kg e volta pra 12.",
           "atencao": "Único exercício do programa com RIR 0 nas séries de trabalho — pode e deve chegar bem perto da falha. É seguro e é onde você compra estímulo barato.",
           "cadencia": {
             "concentrica": 2,
@@ -699,62 +761,15 @@
             "verboSubida": "subindo",
             "verboDescida": "descendo"
           },
-          "corte": 4
-        },
-        {
-          "ordem": 6,
-          "exercicioId": "panturrilha_em_pe_maquina",
-          "series": 3,
-          "repeticoes": {
-            "min": 12,
-            "max": 20
-          },
-          "rirAlvo": 0,
-          "descansoSegundos": 60,
-          "tempo": "2s subindo · 3s descendo · 2s de pausa embaixo",
-          "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Manutenção mínima, e isso é uma decisão, não um esquecimento: anos de vôlei e futebol já construíram sua panturrilha. 3 séries mantêm o que existe sem tirar tempo do que importa.",
-          "comoExecutar": "Suba na ponta do pé o máximo possível e desça em 3 segundos até o calcanhar ficar abaixo do degrau, com PAUSA DE 2 SEGUNDOS no alongamento embaixo. Essa pausa é o exercício — panturrilha responde à posição alongada muito mais que à contração no topo.",
-          "quandoSubirCarga": "Quando as 3 séries fecharem 20 repetições mantendo a pausa de 2s. Sobe 5 kg e volta pra 12.",
-          "atencao": "Sem pular. Se você quicar pra subir, a panturrilha não trabalha — o tendão trabalha.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 0,
-            "excentrica": 3,
-            "pausaBase": 2,
-            "verboSubida": "subindo",
-            "verboDescida": "descendo"
-          },
-          "corte": 2
-        },
-        {
-          "ordem": 7,
-          "exercicioId": "cadeira_abdutora",
-          "series": 2,
-          "repeticoes": {
-            "min": 15,
-            "max": 25
-          },
-          "rirAlvo": 1,
-          "descansoSegundos": 60,
-          "tempo": "2s abrindo · 2s voltando · 1s de aperto no topo",
-          "falhaNaUltimaSerie": true,
-          "porqueEstaAqui": "Opcional. Glúteo não é prioridade e já trabalha no hack, no leg press e no stiff — a abdutora completa o glúteo médio, mas não há estudo mostrando quanto ela faz crescer. É a primeira a sair se faltar tempo.",
-          "comoExecutar": "Tronco levemente inclinado pra frente aumenta a ênfase no glúteo médio. Abra até o fim, aperte 1 segundo, volte em 2s sem deixar as placas baterem.",
-          "quandoSubirCarga": "Quando as 2 séries fecharem 25 repetições. Sobe 2,5 kg e volta pra 15.",
-          "atencao": "Repetições altas de propósito — o glúteo médio responde bem a isso e o custo de recuperação é baixo.",
-          "cadencia": {
-            "concentrica": 2,
-            "pausaTopo": 1,
-            "excentrica": 2,
-            "pausaBase": 0,
-            "verboSubida": "abrindo",
-            "verboDescida": "voltando"
-          },
-          "opcional": true,
           "corte": 1
         }
-      ]
+      ],
+      "regrasImpulsao": {
+        "depoisDeJogo": "Jogou vôlei ou futebol forte nas últimas 48 h: pule box jump e agachamento com salto; faça só a força.",
+        "qualidade": "Todo salto é no máximo. Se a altura cair ou a aterrissagem ficar barulhenta, a série acabou.",
+        "joelho": "Dor no tendão abaixo da patela: tire os saltos e continue só com a força até passar.",
+        "teste": "A cada 3 semanas, no começo da sessão e depois do aquecimento: 3 saltos com as mãos na cintura no app My Jump, 1 min de pausa, registre o melhor em Evolução → Salto vertical."
+      }
     },
     {
       "numero": 5,
@@ -975,5 +990,5 @@
     "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
     "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
   ],
-  "revisao": "2026-09-24"
+  "revisao": "2026-09-26"
 }

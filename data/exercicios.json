@@ -1,7 +1,7 @@
 {
-  "versao": "1.4",
-  "dataAtualizacao": "2026-09-24",
-  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo) + auditoria científica 2026-09-24 (mapeamentos de músculo corrigidos: leg press e agachamento não treinam posterior de coxa — Kubo 2019; remadas creditam deltoide posterior; desenvolvimento/elevação frontal são deltoide anterior; mesa flexora deitada não é posição alongada — Maeo 2021; + cadeira flexora sentada e rosca inclinada)",
+  "versao": "1.5",
+  "dataAtualizacao": "2026-09-26",
+  "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo) + auditoria científica 2026-09-24 (mapeamentos de músculo corrigidos: leg press e agachamento não treinam posterior de coxa — Kubo 2019; remadas creditam deltoide posterior; desenvolvimento/elevação frontal são deltoide anterior; mesa flexora deitada não é posição alongada — Maeo 2021; + cadeira flexora sentada e rosca inclinada) + impulsão para vôlei 2026-09-26 (box jump e agachamento com salto no Smith; força pesada + pliometria rende mais salto que cada um sozinho — Pagaduan 2020, Cormier 2020)",
   "exercicios": [
     {
       "id": "supino_inclinado_halteres",
@@ -416,6 +416,48 @@
       "cargaAlongada": true,
       "incrementoMinimo_kg": 5,
       "observacoesExecucao": "Pés na largura do quadril, um pouco à frente. Desça controlado até a coxa passar da paralela, sem tirar o lombar do apoio. Carrega o quadríceps na posição alongada — é o que a máquina extensora não faz."
+    },
+    {
+      "id": "box_jump",
+      "nome": "Box jump (salto no caixote)",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "panturrilha",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "potencia",
+      "equipamento": "peso_corporal",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 0,
+      "fatorVolume": 0,
+      "observacoesExecucao": "Salto máximo em cima do caixote, aterrissando suave e em pé. Desce andando, sem pular pra trás. É treino de impulsão, não de volume: poucos saltos, todos no máximo."
+    },
+    {
+      "id": "agachamento_salto_smith",
+      "nome": "Agachamento com salto no Smith",
+      "musculoPrimario": "quadriceps",
+      "musculosSecundarios": [
+        {
+          "musculo": "gluteo",
+          "contribuicao": 0.5
+        },
+        {
+          "musculo": "panturrilha",
+          "contribuicao": 0.5
+        }
+      ],
+      "tipo": "potencia",
+      "equipamento": "barra",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "fatorVolume": 0.5,
+      "observacoesExecucao": "Carga leve (só a barra até ~25% do seu agachamento). Desce rápido até ~1/4 de agachamento e salta o mais alto possível, aterrissando suave com o joelho levemente dobrado. Velocidade máxima em toda repetição."
     },
     {
       "id": "stiff_halteres",

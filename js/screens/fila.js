@@ -2,6 +2,7 @@
 import { getSeriesDoExercicioNaData } from "../data/historico.js";
 import { descreverSemana, ordemDeCorte } from "../engine/fichaFixa.js";
 import { ehSerieDeTrabalho } from "../engine/volume.js";
+import { getTestesSalto, diasAteProximoTeste } from "../data/testesSalto.js";
 import { animarSpring } from "../lib/spring.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
@@ -429,6 +430,17 @@ export async function montarTelaFila(db, contexto, callbacks) {
   root.appendChild(main);
 
   main.appendChild(montarBarraProgresso(exerciciosConcluidos, exerciciosHoje.length));
+
+  // Dia de Pernas + Impulsão: lembra do teste de salto a cada 3 semanas.
+  if (diaDaFicha?.regrasImpulsao) {
+    const faltam = diasAteProximoTeste(await getTestesSalto(db), hoje);
+    if (faltam === 0) {
+      const avisoTeste = document.createElement("p");
+      avisoTeste.className = "prev-hint";
+      avisoTeste.textContent = "Hoje é dia de teste de salto: depois do aquecimento, 3 saltos no app My Jump (mãos na cintura, 1 min de pausa) e registre o melhor em Evolução → Salto vertical.";
+      main.appendChild(avisoTeste);
+    }
+  }
 
   if (musculosTreinadosHaPouco.length > 0) {
     const aviso = document.createElement("p");

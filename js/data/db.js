@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 12;
+const DB_VERSION = 13;
 
 const STORES = {
   perfil: "versao",
@@ -22,6 +22,8 @@ const STORES = {
   notasExercicio: "chave",
   // Sessões do treino de levantamento de vôlei (js/data/volei.js).
   sessoesVolei: "data",
+  // Teste de salto vertical a cada 3 semanas (js/data/testesSalto.js).
+  testesSalto: "data",
   // Fila de escritas pendentes de sincronização com o Supabase (js/data/sync.js).
   // Fica no mesmo banco local por simplicidade — não é lida/gravada por
   // nenhuma tela, só pelo módulo de sync.

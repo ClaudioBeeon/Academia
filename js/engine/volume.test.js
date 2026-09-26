@@ -54,3 +54,14 @@ test("drop-set e rest-pause contam meia série no volume", async () => {
   ];
   assert.deepEqual(calcularVolumeSemanal(expandirContribuicoes(series, catalogo)).porMusculo, { biceps: 1.5 });
 });
+
+test("exercício de potência conta no volume pelo fatorVolume do catálogo (box jump não conta)", async () => {
+  const { expandirContribuicoes } = await import("./volume.js");
+  const catalogo = [
+    { id: "box", musculoPrimario: "quadriceps", musculosSecundarios: [{ musculo: "gluteo", contribuicao: 0.5 }], fatorVolume: 0 },
+    { id: "smith", musculoPrimario: "quadriceps", musculosSecundarios: [], fatorVolume: 0.5 },
+    { id: "hack", musculoPrimario: "quadriceps", musculosSecundarios: [] },
+  ];
+  const series = ["box", "smith", "hack"].map((exercicioId) => ({ exercicioId, tipoSerie: "normal" }));
+  assert.deepEqual(calcularVolumeSemanal(expandirContribuicoes(series, catalogo)).porMusculo, { quadriceps: 1.5 });
+});

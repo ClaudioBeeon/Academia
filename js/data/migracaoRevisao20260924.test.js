@@ -43,3 +43,16 @@ test("nunca toca a ficha de outro perfil", async () => {
   assert.equal((await get(db, "ficha", "1.0")).nome, "Manutenção — peito, bíceps e cardio em foco");
   db.close();
 });
+
+test("pernas + impulsão: troca só a ficha que ainda está na revisão de 24/09", async () => {
+  const { migrarPernasImpulsao20260926 } = await import("./seed.js");
+  const banco = await openDatabase();
+  const fichaImpulsao = { versao: "1.0", revisao: "2026-09-26", dias: [{ numero: 4, titulo: "Pernas + Impulsão", exercicios: [] }] };
+  const buscar = async () => ({ json: async () => fichaImpulsao });
+  await put(banco, "ficha", { versao: "1.0", revisao: "2026-09-24", dias: [] });
+  const r = await migrarPernasImpulsao20260926(banco, buscar);
+  assert.equal(r.migrado, true);
+  assert.equal((await get(banco, "ficha", "1.0")).revisao, "2026-09-26");
+  assert.equal((await migrarPernasImpulsao20260926(banco, buscar)).jaFeita, true, "roda uma vez só");
+  banco.close();
+});

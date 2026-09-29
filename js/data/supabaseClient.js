@@ -178,7 +178,7 @@ export async function entrarComLinkDoEmail(texto) {
     const { error } = await client.auth.verifyOtp({ token_hash: lido.token, type: lido.tipo });
     if (error) {
       throw new Error(/expired|invalid/i.test(error.message ?? "")
-        ? "Esse link já foi usado ou venceu. Peça outro em \"Esqueci a senha\" e cole sem tocar nele antes."
+        ? "Esse link já foi usado ou venceu (no iPhone, segurar o dedo no link abre uma prévia que já gasta ele). Peça outro em \"Esqueci a senha\" e só toque nele."
         : error.message);
     }
   }

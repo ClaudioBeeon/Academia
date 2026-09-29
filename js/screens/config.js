@@ -394,7 +394,7 @@ async function criarSecaoSupabase(db) {
         <div class="prev-hint auth-erro"></div>
       </form>
       <div class="colar-link" style="display:grid; gap:8px; margin-top:12px;">
-        <div class="prev-hint" style="padding:0;"><b>Recebeu o e-mail?</b> Não toque no link: no Gmail, <b>segure o dedo em cima do link</b>, escolha <b>Copiar link</b>, volte aqui e cole abaixo. Funciona dentro do app instalado.</div>
+        <div class="prev-hint" style="padding:0;"><b>Recebeu o e-mail?</b> <b>Toque no link</b> (sem segurar o dedo: no iPhone, segurar abre uma prévia que já gasta o link). Ele abre o app no Safari na tela da senha nova. Crie a senha lá e depois entre aqui com o e-mail e a senha. Se a página abrir mas não pedir a senha, copie o endereço da barra do Safari e cole abaixo.</div>
         <div class="set-field"><label>Link do e-mail<textarea class="link-email" rows="2" placeholder="cole aqui o link inteiro"></textarea></label></div>
         <button type="button" class="swap-pill entrar-link-btn" style="width:100%;">Entrar com o link</button>
         <div class="prev-hint colar-msg" style="padding:0;"></div>
@@ -435,7 +435,7 @@ async function criarSecaoSupabase(db) {
       erro.textContent = "Enviando o link...";
       try {
         await pedirLinkDeNovaSenha(email);
-        erro.textContent = `Pronto: mandamos um link pra ${email} (veja também o spam). NÃO toque nele: segure o dedo em cima, copie e cole no campo "Link do e-mail" logo abaixo.`;
+        erro.textContent = `Pronto: mandamos um link pra ${email} (veja também o spam). Toque nele uma vez só, sem segurar o dedo — abre a tela da senha nova no Safari. O Supabase manda no máximo 2 e-mails por hora.`;
       } catch (err) {
         erro.textContent = err.message ?? "Não foi possível mandar o link.";
       }

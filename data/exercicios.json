@@ -1,6 +1,6 @@
 {
-  "versao": "1.6",
-  "dataAtualizacao": "2026-09-26",
+  "versao": "1.7",
+  "dataAtualizacao": "2026-09-29",
   "baseadoEm": "seções 6, 7, 8, 20 da pesquisa + auditoria 2026-08-23 (lacunas de deltoide posterior, posterior de coxa, antebraço e 3º bíceps) + alternativas de ombro/tríceps 2026-08-26 (elevação lateral e tríceps só tinham 1 opção cada além da prescrita) + expansão geral 2026-08-26 (glúteo, panturrilha, antebraço e abdômen tinham só 1-2 opções cada — 'Trocar exercício' precisa de alternativa de verdade em todo grupo) + auditoria científica 2026-09-24 (mapeamentos de músculo corrigidos: leg press e agachamento não treinam posterior de coxa — Kubo 2019; remadas creditam deltoide posterior; desenvolvimento/elevação frontal são deltoide anterior; mesa flexora deitada não é posição alongada — Maeo 2021; + cadeira flexora sentada e rosca inclinada) + impulsão para vôlei 2026-09-26 (box jump e agachamento com salto no Smith; força pesada + pliometria rende mais salto que cada um sozinho — Pagaduan 2020, Cormier 2020)",
   "exercicios": [
     {
@@ -816,6 +816,46 @@
       "cargaAlongada": false,
       "incrementoMinimo_kg": 1,
       "observacoesExecucao": "antebraços apoiados no banco, palmas voltadas pra baixo, suba só o punho — trabalha os extensores, complementando a rosca de punho normal."
+    },
+    {
+      "id": "rotacao_cabo_explosiva",
+      "nome": "Rotação explosiva no cabo",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [
+        {
+          "musculo": "ombro",
+          "contribuicao": 0.25
+        }
+      ],
+      "tipo": "potencia",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "fatorVolume": 0,
+      "observacoesExecucao": "Polia na altura do peito, de lado pra ela. Gira o tronco o mais rápido que conseguir, puxando o cabo com os braços quase esticados, e volta devagar. A força sai do quadril e do tronco, não dos braços. Carga leve: é velocidade."
+    },
+    {
+      "id": "lenhador_cabo",
+      "nome": "Lenhador no cabo (de cima pra baixo)",
+      "musculoPrimario": "abdomen",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "cabos_polias",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 2.5,
+      "observacoesExecucao": "Polia alta, de lado pra ela. Puxa o cabo em diagonal, de cima de um ombro até o lado oposto do quadril, girando o tronco com os braços quase esticados. Volta controlado."
+    },
+    {
+      "id": "pinca_anilha",
+      "nome": "Pinça com anilha (dedos)",
+      "musculoPrimario": "antebraco",
+      "musculosSecundarios": [],
+      "tipo": "isolador",
+      "equipamento": "peso_corporal",
+      "cargaAlongada": false,
+      "incrementoMinimo_kg": 0,
+      "fatorVolume": 0.5,
+      "observacoesExecucao": "Segura duas anilhas lisas juntas, com o lado liso pra fora, só com a ponta dos dedos e o polegar. Braço esticado ao lado do corpo. Conta os segundos."
     }
   ]
 }

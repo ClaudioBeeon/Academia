@@ -1,10 +1,10 @@
 {
   "versao": "1.0",
-  "dataAtualizacao": "2026-09-26",
+  "dataAtualizacao": "2026-09-29",
   "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
   "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote).",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote). Em 29/09/2026 entraram potência de ataque pro vôlei (rotação explosiva no cabo e pullover no dia 2, lenhador no lugar da prancha no dia 3) e força de dedo pro toque (pinça com anilha no dia 5).",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
@@ -291,8 +291,8 @@
       "numero": 2,
       "titulo": "Costas + Bíceps",
       "foco": "Segundo dia de puxar da semana e o grosso do bíceps",
-      "duracaoEstimadaMin": 38,
-      "totalSeries": 12,
+      "duracaoEstimadaMin": 50,
+      "totalSeries": 18,
       "notaDoDia": "Dia curto de propósito — é um dos dois dias com cardio. A remada curvada saiu (duas remadas seguidas, a segunda com a lombar e a pegada já cansadas) e entrou a puxada fechada, que dobra o trabalho vertical das costas na semana.",
       "cardio": {
         "modalidade": "escada",
@@ -303,6 +303,24 @@
       "exercicios": [
         {
           "ordem": 1,
+          "exercicioId": "rotacao_cabo_explosiva",
+          "series": 3,
+          "repeticoes": {
+            "min": 5,
+            "max": 5
+          },
+          "rirAlvo": 4,
+          "descansoSegundos": 60,
+          "tempo": "gira rápido · volta devagar",
+          "falhaNaUltimaSerie": false,
+          "potencia": true,
+          "porqueEstaAqui": "Potência de ataque: na cortada, a força das pernas passa pelo tronco girando antes de chegar no braço. Sem medicine ball na academia, a rotação rápida no cabo treina o mesmo gesto. Poucas repetições, todas no máximo de velocidade.",
+          "comoExecutar": "Polia na altura do peito, de lado pra ela, pés na largura dos ombros e joelhos levemente dobrados. Segura o puxador com as duas mãos, braços quase esticados. Gira o tronco o mais rápido possível pro lado de fora, começando pelo quadril, e volta devagar. 5 de um lado, depois 5 do outro — isso é uma série.",
+          "quandoSubirCarga": "Não é pra ficar pesado. Se as 5 saem rápidas e fáceis, sobe um furo; se ficarem lentas, a carga está alta.",
+          "atencao": "Quem gira é o quadril e o tronco, não os braços dobrando. Lombar firme, sem torcer só a coluna."
+        },
+        {
+          "ordem": 2,
           "exercicioId": "remada_serrote_halter",
           "series": 3,
           "repeticoes": {
@@ -327,7 +345,7 @@
           }
         },
         {
-          "ordem": 2,
+          "ordem": 3,
           "exercicioId": "puxada_pegada_fechada",
           "series": 3,
           "repeticoes": {
@@ -353,7 +371,32 @@
           }
         },
         {
-          "ordem": 3,
+          "ordem": 4,
+          "exercicioId": "pullover_cabo",
+          "series": 3,
+          "repeticoes": {
+            "min": 10,
+            "max": 12
+          },
+          "rirAlvo": 2,
+          "descansoSegundos": 75,
+          "tempo": "2s puxando · 3s voltando",
+          "falhaNaUltimaSerie": false,
+          "cadencia": {
+            "concentrica": 2,
+            "pausaTopo": 0,
+            "excentrica": 3,
+            "pausaBase": 0,
+            "verboSubida": "puxando",
+            "verboDescida": "voltando"
+          },
+          "porqueEstaAqui": "O grande dorsal é o músculo que puxa o braço pra baixo na hora da cortada. O pullover treina esse gesto (braço esticado, de cima pra baixo) de um jeito que a puxada não treina.",
+          "comoExecutar": "De frente pra polia alta, com barra reta ou corda, um passo pra trás e tronco levemente inclinado. Braços quase esticados, cotovelos fixos. Puxa em arco até a barra chegar perto das coxas e volta devagar até sentir a costa alongar.",
+          "quandoSubirCarga": "Quando as 3 séries fecharem 12 repetições com 2 sobrando. Sobe um furo e volta pra 10.",
+          "atencao": "Não dobre os cotovelos no meio: aí vira tríceps."
+        },
+        {
+          "ordem": 5,
           "exercicioId": "rosca_direta_barra_w",
           "series": 3,
           "repeticoes": {
@@ -378,7 +421,7 @@
           }
         },
         {
-          "ordem": 4,
+          "ordem": 6,
           "exercicioId": "rosca_martelo_halteres",
           "series": 3,
           "repeticoes": {
@@ -409,7 +452,7 @@
       "titulo": "Peito (horizontal) + Ombros + Tríceps + Abdômen",
       "foco": "Peito na porção esternal, deltoide lateral e posterior, e o abdômen da semana",
       "duracaoEstimadaMin": 50,
-      "totalSeries": 17,
+      "totalSeries": 20,
       "notaDoDia": "O crucifixo inverso veio do dia 1: assim o deltoide posterior é treinado duas vezes na semana, com 48 h entre elas. O desenvolvimento de ombro segue fora — o deltoide anterior já cresce com os supinos. A prancha virou opcional.",
       "cardio": null,
       "alongamentoFinal": "peitoralEPescoco",
@@ -545,22 +588,28 @@
         },
         {
           "ordem": 6,
-          "exercicioId": "prancha_isometrica",
-          "series": 2,
+          "exercicioId": "lenhador_cabo",
+          "series": 3,
           "repeticoes": {
-            "min": 30,
-            "max": 60
+            "min": 8,
+            "max": 10
           },
-          "rirAlvo": 1,
+          "rirAlvo": 2,
           "descansoSegundos": 60,
-          "tempo": "isometria — segure parado",
+          "tempo": "1s puxando · 2s voltando",
           "falhaNaUltimaSerie": false,
-          "porqueEstaAqui": "Opcional. A prancha treina estabilidade do tronco, mas não há evidência de que faça o abdômen crescer — o abdominal na polia faz esse papel. Se o tempo estiver curto, é a primeira a sair.",
-          "comoExecutar": "Antebraços e pontas dos pés no chão. Quadril alinhado com o tronco — nem subido nem caído. Contraia o abdômen e o glúteo, respire normal. AQUI A PROGRESSÃO É TEMPO, não carga: registre os segundos.",
-          "quandoSubirCarga": "Quando conseguir 60 segundos nas 3 séries, aumente a dificuldade (levantar um pé alternado, ou apoiar os pés mais elevados) e volte pra 30 segundos.",
-          "atencao": "No instante em que o quadril cair ou subir, a série acabou. Segurar 60s com a lombar arriada não vale nada — 30s bem feitos valem mais.",
-          "opcional": true,
-          "corte": 1
+          "cadencia": {
+            "concentrica": 1,
+            "pausaTopo": 0,
+            "excentrica": 2,
+            "pausaBase": 0,
+            "verboSubida": "puxando",
+            "verboDescida": "voltando"
+          },
+          "porqueEstaAqui": "Força de rotação do tronco com carga — é o que passa a força das pernas pro braço no ataque. Vale mais pro vôlei do que ficar parado na prancha, que saiu.",
+          "comoExecutar": "Polia alta, de lado pra ela. Segura o puxador com as duas mãos acima do ombro e puxa em diagonal até o lado oposto do quadril, girando o tronco e o pé de trás junto, braços quase esticados. Volta controlado. 8–10 de um lado, depois do outro — isso é uma série.",
+          "quandoSubirCarga": "Quando fizer 10 de cada lado nas 3 séries com 2 sobrando. Sobe um furo e volta pra 8.",
+          "atencao": "O movimento sai do tronco. Se estiver puxando só com os braços, a carga está alta."
         }
       ]
     },
@@ -775,8 +824,8 @@
       "numero": 5,
       "titulo": "Peito (alongado) + Bíceps + Ombro + Antebraço",
       "foco": "Terceiro ângulo de peito e o fechamento de braço da semana",
-      "duracaoEstimadaMin": 45,
-      "totalSeries": 14,
+      "duracaoEstimadaMin": 50,
+      "totalSeries": 19,
       "notaDoDia": "Fecha a rotação de ângulos do peito: inclinado no dia 1, reto no dia 3, alongado hoje. A segunda rosca martelo virou rosca inclinada, mais específica pro bíceps. A rosca de punho virou opcional.",
       "cardio": {
         "modalidade": "bicicleta",
@@ -912,6 +961,23 @@
           },
           "opcional": true,
           "corte": 1
+        },
+        {
+          "ordem": 6,
+          "exercicioId": "pinca_anilha",
+          "series": 3,
+          "repeticoes": {
+            "min": 20,
+            "max": 30
+          },
+          "rirAlvo": 1,
+          "descansoSegundos": 60,
+          "tempo": "isometria — segure parado",
+          "falhaNaUltimaSerie": false,
+          "porqueEstaAqui": "Dedo firme pro toque: a pinça fortalece exatamente a ponta dos dedos e o polegar, que seguram e empurram a bola no levantamento.",
+          "comoExecutar": "Junta duas anilhas lisas (lado liso pra fora) e segura só com a ponta dos dedos e o polegar, braço esticado ao lado do corpo. Segura parado e conta os segundos. Faz as duas mãos. AQUI A PROGRESSÃO É TEMPO: registre os segundos.",
+          "quandoSubirCarga": "Quando segurar 30 segundos nas 3 séries, use anilhas mais pesadas ou mais largas e volte pra 20 segundos.",
+          "atencao": "Sem dor nas articulações dos dedos. Se doer, use anilhas mais leves."
         }
       ]
     }
@@ -990,5 +1056,5 @@
     "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
     "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
   ],
-  "revisao": "2026-09-26b"
+  "revisao": "2026-09-29"
 }

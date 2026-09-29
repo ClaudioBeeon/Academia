@@ -230,14 +230,20 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const carrossel = document.createElement("div");
   carrossel.className = "carrossel-plano";
   carrossel.appendChild(planoCard);
-  carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio, abrirFluxoNovaAtividade));
+  // Card de cardio só quando hoje tem cardio prescrito ou já feito. Antes ele
+  // aparecia todo dia ("Nenhum cardio hoje") e dava a impressão de que todo
+  // treino tinha cardio. Cardio avulso continua no "+" do cabeçalho.
+  if (cardioDeHojeLogado || diaDaFichaHoje?.cardio) {
+    carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio, abrirFluxoNovaAtividade));
+  }
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
     const diaFuturoInfo = obterDiaPorNumero(numero);
     const { exerciciosHoje: exerciciosDoDiaFuturo } = prepararSessaoDoDia({
       todosExercicios, protocolo, todasAsSeries, hoje, diaInfo: diaFuturoInfo, ficha, semanaDoBloco, fadigaDetectada,
     });
-    carrossel.appendChild(montarCardProximoDia(diaFuturoInfo, exerciciosDoDiaFuturo, () => {
+    const diaDaFichaFuturo = ficha?.dias?.find((d) => d.numero === numero) ?? null;
+    carrossel.appendChild(montarCardProximoDia(diaFuturoInfo, exerciciosDoDiaFuturo, diaDaFichaFuturo, () => {
       if (onAbrirDia) onAbrirDia(numero);
     }));
   }
@@ -736,9 +742,12 @@ function montarCardCardio(cardioLogadoHoje, cardioDeHoje, onIrParaCardio, onInic
   return card;
 }
 
-function montarCardProximoDia(dia, exerciciosDoDia, aoClicar) {
+// Mostra o cardio do dia junto (só os dias que têm) e usa a duração da ficha.
+function montarCardProximoDia(dia, exerciciosDoDia, diaDaFicha, aoClicar) {
   const totalSeries = exerciciosDoDia.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
-  const minutosEstimados = exerciciosDoDia.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+  const minutosEstimados = diaDaFicha?.duracaoEstimadaMin ?? exerciciosDoDia.length * MINUTOS_ESTIMADOS_POR_EXERCICIO;
+  const cardio = diaDaFicha?.cardio;
+  const nomeCardio = cardio ? (NOME_MODALIDADE_CARDIO[cardio.modalidade] ?? cardio.modalidade) : null;
   const card = document.createElement("section");
   card.className = "plano-hero alt clicavel";
   card.innerHTML = `
@@ -748,6 +757,7 @@ function montarCardProximoDia(dia, exerciciosDoDia, aoClicar) {
       <span><b>${exerciciosDoDia.length}</b> exercícios</span>
       <span><b>${totalSeries}</b> séries</span>
       <span>~<b>${minutosEstimados}</b> min</span>
+      ${cardio ? `<span>+ ${nomeCardio} <b>${cardio.duracaoMin}</b> min</span>` : ""}
     </div>
     <button type="button">Ver treino</button>
   `;

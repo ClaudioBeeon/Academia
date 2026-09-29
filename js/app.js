@@ -2,7 +2,7 @@
 import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded, trazerRevisoesDoRepositorio } from "./data/seed.js";
 import { carregarCacheDeChaves } from "./data/chavesApi.js";
-import { initAutoSync } from "./data/sync.js";
+import { initAutoSync, enviarDadosPessoaisUmaVez } from "./data/sync.js";
 import { isConfigured as supabaseConfigurado, veioDoLinkDeNovaSenha, erroDoLinkDeLogin } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
 import { getCheckin } from "./data/checkin.js";
@@ -67,6 +67,7 @@ async function bootstrap() {
   // Depois da sincronização ligada: se o login trouxe do servidor uma ficha,
   // protocolo ou catálogo antigos, volta pra revisão atual e sobe ela.
   await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
+  enviarDadosPessoaisUmaVez(db).catch((err) => console.error("Falha ao enviar a ficha:", err));
 
   // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
   // a Config, onde fica o campo da senha nova.

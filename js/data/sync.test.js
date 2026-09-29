@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import "fake-indexeddb/auto";
 import { openDatabase, clearStore, getAll, get } from "./db.js";
-import { enfileirar, flushSyncQueue, pullFromSupabase, pendentesNaFila, ehStoreNumerica } from "./sync.js";
+import { enfileirar, flushSyncQueue, pullFromSupabase, pendentesNaFila, ehStoreNumerica, enviarDadosPessoaisUmaVez } from "./sync.js";
+import { put as gravar } from "./db.js";
 
 const USUARIO = { id: "user-123", email: "teste@exemplo.com" };
 
@@ -215,5 +216,22 @@ test("pendentesNaFila conta o que ainda não foi enviado", async () => {
   await enfileirar(db, "habitos", "2026-08-24", { creatina: true }, false);
   await enfileirar(db, "perfil", "1.0", {}, false);
   assert.equal(await pendentesNaFila(db), 2);
+  db.close();
+});
+
+test("ficha, protocolo e perfil sobem uma vez, só com a pessoa logada", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "syncOutbox");
+  await clearStore(db, "config");
+  await gravar(db, "ficha", { versao: "1.0", nome: "F" });
+  await gravar(db, "protocolo", { versao: "1.1" });
+  const deps = { isConfiguredImpl: () => true, flushImpl: async () => {} };
+
+  assert.equal((await enviarDadosPessoaisUmaVez(db, { ...deps, getUsuarioImpl: async () => null })).enviados, 0, "sem login não sobe");
+  const r = await enviarDadosPessoaisUmaVez(db, { ...deps, getUsuarioImpl: async () => ({ id: "u" }) });
+  assert.ok(r.enviados >= 2);
+  const fila = await getAll(db, "syncOutbox");
+  assert.ok(fila.some((i) => i.storeName === "ficha" && i.key === "1.0" && i.value.nome === "F"));
+  assert.equal((await enviarDadosPessoaisUmaVez(db, { ...deps, getUsuarioImpl: async () => ({ id: "u" }) })).enviados, 0, "só uma vez");
   db.close();
 });

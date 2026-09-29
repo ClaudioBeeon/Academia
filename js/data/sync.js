@@ -20,7 +20,7 @@
 // (updated_at) — não é o problema deste app de uso pessoal.
 
 import {
-  put, getAll, del,
+  put, get, getAll, del,
   registerWriteHook, withHooksSuspended, STORES_COM_CHAVE_NUMERICA,
 } from "./db.js";
 import { getClient, getUsuario, isConfigured } from "./supabaseClient.js";
@@ -170,6 +170,32 @@ export async function pullFromSupabase(db, deps = {}) {
     }
   });
   return { recebidos };
+}
+
+// Ficha, protocolo e perfil são gravados pelo seed/migrações antes de a
+// sincronização ligar, então nunca subiam — o servidor não tinha a ficha
+// (visto em 28/09/2026). Sobe uma vez, só com a pessoa logada (antes do
+// login, a fila seria enviada depois do pull e sobrescreveria o servidor
+// com o perfil padrão semeado).
+const CHAVE_PESSOAIS_ENVIADOS = "pessoaisNoServidor20260928";
+const STORES_PESSOAIS_UMA_VEZ = ["ficha", "protocolo", "perfil"];
+
+export async function enviarDadosPessoaisUmaVez(db, deps = {}) {
+  const { getUsuarioImpl = getUsuario, isConfiguredImpl = isConfigured, flushImpl = flushSyncQueue } = deps;
+  if (!isConfiguredImpl()) return { enviados: 0 };
+  const marcador = await get(db, "config", CHAVE_PESSOAIS_ENVIADOS);
+  if (marcador?.valor) return { enviados: 0 };
+  if (!(await getUsuarioImpl())) return { enviados: 0 };
+  let enviados = 0;
+  for (const store of STORES_PESSOAIS_UMA_VEZ) {
+    for (const valor of await getAll(db, store)) {
+      await enfileirar(db, store, valor.versao, valor, false);
+      enviados++;
+    }
+  }
+  await put(db, "config", { chave: CHAVE_PESSOAIS_ENVIADOS, valor: true });
+  await flushImpl(db);
+  return { enviados };
 }
 
 let intervaloAtivo = null;

@@ -12,6 +12,7 @@ import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSem
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
+import { inicioDaSessaoEmAndamento } from "../engine/sessao.js";
 import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
 import { musculosTreinadosRecentemente } from "../engine/recuperacaoMuscular.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
@@ -105,9 +106,13 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   let descansoPendenteSegundos = 0;
   let telaAtual = null;
   const prsDaSessao = [];
-  // Sessão de verdade (não preview): o cronômetro da fila conta a partir
-  // daqui e continua atravessando exercícios e cardio até o relatório.
-  const inicioSessaoTs = modoPreview ? null : Date.now();
+  // Sessão de verdade (não preview): o relógio da sessão conta a partir
+  // daqui e continua atravessando exercícios e cardio até o relatório. Se já
+  // tem série hoje (saiu e tocou "Continuar treino"), retoma de quando o
+  // treino começou em vez de voltar pro 00:00.
+  const inicioSessaoTs = modoPreview
+    ? null
+    : inicioDaSessaoEmAndamento({ seriesDoDia: todasAsSeries.filter((s) => s.data === hoje) });
 
   const persistirDiaSeNecessario = async () => {
     if (!diaPersistido) {
@@ -197,6 +202,7 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
           mostrarExplicacaoAberta,
           semanaDoBloco,
           descansoInicialSegundos: (() => { const d = descansoPendenteSegundos; descansoPendenteSegundos = 0; return d; })(),
+          inicioSessaoTs,
           outrosExerciciosHoje: exerciciosHoje.filter((e) => e.id !== exercicio.id && !e.puladoHoje).map((e) => ({ id: e.id, nome: e.nome })),
         }, {
           // Superset: vai direto pro par (sem descanso depois do A; com o

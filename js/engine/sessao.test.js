@@ -1,6 +1,32 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcularEstatisticasSessao } from "./sessao.js";
+import { calcularEstatisticasSessao, inicioDaSessaoEmAndamento, formatarDuracaoSessao } from "./sessao.js";
+
+test("inicioDaSessaoEmAndamento conta de agora quando ainda não há série hoje", () => {
+  const agoraMs = Date.parse("2026-09-29T19:00:00");
+  assert.equal(inicioDaSessaoEmAndamento({ seriesDoDia: [], agoraMs }), agoraMs);
+});
+
+test("inicioDaSessaoEmAndamento retoma da primeira série de hoje (sair e voltar não zera o relógio)", () => {
+  const agoraMs = Date.parse("2026-09-29T19:00:00");
+  const primeira = Date.parse("2026-09-29T18:20:00");
+  const seriesDoDia = [{ registradaEm: Date.parse("2026-09-29T18:40:00") }, { registradaEm: primeira }, {}];
+  assert.equal(inicioDaSessaoEmAndamento({ seriesDoDia, agoraMs }), primeira);
+});
+
+test("inicioDaSessaoEmAndamento ignora série de mais de 4 h atrás (outro treino do dia)", () => {
+  const agoraMs = Date.parse("2026-09-29T19:00:00");
+  const seriesDoDia = [{ registradaEm: Date.parse("2026-09-29T07:00:00") }];
+  assert.equal(inicioDaSessaoEmAndamento({ seriesDoDia, agoraMs }), agoraMs);
+});
+
+test("formatarDuracaoSessao usa mm:ss abaixo de 1 h e h:mm:ss a partir dela", () => {
+  assert.equal(formatarDuracaoSessao(0), "00:00");
+  assert.equal(formatarDuracaoSessao(425), "07:05");
+  assert.equal(formatarDuracaoSessao(3599), "59:59");
+  assert.equal(formatarDuracaoSessao(3725), "1:02:05");
+  assert.equal(formatarDuracaoSessao(-5), "00:00");
+});
 
 test("array vazio retorna os quatro campos zerados", () => {
   const resultado = calcularEstatisticasSessao([]);

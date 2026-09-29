@@ -25,6 +25,7 @@ import { responderPerguntaExercicio } from "../ai/gemini.js";
 import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/perguntasIA.js";
 import { DIAS_SEQUENCIA, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
+import { montarRelogioSessao } from "../lib/relogioSessao.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -123,7 +124,7 @@ function montarVisualAnilhas(anilhasPorLado, pesoBarra) {
 }
 
 export async function montarTelaExecucao(db, contexto, callbacks) {
-  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta, semanaDoBloco = null, descansoInicialSegundos = 0, outrosExerciciosHoje = [] } = contexto;
+  const { exercicio, indice, total, todosExercicios, idsExerciciosHoje = [], protocolo, equipamento, hoje, mostrarExplicacaoAberta, semanaDoBloco = null, descansoInicialSegundos = 0, outrosExerciciosHoje = [], inicioSessaoTs = null } = contexto;
   const { onFechar, onProximoExercicio, onSerieRegistrada, onPrsDetectados, onExercicioSubstituido, onExercicioAdiado, onExercicioPulado, onMinimizarSessao, onIrParaExercicio, onCriarSuperset, onDesfazerSuperset } = callbacks;
 
   const cfg = obterConfigExercicio(protocolo, exercicio);
@@ -212,6 +213,13 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     </div>
   `;
   header.querySelector(".exec-titulo").textContent = exercicio.nome;
+  // Relógio da sessão: um no cabeçalho e outro (compacto) que vai pro topo
+  // do telão cada vez que ele abre — é onde a pessoa fica durante a série e
+  // o descanso. Os dois param junto com a tela (pararTudo).
+  const relogiosSessao = inicioSessaoTs != null
+    ? [montarRelogioSessao(inicioSessaoTs), montarRelogioSessao(inicioSessaoTs, { compacto: true })]
+    : [];
+  if (relogiosSessao.length > 0) header.querySelector(".exec-titulo").after(relogiosSessao[0].elemento);
   header.querySelector(".voltar-btn").addEventListener("click", () => {
     // Com o telão aberto e um cronômetro rodando (descanso ou trabalho),
     // sair por aqui minimiza em vez de matar o cronômetro sem deixar a
@@ -799,6 +807,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   function pararTudo() {
     pararDescanso();
     fecharTelaCheia();
+    relogiosSessao.forEach((relogio) => relogio.parar());
     if (wakeLockAtivo) {
       wakeLockAtivo.release().catch(() => {});
       wakeLockAtivo = null;
@@ -862,6 +871,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       incrementoCarga,
       totalSeriesAlvo,
       numeroAtual: numero,
+      relogioSessaoEl: relogiosSessao[1]?.elemento ?? null,
       aoFechar: fecharTelaCheia,
       aoTerminar: () => finalizarTrabalhoERegistrar(),
       aoAjustarDescanso: (delta) => { if (cronometroAtivo) cronometroAtivo.ajustar(delta); },

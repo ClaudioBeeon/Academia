@@ -61,6 +61,7 @@ export function montarTelaSerieCheia({
   incrementoCarga = 1,
   totalSeriesAlvo,
   numeroAtual,
+  relogioSessaoEl = null,
   aoFechar,
   aoTerminar,
   aoAjustarDescanso,
@@ -284,6 +285,9 @@ export function montarTelaSerieCheia({
   const contagemRotuloEl = elemento.querySelector(".sc-contagem-rotulo");
   const trilhoTracosEl = elemento.querySelector(".sc-trilho-tracos");
   const trilhoNumeroEl = elemento.querySelector(".sc-trilho-n");
+  // Relógio da sessão (vem pronto da execução, que cuida de parar ele) —
+  // fica ao lado de "1/3" pra dar o tempo total sem tirar o foco da série.
+  if (relogioSessaoEl) trilhoNumeroEl.after(relogioSessaoEl);
 
   let d = "";
   const PASSOS = 80;

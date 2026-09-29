@@ -7,6 +7,7 @@ import { animarSpring } from "../lib/spring.js";
 import { criarIconeExercicio } from "./iconeExercicio.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 import { animarDetails } from "../lib/detailsAnimado.js";
+import { montarRelogioSessao } from "../lib/relogioSessao.js";
 import { confirmarAcao } from "./confirmarAcao.js";
 
 // Um traço por exercício do dia. Substitui o anel de 156px que ocupava um
@@ -396,34 +397,10 @@ export async function montarTelaFila(db, contexto, callbacks) {
   // Não existe no modo preview (abrir o card de um dia futuro só pra olhar).
   // Fica dentro do bloco do título (não do header inteiro) pra não quebrar
   // o space-between de duas colunas que o header já usa com o botão fechar.
-  let intervalSessao = null;
   if (inicioSessaoTs != null) {
-    const cronoEl = document.createElement("div");
-    cronoEl.className = "fila-cronometro-sessao";
-    cronoEl.innerHTML = `<span class="rot">Sessão</span><span class="t">00:00</span>`;
-    header.firstElementChild.appendChild(cronoEl);
-    const tEl = cronoEl.querySelector(".t");
-
-    const atualizar = () => {
-      const segundos = Math.max(0, Math.floor((Date.now() - inicioSessaoTs) / 1000));
-      const min = String(Math.floor(segundos / 60)).padStart(2, "0");
-      const seg = String(segundos % 60).padStart(2, "0");
-      tEl.textContent = `${min}:${seg}`;
-    };
-    atualizar();
-    intervalSessao = setInterval(atualizar, 1000);
-
-    // setInterval atrasa/pausa com o app em segundo plano — como o relógio
-    // é derivado de Date.now() a cada tick (não acumula), só precisa forçar
-    // uma atualização na volta pro primeiro plano pra não parecer travado.
-    const aoVoltarAoPrimeiroPlano = () => { if (document.visibilityState !== "hidden") atualizar(); };
-    document.addEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
-    window.addEventListener("focus", aoVoltarAoPrimeiroPlano);
-    root._dispose = () => {
-      clearInterval(intervalSessao);
-      document.removeEventListener("visibilitychange", aoVoltarAoPrimeiroPlano);
-      window.removeEventListener("focus", aoVoltarAoPrimeiroPlano);
-    };
+    const relogio = montarRelogioSessao(inicioSessaoTs);
+    header.firstElementChild.appendChild(relogio.elemento);
+    root._dispose = relogio.parar;
   }
 
   const main = document.createElement("main");

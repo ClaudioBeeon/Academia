@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = "app-treino-shell-v92";
+const CACHE_NAME = "app-treino-shell-v93";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -103,6 +103,7 @@ const APP_SHELL = [
   "./js/lib/detailsAnimado.js",
   "./js/lib/autoResizeTextarea.js",
   "./js/lib/tema.js",
+  "./js/lib/relogioSessao.js",
   "./js/lib/graficoLinha.js",
   "./js/data/iconesExercicio.js",
   "./data/perfil.json",

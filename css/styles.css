@@ -1014,13 +1014,17 @@ body:has(.tela-execucao) #tab-content, body:has(.tela-fila) #tab-content, body:h
 .foot { padding: 14px 0 24px; }
 .foot button { width: 100%; }
 
-/* Cronômetro da sessão inteira (fila do dia) */
-.fila-cronometro-sessao {
+/* Relógio da sessão (js/lib/relogioSessao.js) — fila, execução e telão da
+   série. A tela de vôlei monta o mesmo visual com a classe antiga. */
+.fila-cronometro-sessao, .relogio-sessao {
   display: inline-flex; align-items: baseline; gap: 6px; margin-top: 8px;
   background: var(--card); border-radius: 999px; padding: 5px 12px;
 }
-.fila-cronometro-sessao .rot { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
-.fila-cronometro-sessao .t { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.fila-cronometro-sessao .rot, .relogio-sessao .rot { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.fila-cronometro-sessao .t, .relogio-sessao .t { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+/* No telão fica dentro da barra do topo, ao lado de "1/3" — sem fundo nem
+   margem, pra não disputar atenção com o cronômetro da série. */
+.relogio-sessao.compacto { margin: 0 0 0 4px; padding: 0; background: none; gap: 4px; }
 
 /* Fila do dia — barra de progresso (um traço por exercício), aquecimento
    compacto, bloco "Agora" e linhas de exercício com pictograma. */

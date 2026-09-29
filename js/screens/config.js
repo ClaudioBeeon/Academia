@@ -535,6 +535,15 @@ async function criarSecaoSupabase(db) {
     });
     linha.appendChild(botaoSair);
     authSecao.appendChild(linha);
+    // Trocar a senha sem e-mail: útil quando a conta já está aberta (ex.: no
+    // Safari, depois de um link) e o limite de e-mails do Supabase estourou.
+    const botaoSenha = document.createElement("button");
+    botaoSenha.type = "button";
+    botaoSenha.className = "pular-treino-btn";
+    botaoSenha.style.margin = "10px auto 0";
+    botaoSenha.textContent = "Criar ou trocar a senha";
+    botaoSenha.addEventListener("click", () => montarFormNovaSenha());
+    authSecao.appendChild(botaoSenha);
   }
 
   // Primeiro login num aparelho novo: puxa tudo que já existe no servidor

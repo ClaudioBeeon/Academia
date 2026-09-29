@@ -4,7 +4,7 @@
   "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
   "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote). Em 29/09/2026 entraram potência de ataque pro vôlei (rotação explosiva no cabo e pullover no dia 2, lenhador no lugar da prancha no dia 3) e força de dedo pro toque (pinça com anilha no dia 5).",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote). Em 29/09/2026 entraram potência de ataque pro vôlei (rotação explosiva no cabo e pullover no dia 2, lenhador no lugar da prancha no dia 3) e força de dedo pro toque (pinça com anilha no dia 5). Ainda em 29/09/2026 o lenhador do dia 3 virou explosivo (pedido do dono) e passou pro começo do dia.",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
@@ -453,12 +453,30 @@
       "foco": "Peito na porção esternal, deltoide lateral e posterior, e o abdômen da semana",
       "duracaoEstimadaMin": 50,
       "totalSeries": 20,
-      "notaDoDia": "O crucifixo inverso veio do dia 1: assim o deltoide posterior é treinado duas vezes na semana, com 48 h entre elas. O desenvolvimento de ombro segue fora — o deltoide anterior já cresce com os supinos. A prancha virou opcional.",
+      "notaDoDia": "O crucifixo inverso veio do dia 1: assim o deltoide posterior é treinado duas vezes na semana, com 48 h entre elas. O desenvolvimento de ombro segue fora — o deltoide anterior já cresce com os supinos. A prancha virou opcional. O lenhador virou explosivo e abre o dia: potência se treina descansado.",
       "cardio": null,
       "alongamentoFinal": "peitoralEPescoco",
       "exercicios": [
         {
           "ordem": 1,
+          "exercicioId": "lenhador_cabo",
+          "series": 3,
+          "repeticoes": {
+            "min": 5,
+            "max": 5
+          },
+          "rirAlvo": 4,
+          "descansoSegundos": 60,
+          "tempo": "puxa rápido · volta devagar",
+          "falhaNaUltimaSerie": false,
+          "potencia": true,
+          "porqueEstaAqui": "Potência de ataque, junto com a rotação explosiva do dia 2: a rotação gira na horizontal, o lenhador gira em diagonal, de cima pra baixo — o mesmo caminho do braço e do tronco na cortada. Vem primeiro, com você descansado, porque explosivo cansado vira só exercício lento.",
+          "comoExecutar": "Polia alta, de lado pra ela. Segura o puxador com as duas mãos acima do ombro e puxa em diagonal até o lado oposto do quadril o mais rápido possível, começando pelo quadril e girando o pé de trás junto, braços quase esticados. Volta devagar. 5 de um lado, depois 5 do outro — isso é uma série.",
+          "quandoSubirCarga": "Não é pra ficar pesado. Se as 5 saem rápidas e fáceis, sobe um furo; se ficarem lentas, a carga está alta.",
+          "atencao": "A força sai do quadril e do tronco, não dos braços dobrando. Lombar firme, sem torcer só a coluna. Se a velocidade cair, a série acabou."
+        },
+        {
+          "ordem": 2,
           "exercicioId": "supino_reto_maquina",
           "series": 5,
           "repeticoes": {
@@ -483,7 +501,7 @@
           }
         },
         {
-          "ordem": 2,
+          "ordem": 3,
           "exercicioId": "elevacao_lateral_maquina",
           "series": 3,
           "repeticoes": {
@@ -509,7 +527,7 @@
           "corte": 5
         },
         {
-          "ordem": 3,
+          "ordem": 4,
           "exercicioId": "crucifixo_inverso_maquina",
           "series": 3,
           "repeticoes": {
@@ -535,7 +553,7 @@
           "corte": 3
         },
         {
-          "ordem": 4,
+          "ordem": 5,
           "exercicioId": "triceps_frances_halteres",
           "series": 3,
           "repeticoes": {
@@ -561,7 +579,7 @@
           "corte": 4
         },
         {
-          "ordem": 5,
+          "ordem": 6,
           "exercicioId": "abdominal_polia_alta",
           "series": 3,
           "repeticoes": {
@@ -585,31 +603,6 @@
             "verboDescida": "voltando"
           },
           "corte": 2
-        },
-        {
-          "ordem": 6,
-          "exercicioId": "lenhador_cabo",
-          "series": 3,
-          "repeticoes": {
-            "min": 8,
-            "max": 10
-          },
-          "rirAlvo": 2,
-          "descansoSegundos": 60,
-          "tempo": "1s puxando · 2s voltando",
-          "falhaNaUltimaSerie": false,
-          "cadencia": {
-            "concentrica": 1,
-            "pausaTopo": 0,
-            "excentrica": 2,
-            "pausaBase": 0,
-            "verboSubida": "puxando",
-            "verboDescida": "voltando"
-          },
-          "porqueEstaAqui": "Força de rotação do tronco com carga — é o que passa a força das pernas pro braço no ataque. Vale mais pro vôlei do que ficar parado na prancha, que saiu.",
-          "comoExecutar": "Polia alta, de lado pra ela. Segura o puxador com as duas mãos acima do ombro e puxa em diagonal até o lado oposto do quadril, girando o tronco e o pé de trás junto, braços quase esticados. Volta controlado. 8–10 de um lado, depois do outro — isso é uma série.",
-          "quandoSubirCarga": "Quando fizer 10 de cada lado nas 3 séries com 2 sobrando. Sobe um furo e volta pra 8.",
-          "atencao": "O movimento sai do tronco. Se estiver puxando só com os braços, a carga está alta."
         }
       ]
     },
@@ -1056,5 +1049,5 @@
     "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
     "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
   ],
-  "revisao": "2026-09-29"
+  "revisao": "2026-09-29b"
 }

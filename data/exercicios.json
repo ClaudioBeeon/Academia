@@ -836,14 +836,15 @@
     },
     {
       "id": "lenhador_cabo",
-      "nome": "Lenhador no cabo (de cima pra baixo)",
+      "nome": "Lenhador explosivo no cabo (de cima pra baixo)",
       "musculoPrimario": "abdomen",
       "musculosSecundarios": [],
-      "tipo": "isolador",
+      "tipo": "potencia",
       "equipamento": "cabos_polias",
       "cargaAlongada": false,
       "incrementoMinimo_kg": 2.5,
-      "observacoesExecucao": "Polia alta, de lado pra ela. Puxa o cabo em diagonal, de cima de um ombro até o lado oposto do quadril, girando o tronco com os braços quase esticados. Volta controlado."
+      "observacoesExecucao": "Polia alta, de lado pra ela. Puxa o cabo em diagonal, de cima de um ombro até o lado oposto do quadril, o mais rápido possível, girando o tronco com os braços quase esticados. Volta devagar. Carga leve: é velocidade.",
+      "fatorVolume": 0
     },
     {
       "id": "pinca_anilha",

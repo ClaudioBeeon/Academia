@@ -176,7 +176,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       acao: "manter",
       carga: sessoesAnteriores.length > 0 ? ultimaCarga : sugestao.carga,
       repsAlvo: cfg.repsMax,
-      motivo: "Explosivo: toda repetição no máximo de velocidade e altura. Não é pra ficar pesado — pare a série se o salto cair.",
+      motivo: "Explosivo: toda repetição no máximo de velocidade. Não é pra ficar pesado — pare a série se a velocidade (ou a altura do salto) cair.",
     });
   }
 
@@ -902,7 +902,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       repsMax: cfg.repsMax,
       rotuloReps: incrementoCarga === 0 && !exercicio.prescricao?.potencia ? "Segundos / reps" : "Repetições",
       dica: exercicio.prescricao?.potencia
-        ? "Explosivo: conte só as repetições feitas no máximo. No RIR, marque quantas ainda sairiam com a mesma altura."
+        ? "Explosivo: conte só as repetições feitas no máximo. No RIR, marque quantas ainda sairiam com a mesma velocidade."
         : null,
     });
     if (!resultado || numeroEmAndamento !== numero) return;

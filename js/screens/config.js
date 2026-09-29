@@ -420,7 +420,10 @@ async function criarSecaoSupabase(db) {
     const formAuth = authSecao.querySelector(".auth-form");
     const erro = authSecao.querySelector(".auth-erro");
     const erroDoLink = erroDoLinkDeLogin();
-    if (erroDoLink) erro.textContent = erroDoLink;
+    if (erroDoLink) {
+      erro.textContent = erroDoLink;
+      mostrarNoTopo(formAuth);
+    }
 
     authSecao.querySelector(".esqueci-btn").addEventListener("click", async () => {
       const email = formAuth.email.value.trim();
@@ -492,6 +495,9 @@ async function criarSecaoSupabase(db) {
     `;
     const form = authSecao.querySelector(".nova-senha-form");
     const msg = authSecao.querySelector(".nova-senha-msg");
+    // A seção de login fica no fim da Config: sem rolar até ela, quem chega
+    // pelo link só via o topo da página e achava que o link "não fez nada".
+    mostrarNoTopo(form, form.senha);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (form.senha.value.length < 6) {
@@ -505,7 +511,7 @@ async function criarSecaoSupabase(db) {
       msg.textContent = "Salvando...";
       try {
         await definirNovaSenha(form.senha.value);
-        msg.textContent = "Senha trocada.";
+        msg.textContent = "Senha trocada! Se você está no Safari, volte pro app instalado e entre com o e-mail e essa senha.";
         await aposLogin();
       } catch (err) {
         msg.textContent = `Não deu pra trocar a senha (${err.message ?? "erro"}). Peça um novo link em "Esqueci a senha".`;
@@ -571,7 +577,14 @@ async function criarSecaoSupabase(db) {
     const usuario = await getUsuario();
     if (veioDoLinkDeNovaSenha() && usuario) montarFormNovaSenha();
     else if (usuario) montarBotaoSair(usuario);
-    else montarFormAuth();
+    else {
+      montarFormAuth();
+      if (veioDoLinkDeNovaSenha()) {
+        const aviso = authSecao.querySelector(".auth-erro");
+        if (aviso) aviso.textContent = "O link do e-mail não abriu a sua conta (pode ter vencido ou já ter sido usado). Peça outro em \"Esqueci a senha\" e toque só no e-mail mais novo.";
+        mostrarNoTopo(authSecao);
+      }
+    }
   }
   await atualizarStatus();
 
@@ -913,4 +926,22 @@ async function criarSecaoEquipamento(db) {
   });
 
   return card;
+}
+
+// Rola até o elemento (a parte de login fica no fim da Config) e, se vier,
+// põe o cursor no campo.
+// Espera a tela entrar no documento e a transição acabar antes de rolar.
+function mostrarNoTopo(elemento, campo = null) {
+  let tentativas = 0;
+  const tentar = () => {
+    if (!elemento.isConnected && tentativas++ < 60) {
+      setTimeout(tentar, 50);
+      return;
+    }
+    setTimeout(() => {
+      elemento.scrollIntoView({ block: "center" });
+      campo?.focus({ preventScroll: true });
+    }, 400);
+  };
+  tentar();
 }

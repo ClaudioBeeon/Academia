@@ -89,6 +89,9 @@ async function bootstrap() {
   const hoje = obterDataLocal();
   const [habitoHoje, checkinHoje, seriesDeHoje] = await Promise.all([getHabito(db, hoje), getCheckin(db, hoje), getSeriesDoDia(db, hoje)]);
   const treinouHoje = seriesDeHoje.length > 0;
+  // Chegando pelo link do e-mail, a tela da senha nova é o que importa: o
+  // popup por cima escondia ela (visto em 29/09/2026).
+  if (veioDoLinkDeNovaSenha() || erroDoLinkDeLogin()) return;
   montarPopupPerguntasDiarias(db, hoje, habitoHoje, checkinHoje, treinouHoje, {
     // Sem isso, os chips de hábito e o readiness score na tela por trás do
     // popup ficavam com os valores de antes das respostas até a pessoa dar

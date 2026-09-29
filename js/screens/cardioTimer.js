@@ -120,6 +120,13 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
   let terminou = false;
   let wakeLock = null;
   let duracaoAlvo = totalSegundos; // muda se o usuário usar ±1 min
+  // Quando o cardio acaba, em relógio de parede. Guardado aqui e não
+  // recalculado do restante do cronômetro: depois de minimizar o cronômetro
+  // desta tela fica parado (quem conta é a bolha), e recalcular a partir do
+  // restante congelado empurrava o fim pra frente a cada vez que o app ia
+  // pra segundo plano.
+  let alvoTimestamp = null;
+  const marcarAlvo = () => { alvoTimestamp = Date.now() + cronometro.obterRestante() * 1000; };
 
   subEl.textContent = `de ${formatarRelogio(totalSegundos)}`;
 
@@ -130,7 +137,10 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
   }
 
   const cronometro = criarCronometro({
-    duracaoInicialSegundos: restanteInicialSegundos ?? totalSegundos,
+    // Voltando depois de o tempo acabar, o restante calculado é negativo
+    // (ex.: −600 s se acabou há 10 min) — sem o piso em 0 os minutos
+    // registrados somavam esse tempo extra (19 min viravam 29).
+    duracaoInicialSegundos: restanteInicialSegundos != null ? Math.max(0, restanteInicialSegundos) : totalSegundos,
     aoAtualizar: pintar,
     aoFinalizar: () => {
       rodando = false;
@@ -152,8 +162,8 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
   // pelo sistema), não só trocar de tela dentro dele. Chamado ao começar,
   // ajustar o tempo, e sempre que a aba vai pra segundo plano (é o momento
   // mais provável de o sistema matar o processo, em celular).
-  function persistirProgresso() {
-    if (!rodando) return;
+  function persistirProgresso({ minimizado = false } = {}) {
+    if (!rodando || alvoTimestamp == null) return;
     salvarCardioEmAndamento(db, {
       hoje,
       modalidade,
@@ -161,7 +171,8 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       rotulo: nome,
       duracaoMin,
       duracaoTotalSegundos: duracaoAlvo,
-      alvoTimestamp: Date.now() + cronometro.obterRestante() * 1000,
+      alvoTimestamp,
+      minimizado,
     }).catch(() => {});
   }
 
@@ -191,6 +202,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     } else {
       cronometro.iniciar();
       rodando = true;
+      marcarAlvo();
       pedirWakeLock();
       persistirProgresso();
       notaEl.textContent = "A tela fica acesa enquanto o cardio roda.";
@@ -208,6 +220,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
       duracaoAlvo = Math.max(1, duracaoAlvo + delta);
       subEl.textContent = `de ${formatarRelogio(duracaoAlvo)}`;
       pintar(cronometro.obterRestante());
+      if (rodando) marcarAlvo();
       persistirProgresso();
     });
   }
@@ -271,17 +284,22 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     // Rodando: minimiza em vez de parar — sem isso, sair da tela pra mexer
     // em outra coisa do app matava o cronômetro sem chance de retomar.
     if (rodando && aoMinimizar) {
-      const alvoTimestamp = Date.now() + cronometro.obterRestante() * 1000;
+      marcarAlvo();
       cronometro.parar();
       liberarWakeLock();
       // Continua persistido no IndexedDB mesmo minimizado — a bolha
       // flutuante cobre "troquei de tela dentro do app", isto aqui cobre
-      // "o app fechou de verdade nesse meio-tempo".
+      // "o app fechou de verdade nesse meio-tempo". O "minimizado" diz pra
+      // reabertura do app devolver a bolha, não a tela cheia.
+      persistirProgresso({ minimizado: true });
       aoMinimizar({ rotulo: nome, alvoTimestamp, duracaoTotalSegundos: duracaoAlvo });
+      limpar();
       if (aoVoltar) aoVoltar();
       return;
     }
-    if (!rodando && !terminou) limparCardioEmAndamento(db).catch(() => {});
+    // Fechar sem registrar é descartar de propósito — inclusive um cardio
+    // que já terminou (senão a reabertura do app ofereceria ele de novo).
+    if (!rodando) limparCardioEmAndamento(db).catch(() => {});
     limpar();
     if (aoVoltar) aoVoltar();
   });
@@ -351,7 +369,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     terminou = true;
     root.classList.add("cardio-fim");
     atualizarPlay();
-    notaEl.textContent = "Tempo concluído enquanto estava minimizado. Registre a intensidade abaixo.";
+    notaEl.textContent = "O tempo acabou enquanto você estava fora. Marque a intensidade e toque em Encerrar e registrar.";
     controlesEl.style.display = "none";
     mostrarIntensidade();
   } else if (restanteInicialSegundos != null) {
@@ -360,6 +378,7 @@ export function montarTelaCardio(db, { hoje, modalidade, duracaoMin, aoVoltar, a
     pintar(restanteInicialSegundos);
     rodando = true;
     cronometro.iniciar();
+    marcarAlvo();
     pedirWakeLock();
     persistirProgresso();
     atualizarPlay();

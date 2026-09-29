@@ -72,7 +72,7 @@ async function bootstrap() {
   // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
   // a Config, onde fica o campo da senha nova.
   const abaInicial = veioDoLinkDeNovaSenha() || erroDoLinkDeLogin() ? "config" : "hoje";
-  const { renderTab, obterTabAtual } = renderShell(db, { abaInicial });
+  const { renderTab, obterTabAtual, abaEstaNaFrente } = renderShell(db, { abaInicial });
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
 
   // Lembrete de treino: diferente dos outros, depende da hora — então
@@ -97,7 +97,7 @@ async function bootstrap() {
     // popup ficavam com os valores de antes das respostas até a pessoa dar
     // reload — as respostas salvavam certinho no banco, só a tela que não
     // sabia que precisava se redesenhar.
-    aoFechar: () => renderTab(obterTabAtual()),
+    aoFechar: () => { if (abaEstaNaFrente()) renderTab(obterTabAtual()); },
   }).catch((err) => console.error("Falha ao montar o popup de perguntas diárias:", err));
 }
 
@@ -246,7 +246,7 @@ function renderShell(db, { abaInicial = "hoje" } = {}) {
     return promessa;
   }
 
-  const renderTab = async (tabName, direcao = "trocarAba") => {
+  const renderTabSemRegistro = async (tabName, direcao = "trocarAba") => {
     tabAtual = tabName;
     tabs.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabName));
 
@@ -330,52 +330,76 @@ function renderShell(db, { abaInicial = "hoje" } = {}) {
     }
   };
 
+  // A tela da própria aba que está na frente. Cardio, sessão e afins abrem
+  // por cima sem passar por renderTab — e o popup de perguntas só pode
+  // redesenhar a aba se ela ainda for o que está na tela. Sem essa checagem,
+  // fechar o popup com o cardio aberto trocava o cardio pela Início e ele
+  // sumia (continuava contando escondido, sem bolha).
+  let telaDaAba = null;
+  const renderTab = async (tabName, direcao) => {
+    await renderTabSemRegistro(tabName, direcao);
+    telaDaAba = content.lastElementChild;
+  };
+  const abaEstaNaFrente = () => telaDaAba != null && content.lastElementChild === telaDaAba;
+
   tabs.forEach((button) => {
     button.addEventListener("click", () => { renderTab(button.dataset.tab); });
   });
 
-  // Recupera um cardio que ficou rodando quando o app fechou de verdade
-  // (não só trocou de tela) — sem isso, o progresso salvo em
-  // js/data/cardioEmAndamento.js nunca voltava a virar bolha flutuante, e
-  // o minuto já feito ficava preso no banco sem ninguém saber que existia.
+  const primeiraTela = renderTab(abaInicial);
+
+  // Recupera um cardio que estava rodando quando o sistema fechou o app de
+  // verdade — no iPhone basta sair pro TikTok e esperar um pouco. O
+  // progresso está em js/data/cardioEmAndamento.js; aqui ele volta pra tela.
   (async () => {
     const emAndamento = await getCardioEmAndamento(db).catch(() => null);
     if (!emAndamento) return;
-    if (emAndamento.hoje !== obterDataLocal()) {
+    // Outro dia, ou registro corrompido (sem horário de fim válido): não
+    // tem o que recuperar.
+    if (emAndamento.hoje !== obterDataLocal() || !Number.isFinite(emAndamento.alvoTimestamp)) {
       await limparCardioEmAndamento(db).catch(() => {});
       return;
     }
-    const restanteInicialSegundos = Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000);
-    // Cronômetro já tinha zerado enquanto o app estava fechado — não é mais
-    // "rodando", não faz sentido a bolha reaparecer travada em 00:00 toda
-    // vez que o app abre. Limpa o registro em vez de ressuscitar a bolha.
-    // `!(x > 0)` em vez de `x <= 0` também cobre alvoTimestamp inválido/NaN
-    // (um registro corrompido não pode deixar a bolha travada pra sempre).
-    if (!(restanteInicialSegundos > 0)) {
-      await limparCardioEmAndamento(db).catch(() => {});
-      return;
-    }
-    definirCronometroFlutuante({
-      rotulo: emAndamento.rotulo,
-      alvoTimestamp: emAndamento.alvoTimestamp,
-      duracaoTotalSegundos: emAndamento.duracaoTotalSegundos,
-      aoExpandir: () => {
-        limparCronometroFlutuante();
-        abrirTelaCardio({
-          hoje: emAndamento.hoje,
-          modalidade: emAndamento.modalidade,
-          duracaoMin: emAndamento.duracaoMin,
-          mesmoDiaDeTreino: emAndamento.mesmoDiaDeTreino,
-          restanteInicialSegundos,
-          aoVoltar: () => renderTab("hoje", "voltar"),
-          aoConcluir: () => renderTab("hoje", "voltar"),
-        });
-      },
+    // Restante calculado na hora de abrir, não na hora que o app subiu —
+    // senão tocar na bolha minutos depois voltava o relógio pra trás.
+    const opcoesCardio = () => ({
+      hoje: emAndamento.hoje,
+      modalidade: emAndamento.modalidade,
+      // Duração com os ±1 min que a pessoa tenha usado, não só a prescrita.
+      duracaoMin: emAndamento.duracaoTotalSegundos ? emAndamento.duracaoTotalSegundos / 60 : emAndamento.duracaoMin,
+      mesmoDiaDeTreino: emAndamento.mesmoDiaDeTreino,
+      restanteInicialSegundos: Math.round((emAndamento.alvoTimestamp - Date.now()) / 1000),
+      aoVoltar: () => renderTab("hoje", "voltar"),
+      aoConcluir: () => renderTab("hoje", "voltar"),
     });
+    const aindaRodando = emAndamento.alvoTimestamp > Date.now();
+
+    // Tinha sido minimizado de propósito (bolha) e ainda está rodando: volta
+    // do mesmo jeito. Também cai aqui quando o app abriu em outra aba (link
+    // de senha nova) — a bolha não tampa nada.
+    if (aindaRodando && (emAndamento.minimizado || abaInicial !== "hoje")) {
+      definirCronometroFlutuante({
+        rotulo: emAndamento.rotulo,
+        alvoTimestamp: emAndamento.alvoTimestamp,
+        duracaoTotalSegundos: emAndamento.duracaoTotalSegundos,
+        aoExpandir: () => {
+          limparCronometroFlutuante();
+          abrirTelaCardio(opcoesCardio());
+        },
+      });
+      return;
+    }
+    if (abaInicial !== "hoje") return; // terminou: oferece na próxima abertura
+
+    // Estava na tela do cardio: volta direto pra ela, rodando. E se o tempo
+    // acabou com o app fechado, abre já como concluído pra só marcar a
+    // intensidade e registrar — antes isso era descartado em silêncio, e o
+    // cardio feito sumia.
+    await primeiraTela.catch(() => {});
+    abrirTelaCardio(opcoesCardio());
   })();
 
-  renderTab(abaInicial);
-  return { renderTab, obterTabAtual: () => tabAtual };
+  return { renderTab, obterTabAtual: () => tabAtual, abaEstaNaFrente };
 }
 
 bootstrap().catch((err) => {

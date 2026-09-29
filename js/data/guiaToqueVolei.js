@@ -8,7 +8,7 @@
 // Cada painel é { titulo, svg, pontos[] }. Cores fixas (fundo claro próprio)
 // pra ficar igual no tema claro e no escuro.
 
-const COR = {
+export const COR = {
   fundo: "#f8fafc",
   linha: "#1f2937",
   pele: "#f2cba8",
@@ -42,7 +42,7 @@ function trechoFinal([p0, p1, p2], t) {
 
 const caminho = ([p0, p1, p2]) => `M${r1(p0[0])},${r1(p0[1])} Q${r1(p1[0])},${r1(p1[1])} ${r1(p2[0])},${r1(p2[1])}`;
 
-function bola(id, cx, cy, r, { fita = false, fitaGirando = false } = {}) {
+export function bola(id, cx, cy, r, { fita = false, fitaGirando = false } = {}) {
   const faixa = (cor, dy, largura) =>
     `<path d="M${r1(cx - r * 1.1)},${r1(cy + dy * r - r * 0.35)} Q${cx},${r1(cy + dy * r + r * 0.45)} ${r1(cx + r * 1.1)},${r1(cy + dy * r - r * 0.35)}" stroke="${cor}" stroke-width="${r1(r * largura)}" fill="none"/>`;
   const fitaSvg = fita
@@ -95,7 +95,7 @@ function maoDeBaixo(cx, cy, r, lado, { praia = false, rotulos = false } = {}) {
   return { svg: palmaSvg + desenho.join(""), rotulosDedos, externo };
 }
 
-function envelope(largura, altura, corpo, descricao) {
+export function envelope(largura, altura, corpo, descricao) {
   return `<svg viewBox="0 0 ${largura} ${altura}" role="img" aria-label="${descricao}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;border-radius:12px;background:${COR.fundo};font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
     <defs>
       <marker id="seta-azul" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${COR.movimento}"/></marker>
@@ -106,7 +106,7 @@ function envelope(largura, altura, corpo, descricao) {
   </svg>`;
 }
 
-const texto = (x, y, conteudo, { tam = 12, cor = COR.texto, peso = 400, ancora = "start" } = {}) =>
+export const texto = (x, y, conteudo, { tam = 12, cor = COR.texto, peso = 400, ancora = "start" } = {}) =>
   `<text x="${x}" y="${y}" font-size="${r1(tam * 1.3)}" fill="${cor}" font-weight="${peso}" text-anchor="${ancora}">${conteudo}</text>`;
 
 const legendaCor = (x, y, cor, rotulo) =>
@@ -141,7 +141,7 @@ function painelDedos() {
 }
 
 // Braço + mão de lado, com o punho num ângulo. Pessoa olhando pra direita.
-function bracoDeLado(cotovelo, punho, anguloMao, comprimentoMao, { corMao = COR.principal } = {}) {
+export function bracoDeLado(cotovelo, punho, anguloMao, comprimentoMao, { corMao = COR.principal } = {}) {
   const a = (anguloMao * Math.PI) / 180;
   const ponta = [r1(punho[0] + comprimentoMao * Math.cos(a)), r1(punho[1] - comprimentoMao * Math.sin(a))];
   return {

@@ -132,6 +132,22 @@ export const EXERCICIOS_VOLEI = {
     meta: "10 seguidos",
     contaSequencia: true,
   },
+  estaloChao: {
+    nome: "Ataque: estalo do punho no chão",
+    como: "Em pé, jogue a bola pra cima com uma mão e bata nela pra baixo com o braço esticado, mão aberta e o estalo do punho por cima da bola. Ela quica no chão e vai na parede. Veja os desenhos em \"Como atacar\".",
+    dose: "3 × 15",
+    tentativas: 45,
+    meta: "≥ 12 de 15 com a bola girando pra frente e quicando na frente",
+    taxaMeta: 0.8,
+  },
+  ataqueParede: {
+    nome: "Ataque: bate e volta na parede",
+    como: "A uns 3 m da parede, bata a bola no chão perto dela, deixe voltar e bata de novo, sem parar. Mão por cima da bola, giro pra frente. Veja os desenhos em \"Como atacar\".",
+    dose: "3 × 20",
+    tentativas: 60,
+    meta: "20 seguidos sem perder o controle",
+    contaSequencia: true,
+  },
   reforco: {
     nome: "Reforço de dedos e punho (2x/semana)",
     como: "Abrir os dedos contra elástico (2–3 × 20), pinça com anilha (3 × 20–30 s), extensão de punho e flexão lenta na descida (2 × 12), rotação externa de ombro (2 × 12).",
@@ -150,12 +166,12 @@ export const TESTES_VOLEI = {
 
 // Semanas: foco, lista de exercícios da sessão (na ordem) e testes do dia.
 export const SEMANAS_VOLEI = [
-  { semana: 1, foco: "Linha de base", nota: "Faça os testes T1, T2 e T3 na primeira sessão da semana.", blocos: ["aquecimento", "semGiro", "deitado", "joelhos", "paredeFixa", "faixa"], testes: ["T1", "T2", "T3"] },
-  { semana: 2, foco: "Direção", nota: "Entra o alvo sorteado, só com 2 alturas. Olhe o placar a cada 10 toques, não a cada toque.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "paredeFixa", "reforco"], testes: [] },
-  { semana: 3, foco: "Direção + distância", nota: "Alvo sorteado com 3 alturas e 2 distâncias. Entra o cesto.", blocos: ["aquecimento", "semGiro", "paredeFixa", "sorteado", "cesto", "reforco"], testes: [] },
-  { semana: 4, foco: "Costas", nota: "Levantamento de costas sorteado com o de frente (metade/metade). Refaça o T1 numa sessão.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "costas", "umaMao"], testes: ["T1"] },
-  { semana: 5, foco: "Bola ruim + pressão", nota: "A sessão só termina com 10 seguidos no círculo de 50 cm.", blocos: ["aquecimento", "semGiro", "paredeFixa", "deslocar", "passeRuim", "desafioSequencia", "reforco"], testes: [] },
-  { semana: 6, foco: "Reteste", nota: "Repita T1, T2 e T3. Depois de 3–4 dias sem treinar, faça o T1 de novo: mostra o que ficou aprendido de verdade.", blocos: ["aquecimento", "semGiro", "sorteado", "costas", "deslocar"], testes: ["T1", "T2", "T3", "T4"] },
+  { semana: 1, foco: "Linha de base", nota: "Faça os testes T1, T2 e T3 na primeira sessão da semana.", blocos: ["aquecimento", "semGiro", "deitado", "joelhos", "paredeFixa", "faixa", "estaloChao"], testes: ["T1", "T2", "T3"] },
+  { semana: 2, foco: "Direção", nota: "Entra o alvo sorteado, só com 2 alturas. Olhe o placar a cada 10 toques, não a cada toque.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "paredeFixa", "ataqueParede", "reforco"], testes: [] },
+  { semana: 3, foco: "Direção + distância", nota: "Alvo sorteado com 3 alturas e 2 distâncias. Entra o cesto.", blocos: ["aquecimento", "semGiro", "paredeFixa", "sorteado", "cesto", "estaloChao", "reforco"], testes: [] },
+  { semana: 4, foco: "Costas", nota: "Levantamento de costas sorteado com o de frente (metade/metade). Refaça o T1 numa sessão.", blocos: ["aquecimento", "semGiro", "joelhos", "sorteado", "costas", "umaMao", "ataqueParede"], testes: ["T1"] },
+  { semana: 5, foco: "Bola ruim + pressão", nota: "A sessão só termina com 10 seguidos no círculo de 50 cm.", blocos: ["aquecimento", "semGiro", "paredeFixa", "deslocar", "passeRuim", "desafioSequencia", "estaloChao", "reforco"], testes: [] },
+  { semana: 6, foco: "Reteste", nota: "Repita T1, T2 e T3. Depois de 3–4 dias sem treinar, faça o T1 de novo: mostra o que ficou aprendido de verdade.", blocos: ["aquecimento", "semGiro", "sorteado", "costas", "deslocar", "ataqueParede"], testes: ["T1", "T2", "T3", "T4"] },
 ];
 
 // Opções do sorteio do "alvo sorteado".

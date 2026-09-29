@@ -1,6 +1,6 @@
 // js/app.js
 import { openDatabase, get, put } from "./data/db.js";
-import { seedIfNeeded } from "./data/seed.js";
+import { seedIfNeeded, trazerRevisoesDoRepositorio } from "./data/seed.js";
 import { carregarCacheDeChaves } from "./data/chavesApi.js";
 import { initAutoSync } from "./data/sync.js";
 import { isConfigured as supabaseConfigurado, veioDoLinkDeNovaSenha, erroDoLinkDeLogin } from "./data/supabaseClient.js";
@@ -64,6 +64,9 @@ async function bootstrap() {
   // registrado, mas isConfigured() barra tudo antes de tocar rede. Nunca
   // atrasa a abertura do app: initAutoSync() não é awaited.
   if (supabaseConfigurado()) initAutoSync(db);
+  // Depois da sincronização ligada: se o login trouxe do servidor uma ficha,
+  // protocolo ou catálogo antigos, volta pra revisão atual e sobe ela.
+  await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
 
   // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
   // a Config, onde fica o campo da senha nova.

@@ -308,6 +308,70 @@ export async function migrarSaltoSemCaixote20260926(db, fetchImpl = globalThis.f
   return { migrado, jaFeita: false };
 }
 
+// Olha o ESTADO, não um marcador: o login (pullFromSupabase) regrava a
+// ficha, o protocolo e o catálogo com o que estava no servidor — e as
+// migrações acima rodam antes de a sincronização ligar, então o servidor
+// ficava com as versões antigas. Resultado real (28/09/2026): depois de
+// voltar a logar, a ficha de antes da auditoria (cardio nos 5 dias) voltou
+// e os marcadores em config impediam a migração de rodar de novo.
+// Chamada com a sincronização já ligada (app.js e depois do login), então
+// o que ela grava também sobe pro servidor. Só toca a ficha do dono (Bloco
+// 1 — o perfil do Francesco tem outra ficha) e só quando a do repositório é
+// uma revisão mais nova.
+const PREFIXO_FICHA_DO_DONO = "Bloco 1 — Peito, bíceps";
+
+function canonico(valor) {
+  if (Array.isArray(valor)) return `[${valor.map(canonico).join(",")}]`;
+  if (valor && typeof valor === "object") {
+    return `{${Object.keys(valor).sort().map((k) => `${JSON.stringify(k)}:${canonico(valor[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(valor ?? null);
+}
+
+export async function trazerRevisoesDoRepositorio(db, fetchImpl = globalThis.fetch) {
+  const alterados = [];
+
+  const fichaAtual = await get(db, "ficha", "1.0");
+  if (fichaAtual?.nome?.startsWith(PREFIXO_FICHA_DO_DONO)) {
+    const nova = await fetchImpl(ARQUIVOS_PESSOAIS.ficha).then((r) => r.json());
+    if (nova?.revisao && nova.versao === fichaAtual.versao && (fichaAtual.revisao ?? "") < nova.revisao) {
+      await put(db, "ficha", nova);
+      alterados.push("ficha");
+    }
+  }
+
+  const protocolos = await getAll(db, "protocolo");
+  const protocoloAntigo = protocolos.find((p) => p.notaDaAuditoria && !p.notaDaAuditoria20260924);
+  if (protocoloAntigo) {
+    const novo = await fetchImpl(ARQUIVOS_PESSOAIS.protocolo).then((r) => r.json());
+    if (novo?.notaDaAuditoria20260924 && novo.versao === protocoloAntigo.versao) {
+      await put(db, "protocolo", novo);
+      alterados.push("protocolo");
+    }
+  }
+
+  // Catálogo: compara o conteúdo (sem as observações, que a pessoa pode ter
+  // reescrito) e sem depender da ordem das chaves — o servidor guarda em
+  // jsonb e devolve as chaves em outra ordem.
+  const catalogo = await fetchImpl(ARQUIVO_EXERCICIOS).then((r) => r.json());
+  const existentes = new Map((await getAll(db, "exercicios")).map((e) => [e.id, e]));
+  const semObservacao = ({ observacoesExecucao, ...resto }) => (void observacoesExecucao, canonico(resto));
+  const desatualizado = catalogo.exercicios.some((e) => {
+    const local = existentes.get(e.id);
+    return !local || semObservacao(local) !== semObservacao(e);
+  });
+  if (desatualizado) {
+    await putAll(db, "exercicios", catalogo.exercicios.map((e) => {
+      const observacao = existentes.get(e.id)?.observacoesExecucao;
+      return observacao ? { ...e, observacoesExecucao: observacao } : e;
+    }));
+    await put(db, "config", { chave: CHAVE_VERSAO_BIBLIOTECA, valor: catalogo.versao });
+    alterados.push("exercicios");
+  }
+
+  return alterados;
+}
+
 export async function seedIfNeeded(db, fetchImpl = globalThis.fetch) {
   const [storesPessoaisSemeadas, bibliotecaAtualizada] = await Promise.all([
     semearPessoaisSeVazias(db, fetchImpl),

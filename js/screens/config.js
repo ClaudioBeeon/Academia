@@ -11,7 +11,7 @@ import {
   pedirLinkDeNovaSenha, definirNovaSenha, veioDoLinkDeNovaSenha, erroDoLinkDeLogin, entrarComLinkDoEmail,
 } from "../data/supabaseClient.js";
 import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
-import { listarPerfisDisponiveis, semearPerfilNomeado } from "../data/seed.js";
+import { listarPerfisDisponiveis, semearPerfilNomeado, trazerRevisoesDoRepositorio } from "../data/seed.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas, LEMBRETE_TREINO_PADRAO } from "../engine/lembretes.js";
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
@@ -538,6 +538,9 @@ async function criarSecaoSupabase(db) {
     status.textContent = "Trazendo dados do servidor...";
     const { recebidos } = await pullFromSupabase(db);
     initAutoSync(db);
+    // O servidor pode ter ficha/protocolo/catálogo de antes das últimas
+    // revisões: volta pra atual (e isso sobe pro servidor pela fila).
+    await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
     await flushSyncQueue(db);
     const usuario = await getUsuario();
     if (usuario) montarBotaoSair(usuario);
@@ -559,6 +562,8 @@ async function criarSecaoSupabase(db) {
     status.textContent = "Sincronizando...";
     await flushSyncQueue(db);
     await pullFromSupabase(db);
+    await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
+    await flushSyncQueue(db);
     await atualizarStatus();
   });
 

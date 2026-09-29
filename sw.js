@@ -1,5 +1,5 @@
 // sw.js
-const CACHE_NAME = "app-treino-shell-v88";
+const CACHE_NAME = "app-treino-shell-v89";
 const APP_SHELL = [
   "./",
   "./index.html",

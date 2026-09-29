@@ -12,6 +12,21 @@ import { animarSpring } from "../lib/spring.js";
 
 const OPCOES_RIR = [0, 1, 2, 3, 4, 5];
 
+// Os botões diziam só "0 1 2 3 4 5" e o dono marcou 0 em tudo sem saber o
+// que era (28/09/2026) — e é esse número que decide quando a carga sobe.
+// Agora cada botão explica o que quer dizer.
+const LEGENDA_RIR = { 0: "nenhuma", 1: "mais 1", 2: "mais 2", 3: "mais 3", 4: "mais 4", 5: "fácil" };
+const EXPLICACAO_RIR = "Se você parou e ainda daria pra fazer mais 2 bem feitas, toque 2. \"Nenhuma\" é só quando não saía mais nenhuma.";
+
+function montarBotaoRir(valor) {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "rs-rir-btn";
+  botao.innerHTML = `<span class="rs-rir-num">${valor === 5 ? "5+" : valor}</span><span class="rs-rir-leg">${LEGENDA_RIR[valor]}</span>`;
+  botao.setAttribute("aria-label", valor === 0 ? "Nenhuma — não saía mais nenhuma" : `${valor === 5 ? "5 ou mais" : valor} sobrando`);
+  return botao;
+}
+
 /**
  * Resolve com { reps, rir, aquecimento: false }, { reps, rir: null,
  * aquecimento: true } ou null (voltar sem registrar).
@@ -38,7 +53,8 @@ export function perguntarResultadoSerie({ numero, reps, rirSugerido = null, rirA
           <button type="button" class="rs-extra" data-extra="drop" aria-pressed="false">+ Drop-set</button>
           <button type="button" class="rs-extra" data-extra="restpause" aria-pressed="false">+ Rest-pause</button>
         </div>
-        <p class="rs-pergunta">Quantas ainda sobravam?</p>
+        <p class="rs-pergunta">Quantas repetições ainda sairiam?</p>
+        <p class="rs-explica"></p>
         <div class="rs-rir" role="group" aria-label="Repetições que sobravam (RIR)"></div>
         <p class="rs-dica"></p>
         <div class="carga-sheet-acoes">
@@ -73,14 +89,11 @@ export function perguntarResultadoSerie({ numero, reps, rirSugerido = null, rirA
       });
     }
 
+    overlay.querySelector(".rs-explica").textContent = EXPLICACAO_RIR;
     const rirEl = overlay.querySelector(".rs-rir");
     for (const valor of OPCOES_RIR) {
-      const botao = document.createElement("button");
-      botao.type = "button";
-      botao.className = "rs-rir-btn";
+      const botao = montarBotaoRir(valor);
       if (valor === rirSugerido) botao.classList.add("sugerido");
-      botao.textContent = valor === 5 ? "5+" : String(valor);
-      botao.setAttribute("aria-label", valor === 0 ? "Nenhuma — falha" : `${valor === 5 ? "5 ou mais" : valor} sobrando`);
       botao.addEventListener("click", () => fechar({ reps: repsAtual, rir: valor, aquecimento: false, extra }));
       rirEl.appendChild(botao);
     }
@@ -127,7 +140,8 @@ export function perguntarExercicioInteiro({ nome, carga, incremento, series, rep
         <h3 id="rei-titulo">Já fiz — registrar tudo</h3>
         <p class="rs-dica rei-nome" style="margin:0 0 12px;"></p>
         <div class="rei-linhas"></div>
-        <p class="rs-pergunta">Na última série, quantas ainda sobravam?</p>
+        <p class="rs-pergunta">Na última série, quantas repetições ainda sairiam?</p>
+        <p class="rs-explica"></p>
         <div class="rs-rir" role="group" aria-label="Repetições que sobravam na última série (RIR)"></div>
         <p class="rs-dica"></p>
         <div class="carga-sheet-acoes">
@@ -172,13 +186,10 @@ export function perguntarExercicioInteiro({ nome, carga, incremento, series, rep
       linhasEl.appendChild(linha);
     }
 
+    overlay.querySelector(".rs-explica").textContent = EXPLICACAO_RIR;
     const rirEl = overlay.querySelector(".rs-rir");
     for (const valor of OPCOES_RIR) {
-      const botao = document.createElement("button");
-      botao.type = "button";
-      botao.className = "rs-rir-btn";
-      botao.textContent = valor === 5 ? "5+" : String(valor);
-      botao.setAttribute("aria-label", valor === 0 ? "Nenhuma — falha" : `${valor === 5 ? "5 ou mais" : valor} sobrando`);
+      const botao = montarBotaoRir(valor);
       botao.addEventListener("click", () => fechar({ ...valores, rir: valor }));
       rirEl.appendChild(botao);
     }
@@ -257,6 +268,7 @@ export function perguntarEdicaoSerie({ numero, carga, reps, rir, incremento }) {
       linhasEl.appendChild(linha);
     }
 
+    overlay.querySelector(".rs-explica").textContent = EXPLICACAO_RIR;
     const rirEl = overlay.querySelector(".rs-rir");
     const botoesRir = [];
     for (const valor of OPCOES_RIR) {

@@ -50,20 +50,22 @@ async function semearPessoaisSeVazias(db, fetchImpl) {
 }
 
 // Catálogo de exercícios: regrava quando a versão do arquivo muda, mesclando
-// as observacoesExecucao já escritas pela pessoa pra não perdê-las.
+// o que é da pessoa — observacoesExecucao escritas por ela e a imagem que ela
+// subiu (imagemUrl) — pra não perder nenhum dos dois.
 async function atualizarBiblioteca(db, fetchImpl) {
   const exercicios = await fetchImpl(ARQUIVO_EXERCICIOS).then((r) => r.json());
 
   const versaoAtual = await get(db, "config", CHAVE_VERSAO_BIBLIOTECA);
   if (versaoAtual && versaoAtual.valor === exercicios.versao) return false;
 
-  const existentes = await getAll(db, "exercicios");
-  const observacoesExistentes = new Map(existentes.map((e) => [e.id, e.observacoesExecucao]));
+  const existentes = new Map((await getAll(db, "exercicios")).map((e) => [e.id, e]));
   const mesclados = exercicios.exercicios.map((seedExercicio) => {
-    const observacaoExistente = observacoesExistentes.get(seedExercicio.id);
-    return observacaoExistente
-      ? { ...seedExercicio, observacoesExecucao: observacaoExistente }
-      : seedExercicio;
+    const { observacoesExecucao, imagemUrl } = existentes.get(seedExercicio.id) ?? {};
+    return {
+      ...seedExercicio,
+      ...(observacoesExecucao ? { observacoesExecucao } : {}),
+      ...(imagemUrl ? { imagemUrl } : {}),
+    };
   });
 
   await putAll(db, "exercicios", mesclados);
@@ -350,20 +352,26 @@ export async function trazerRevisoesDoRepositorio(db, fetchImpl = globalThis.fet
     }
   }
 
-  // Catálogo: compara o conteúdo (sem as observações, que a pessoa pode ter
-  // reescrito) e sem depender da ordem das chaves — o servidor guarda em
-  // jsonb e devolve as chaves em outra ordem.
+  // Catálogo: compara o conteúdo sem o que é da pessoa — a observação que
+  // ela pode ter reescrito e a imagem que ela subiu — e sem depender da ordem
+  // das chaves (o servidor guarda em jsonb e devolve em outra ordem). A
+  // imagem também precisa ser carregada pra versão nova: antes ela não era,
+  // e cada atualização do catálogo apagava todas (26 perdidas até 01/10/2026).
   const catalogo = await fetchImpl(ARQUIVO_EXERCICIOS).then((r) => r.json());
   const existentes = new Map((await getAll(db, "exercicios")).map((e) => [e.id, e]));
-  const semObservacao = ({ observacoesExecucao, ...resto }) => (void observacoesExecucao, canonico(resto));
+  const semDadosDaPessoa = ({ observacoesExecucao, imagemUrl, ...resto }) => (void observacoesExecucao, void imagemUrl, canonico(resto));
   const desatualizado = catalogo.exercicios.some((e) => {
     const local = existentes.get(e.id);
-    return !local || semObservacao(local) !== semObservacao(e);
+    return !local || semDadosDaPessoa(local) !== semDadosDaPessoa(e);
   });
   if (desatualizado) {
     await putAll(db, "exercicios", catalogo.exercicios.map((e) => {
-      const observacao = existentes.get(e.id)?.observacoesExecucao;
-      return observacao ? { ...e, observacoesExecucao: observacao } : e;
+      const { observacoesExecucao, imagemUrl } = existentes.get(e.id) ?? {};
+      return {
+        ...e,
+        ...(observacoesExecucao ? { observacoesExecucao } : {}),
+        ...(imagemUrl ? { imagemUrl } : {}),
+      };
     }));
     await put(db, "config", { chave: CHAVE_VERSAO_BIBLIOTECA, valor: catalogo.versao });
     alterados.push("exercicios");

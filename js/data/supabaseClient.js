@@ -228,3 +228,18 @@ export async function subirImagemExercicio(exercicioId, arquivo) {
   const { data } = client.storage.from(BUCKET_IMAGENS_EXERCICIO).getPublicUrl(caminho);
   return data.publicUrl;
 }
+
+// Todas as imagens do bucket, com a URL pública de cada uma. Lista vazia sem
+// login (ou sem rede) — quem chama trata como "nada pra religar".
+export async function listarImagensExercicio() {
+  const client = await getClient();
+  if (!client) return [];
+  const usuario = await getUsuario();
+  if (!usuario) return [];
+  const { data, error } = await client.storage.from(BUCKET_IMAGENS_EXERCICIO).list("", { limit: 1000 });
+  if (error) throw error;
+  return (data ?? []).map((arquivo) => ({
+    nome: arquivo.name,
+    url: client.storage.from(BUCKET_IMAGENS_EXERCICIO).getPublicUrl(arquivo.name).data.publicUrl,
+  }));
+}

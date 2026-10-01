@@ -62,3 +62,18 @@ test("catálogo: regrava se faltar exercício ou mudar campo, mantendo a observa
   assert.equal((await get(db, "config", "seedVersion")).valor, "1.6");
   db.close();
 });
+
+// Caso real (visto em 01/10/2026): as 26 imagens subidas em agosto ficaram
+// sem link — a atualização do catálogo regravava os exercícios sem imagemUrl.
+test("catálogo: imagem da pessoa não conta como diferença e nunca é apagada", async () => {
+  const db = await bancoLimpo();
+  await putAll(db, "exercicios", [{ id: "a", nome: "A", fatorVolume: 1, imagemUrl: "https://x/a.png" }, { id: "b", nome: "B" }]);
+  assert.deepEqual(await trazerRevisoesDoRepositorio(db, buscar), [], "só a imagem diferente: não regrava");
+
+  await put(db, "exercicios", { id: "a", nome: "A", fatorVolume: 0, imagemUrl: "https://x/a.png" });
+  assert.deepEqual(await trazerRevisoesDoRepositorio(db, buscar), ["exercicios"]);
+  const a = await get(db, "exercicios", "a");
+  assert.equal(a.fatorVolume, 1, "pegou o campo novo do repositório");
+  assert.equal(a.imagemUrl, "https://x/a.png", "e manteve a imagem");
+  db.close();
+});

@@ -25,6 +25,7 @@ import { trocarConteudo } from "./screens/transicaoTela.js";
 import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
 import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
 import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
+import { religarImagensExercicios } from "./data/imagensExercicio.js";
 import { obterTemaSalvo, aplicarTema, observarTemaDoSistema } from "./lib/tema.js";
 
 function criarMensagem(texto) {
@@ -68,6 +69,10 @@ async function bootstrap() {
   // protocolo ou catálogo antigos, volta pra revisão atual e sobe ela.
   await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
   enviarDadosPessoaisUmaVez(db).catch((err) => console.error("Falha ao enviar a ficha:", err));
+  // Liga as imagens do bucket aos exercícios (devolve as que se perderam e
+  // traz as subidas por fora do app). Não é aguardado: a Início não mostra
+  // imagem de exercício, e até abrir a fila/biblioteca já terminou.
+  if (supabaseConfigurado()) religarImagensExercicios(db).catch((err) => console.error("Falha ao religar imagens:", err));
 
   // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
   // a Config, onde fica o campo da senha nova.

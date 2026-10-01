@@ -26,6 +26,7 @@ import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/pergu
 import { DIAS_SEQUENCIA, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { montarRelogioSessao } from "../lib/relogioSessao.js";
+import { abrirMenuExercicio, abrirVisorExercicio } from "./folhasExercicio.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -201,26 +202,14 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const root = document.createElement("div");
   root.className = "tela-execucao";
 
-  const header = document.createElement("header");
-  header.className = "top exec-header";
-  header.innerHTML = `
-    <div style="display:flex; align-items:center; gap:12px;">
-      <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">←</button>
-      <div>
-        <div class="date-label">Exercício ${indice} de ${total}</div>
-        <div class="day-title exec-titulo"></div>
-      </div>
-    </div>
-  `;
-  header.querySelector(".exec-titulo").textContent = exercicio.nome;
-  // Relógio da sessão: um no cabeçalho e outro (compacto) que vai pro topo
-  // do telão cada vez que ele abre — é onde a pessoa fica durante a série e
-  // o descanso. Os dois param junto com a tela (pararTudo).
+  // Relógio da sessão: um no topo da tela, um (compacto) que vai pro telão
+  // cada vez que ele abre — é onde a pessoa fica durante a série e o
+  // descanso — e um na barra compacta. Todos param junto com a tela (pararTudo).
   const relogiosSessao = inicioSessaoTs != null
-    ? [montarRelogioSessao(inicioSessaoTs), montarRelogioSessao(inicioSessaoTs, { compacto: true })]
+    ? [montarRelogioSessao(inicioSessaoTs), montarRelogioSessao(inicioSessaoTs, { compacto: true }), montarRelogioSessao(inicioSessaoTs, { compacto: true })]
     : [];
-  if (relogiosSessao.length > 0) header.querySelector(".exec-titulo").after(relogiosSessao[0].elemento);
-  header.querySelector(".voltar-btn").addEventListener("click", () => {
+
+  function voltar() {
     // Com o telão aberto e um cronômetro rodando (descanso ou trabalho),
     // sair por aqui minimiza em vez de matar o cronômetro sem deixar a
     // bolha flutuante pra voltar depois — mesmo caminho do botão "⌄" do
@@ -231,19 +220,18 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       return;
     }
     if (onFechar) onFechar();
-  });
-  const acoesHeader = document.createElement("div");
-  acoesHeader.className = "exec-acoes-header";
+  }
+
+  // Ações do exercício: os botões continuam sendo os mesmos (com toda a
+  // lógica que já tinham, ligada mais abaixo), só não ficam mais soltos no
+  // cabeçalho — o menu "⋯" chama cada um. Eram quatro pílulas empilhadas
+  // ao lado do nome, espremendo o título.
   const trocarBtn = document.createElement("button");
   trocarBtn.type = "button";
-  trocarBtn.className = "swap-pill trocar-pill";
-  trocarBtn.textContent = "Trocar";
-  acoesHeader.appendChild(trocarBtn);
+  const acoesMenu = [{ rotulo: "Trocar exercício", detalhe: "Só hoje. A ficha não muda.", botao: trocarBtn }];
   if (onExercicioAdiado && total > 1) {
     const adiarBtn = document.createElement("button");
     adiarBtn.type = "button";
-    adiarBtn.className = "swap-pill adiar-pill";
-    adiarBtn.textContent = "Deixar pra depois";
     // Mesma trava do botão primário: dois toques rápidos aqui disparavam
     // onExercicioAdiado duas vezes antes da tela seguinte terminar de
     // montar, arriscando o mesmo tipo de índice corrompido.
@@ -257,24 +245,113 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
         adiandoEmAndamento = false;
       }
     });
-    acoesHeader.appendChild(adiarBtn);
+    acoesMenu.push({ rotulo: "Deixar pra depois", detalhe: "Vai pro fim da fila de hoje.", botao: adiarBtn });
   }
-  // "Já fiz / pular": exercício feito sem o app acompanhar, ou que não vai
-  // ser feito hoje. Um botão só (abre as duas opções) pra não empilhar mais
-  // pílulas no cabeçalho.
+  // "Já fiz / pular / superset": exercício feito sem o app acompanhar, que
+  // não vai ser feito hoje, ou emendado com outro.
   const jaFizBtn = document.createElement("button");
   jaFizBtn.type = "button";
-  jaFizBtn.className = "swap-pill jafiz-pill";
-  jaFizBtn.textContent = "Opções";
-  acoesHeader.appendChild(jaFizBtn);
-
+  acoesMenu.push({ rotulo: "Opções do exercício", detalhe: "Já fiz tudo, não vou fazer hoje, superset.", botao: jaFizBtn });
   const diaCicloBtn = document.createElement("button");
   diaCicloBtn.type = "button";
-  diaCicloBtn.className = "swap-pill dia-ciclo-pill";
-  diaCicloBtn.textContent = "Dia do ciclo";
-  acoesHeader.appendChild(diaCicloBtn);
-  header.appendChild(acoesHeader);
-  root.appendChild(header);
+  acoesMenu.push({ rotulo: "Dia do ciclo", detalhe: "Trocar qual dia da ficha é hoje.", botao: diaCicloBtn, rolarAte: () => painelDiaCiclo });
+  const abrirMenu = () => abrirMenuExercicio(acoesMenu.map((acao) => ({
+    rotulo: acao.rotulo,
+    detalhe: acao.detalhe,
+    acao: () => {
+      acao.botao.click();
+      if (acao.rolarAte) acao.rolarAte().scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+  })));
+
+  const ICONE_VOLTAR = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`;
+  const ICONE_MAIS = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>`;
+  const temImagem = Boolean(exercicio.imagemUrl);
+  let heroiEl = null;
+  let barraEl = null;
+
+  if (temImagem) {
+    // Com imagem: ela abre a tela grande, de borda a borda — é quando a
+    // pessoa chega no exercício que precisa achar a máquina. Depois da 1ª
+    // série ela encolhe numa barra com miniatura (atualizarCompacto), e a
+    // barra também aparece sozinha ao rolar pra baixo. Tocar na imagem abre
+    // o visor com o "como executar".
+    heroiEl = document.createElement("section");
+    heroiEl.className = "exec-heroi";
+    heroiEl.innerHTML = `
+      <div class="exec-heroi-corpo">
+        <button type="button" class="exec-heroi-foto" aria-label="Ver a imagem do exercício"><img alt=""></button>
+        <div class="exec-heroi-topo">
+          <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">${ICONE_VOLTAR}</button>
+          <button type="button" class="icon-btn exec-mais-btn" aria-label="Mais opções do exercício">${ICONE_MAIS}</button>
+        </div>
+        <div class="exec-heroi-texto">
+          <div class="date-label">Exercício ${indice} de ${total}</div>
+          <h1 class="exec-heroi-nome"></h1>
+        </div>
+      </div>
+    `;
+    heroiEl.querySelector("img").src = exercicio.imagemUrl;
+    heroiEl.querySelector(".exec-heroi-nome").textContent = exercicio.nome;
+    root.appendChild(heroiEl);
+    if (relogiosSessao.length > 0) {
+      const info = document.createElement("div");
+      info.className = "exec-heroi-info";
+      info.appendChild(relogiosSessao[0].elemento);
+      root.appendChild(info);
+    }
+
+    barraEl = document.createElement("div");
+    barraEl.className = "exec-barra";
+    barraEl.innerHTML = `
+      <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">${ICONE_VOLTAR}</button>
+      <button type="button" class="exec-barra-mini" aria-label="Ver a imagem do exercício"><img alt=""></button>
+      <div class="exec-barra-txt"><strong></strong></div>
+      <button type="button" class="icon-btn exec-mais-btn" aria-label="Mais opções do exercício">${ICONE_MAIS}</button>
+    `;
+    barraEl.querySelector("img").src = exercicio.imagemUrl;
+    barraEl.querySelector("strong").textContent = exercicio.nome;
+    if (relogiosSessao.length > 0) barraEl.querySelector(".exec-barra-txt").appendChild(relogiosSessao[2].elemento);
+    root.appendChild(barraEl);
+
+    for (const foto of [heroiEl.querySelector(".exec-heroi-foto"), barraEl.querySelector(".exec-barra-mini")]) {
+      foto.addEventListener("click", () => abrirVisorExercicio(exercicio));
+    }
+  } else {
+    // Sem imagem (ainda não subida pra este exercício): o cabeçalho de
+    // sempre, só com o menu "⋯" no lugar das quatro pílulas.
+    const header = document.createElement("header");
+    header.className = "top exec-header";
+    header.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+        <button type="button" class="icon-btn voltar-btn" aria-label="Voltar">${ICONE_VOLTAR}</button>
+        <div style="min-width:0;">
+          <div class="date-label">Exercício ${indice} de ${total}</div>
+          <div class="day-title exec-titulo"></div>
+        </div>
+      </div>
+      <button type="button" class="icon-btn exec-mais-btn" aria-label="Mais opções do exercício">${ICONE_MAIS}</button>
+    `;
+    header.querySelector(".exec-titulo").textContent = exercicio.nome;
+    if (relogiosSessao.length > 0) header.querySelector(".exec-titulo").after(relogiosSessao[0].elemento);
+    root.appendChild(header);
+  }
+  root.querySelectorAll(".voltar-btn").forEach((botao) => botao.addEventListener("click", voltar));
+  root.querySelectorAll(".exec-mais-btn").forEach((botao) => botao.addEventListener("click", abrirMenu));
+
+  // Barra compacta: visível depois da 1ª série registrada (já está na
+  // máquina, a imagem grande só ocuparia espaço) ou rolando pra além da
+  // imagem. Sem imagem não existe barra.
+  function atualizarCompacto() {
+    if (!barraEl) return;
+    const compacto = seriesHoje.length > 0;
+    root.classList.toggle("exec-compacto", compacto);
+    // Fora da página (1ª renderização, antes de a tela entrar), a posição
+    // vem zerada e pareceria que já rolou pra além da imagem.
+    const passouDaImagem = heroiEl.isConnected && heroiEl.getBoundingClientRect().bottom < 72;
+    barraEl.classList.toggle("visivel", compacto || passouDaImagem);
+  }
+  if (barraEl) window.addEventListener("scroll", atualizarCompacto, { passive: true });
 
   const main = document.createElement("main");
   root.appendChild(main);
@@ -738,6 +815,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   }
 
   function renderizarTudo() {
+    atualizarCompacto();
     renderizarLinhaTempo();
     renderizarTrioEControle();
     renderizarFooter();
@@ -808,6 +886,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     pararDescanso();
     fecharTelaCheia();
     relogiosSessao.forEach((relogio) => relogio.parar());
+    window.removeEventListener("scroll", atualizarCompacto);
     if (wakeLockAtivo) {
       wakeLockAtivo.release().catch(() => {});
       wakeLockAtivo = null;

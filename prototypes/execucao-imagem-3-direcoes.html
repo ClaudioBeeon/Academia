@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imagem na Tela da Série</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap">
+<style>
+/* Tokens: os mesmos de css/tokens.css (tema escuro), com o mesmo ajuste de
+   contraste dos protótipos anteriores em --ink-dim e --ink-faint. */
+:root{
+  --paper:#0E0E0E; --card:#1C1C1C; --card-2:#262626; --foto:#2C2C2C;
+  --ink:#FFFFFF; --ink-dim:#A6A6A6; --ink-faint:#949494;
+  --accent:#C9F241; --accent-ink:#141414; --line:#262626; --aviso:#E0B04A;
+  --font-display:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--paper);color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:var(--accent-ink)}
+button{font-family:inherit;color:inherit}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ─── Página ─── */
+.pag{max-width:1240px;margin:0 auto;padding:48px 22px 96px}
+h1{font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:-.03em;line-height:1.06;margin-bottom:14px;text-wrap:balance}
+.lede{font-size:16.5px;line-height:1.62;color:var(--ink-dim);max-width:66ch}
+.lede b{color:var(--ink);font-weight:700}
+.comum{margin-top:22px;max-width:70ch;font-size:15px;line-height:1.62;color:var(--ink-dim)}
+.comum b{color:var(--ink)}
+
+.abas{display:flex;gap:8px;margin:36px 0 0;flex-wrap:wrap}
+.aba{font-weight:700;font-size:14.5px;padding:12px 20px;min-height:46px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink-dim);cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease}
+.aba:hover{color:var(--ink);border-color:var(--ink-faint)}
+.aba[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.aba .letra{font-family:var(--font-mono);margin-right:8px}
+
+.painel{margin-top:32px;display:grid;gap:40px;grid-template-columns:minmax(0,1fr);align-items:start}
+.painel[hidden]{display:none}
+@media(min-width:980px){.painel{grid-template-columns:auto minmax(0,1fr)}}
+
+.notas h2{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-bottom:10px}
+.notas .sub{font-size:15.5px;line-height:1.6;color:var(--ink-dim);max-width:60ch}
+.notas h3{font-size:16px;font-weight:800;margin:30px 0 10px}
+.notas ul{list-style:none;display:flex;flex-direction:column;gap:10px;max-width:62ch}
+.notas li{font-size:14.5px;line-height:1.6;color:var(--ink-dim);padding-left:18px;position:relative}
+.notas li::before{content:"";position:absolute;left:0;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--card-2);box-shadow:inset 0 0 0 1.5px var(--ink-faint)}
+.notas li.mais::before{background:var(--accent);box-shadow:none}
+.notas li.menos::before{background:var(--aviso);box-shadow:none}
+.notas li b{color:var(--ink);font-weight:700}
+.teste{margin-top:28px;padding:16px 18px;background:var(--card);border-radius:14px;max-width:62ch;font-size:14.5px;line-height:1.6;color:var(--ink-dim)}
+.teste b{color:var(--ink)}
+.reset{margin-top:12px;font-weight:700;font-size:13.5px;padding:9px 16px;min-height:40px;border-radius:999px;border:none;background:var(--card-2);color:var(--ink);cursor:pointer}
+
+/* ─── Celular ─── */
+.palco{width:414px;max-width:100%}
+.fone{width:414px;height:868px;border-radius:56px;background:#050505;padding:12px;transform-origin:top left;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.85),inset 0 0 0 1.5px #2A2A2A}
+.tela{position:relative;width:390px;height:844px;border-radius:44px;overflow:hidden;background:var(--paper)}
+.rolagem{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:0 18px 128px;scrollbar-width:none}
+.rolagem::-webkit-scrollbar{display:none}
+
+/* Cabeçalho comum */
+.cab{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:10px;padding:16px 0 12px;background:var(--paper)}
+.bt-redondo{width:44px;height:44px;flex:0 0 auto;border-radius:50%;border:none;background:var(--card);display:grid;place-items:center;cursor:pointer}
+.bt-redondo svg{width:20px;height:20px}
+.cab-meio{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pos{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.relogio{display:inline-flex;align-items:baseline;gap:6px;background:var(--card);border-radius:999px;padding:5px 11px}
+.relogio .rot{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.relogio .t{font-family:var(--font-mono);font-size:12.5px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* Identidade do exercício */
+.nome{font-size:26px;font-weight:800;letter-spacing:-.025em;line-height:1.12;text-wrap:balance}
+.musculo{margin-top:6px;font-size:14px;color:var(--ink-dim)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{background:var(--card);border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:700;color:var(--ink-dim)}
+.chip b{font-family:var(--font-mono);color:var(--ink);font-weight:800}
+
+.foto{position:relative;display:block;width:100%;border:none;padding:0;background:var(--foto);border-radius:20px;overflow:hidden;cursor:zoom-in}
+.foto img{display:block;width:100%;height:100%;object-fit:cover}
+.foto .lupa{position:absolute;right:10px;bottom:10px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(14,14,14,.78);color:var(--ink)}
+.foto .lupa svg{width:18px;height:18px}
+
+/* Séries e controles (iguais à tela atual) */
+.trilho{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:22px}
+.trilho div{display:flex;flex-direction:column;gap:7px;align-items:center}
+.trilho i{display:block;width:100%;height:4px;border-radius:2px;background:var(--card-2)}
+.trilho .on i{background:var(--accent)}
+.trilho .feita i{background:#5C7020}
+.trilho span{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+.trilho .on span{color:var(--accent)}
+.trilho .feita span{color:var(--ink-dim)}
+.campos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.campo{border:none;background:transparent;border-radius:18px;padding:14px 6px;text-align:center;cursor:pointer}
+.campo small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.campo strong{display:block;margin-top:6px;font-family:var(--font-mono);font-size:30px;font-weight:800;color:var(--ink-dim)}
+.campo.ativo{background:var(--card)}
+.campo.ativo small{color:var(--accent)}
+.campo.ativo strong{color:var(--ink)}
+.ajuste{display:flex;align-items:center;justify-content:space-between;margin-top:14px;border:1px solid #333;border-radius:999px;padding:6px}
+.ajuste button{width:48px;height:48px;border-radius:50%;border:1px solid #333;background:transparent;display:grid;place-items:center;cursor:pointer}
+.ajuste button svg{width:18px;height:18px}
+.ajuste div{text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.ajuste div b{display:block;color:var(--accent);margin-top:2px}
+.alvo{margin-top:16px;font-size:14px;line-height:1.55;color:var(--ink-dim)}
+.alvo b{color:var(--ink)}
+.ultima{margin-top:14px;display:flex;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--ink-dim)}
+.ultima b{font-family:var(--font-mono);color:var(--ink);font-weight:700}
+.ritmo{margin-top:10px;display:flex;justify-content:space-between;align-items:center;background:var(--card);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--ink-dim)}
+.ritmo b{color:var(--accent);font-weight:800}
+
+/* Rodapé fixo */
+.rodape{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;gap:10px;padding:14px 18px 30px;background:var(--paper);border-top:1px solid var(--line)}
+.rodape .sq{width:52px;height:52px;flex:0 0 auto;border-radius:50%;border:none;background:var(--card-2);color:var(--ink-dim);display:grid;place-items:center;cursor:pointer}
+.rodape .sq svg{width:20px;height:20px}
+.rodape .sec{flex:0 0 auto;min-height:52px;padding:0 18px;border:none;border-radius:999px;background:var(--card-2);color:var(--ink-dim);font-weight:800;font-size:14px;cursor:pointer}
+.rodape .prim{flex:1;min-height:52px;border:none;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:16px;cursor:pointer}
+
+/* Menu ⋯ e visor da imagem (sobreposições dentro do celular) */
+.veu{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.62);opacity:0;pointer-events:none;transition:opacity .22s var(--ease-out)}
+.veu.aberto{opacity:1;pointer-events:auto}
+.folha{position:absolute;left:0;right:0;bottom:0;z-index:21;background:var(--card);border-radius:28px 28px 0 0;padding:10px 18px 30px;
+  transform:translateY(102%);transition:transform .32s var(--ease-out);max-height:88%;overflow-y:auto;scrollbar-width:none}
+.folha.aberta{transform:none}
+.alca{width:38px;height:5px;border-radius:3px;background:#3A3A3A;margin:2px auto 14px}
+.menu-item{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:0 6px;border:none;background:transparent;border-bottom:1px solid var(--card-2);
+  font-size:16px;font-weight:700;text-align:left;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.menu-item svg{width:20px;height:20px;color:var(--ink-dim);flex:0 0 auto}
+.menu-item span{display:block;font-size:12.5px;font-weight:500;color:var(--ink-faint);margin-top:2px}
+.menu-item.leve{color:var(--ink-dim)}
+
+.visor-img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:20px;background:var(--foto)}
+.visor-nome{margin-top:16px;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.visor h4{margin-top:18px;font-size:14px;font-weight:800;color:var(--accent)}
+.visor p{margin-top:6px;font-size:14.5px;line-height:1.6;color:var(--ink-dim)}
+.visor .cuidado{margin-top:14px;background:var(--card-2);border-radius:14px;padding:12px 14px}
+.visor .cuidado h4{margin:0;color:var(--aviso)}
+.bt-video{margin-top:16px;width:100%;min-height:50px;border:none;border-radius:999px;background:var(--card-2);font-weight:800;font-size:14.5px;
+  display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.bt-video svg{width:18px;height:18px}
+
+/* ─── A · Vitrine ─── */
+#a .foto{aspect-ratio:4/3;margin-top:2px}
+#a .foto img{object-position:50% 58%}
+#a .nome{margin-top:18px}
+
+/* ─── B · Miniatura ─── */
+#b .id{display:flex;gap:14px;align-items:flex-start;margin-top:4px}
+#b .foto{width:96px;height:96px;flex:0 0 auto;border-radius:18px}
+#b .foto img{transform:scale(1.42);object-position:50% 58%}
+#b .foto .lupa{right:6px;bottom:6px;width:28px;height:28px}
+#b .foto .lupa svg{width:14px;height:14px}
+#b .nome{font-size:22px}
+#b .musculo{font-size:13.5px}
+
+/* ─── C · Encolhe ao começar ─── */
+#c .rolagem{padding-top:0}
+#c .heroi{position:relative;margin:0 -18px;height:330px;overflow:hidden;transition:height .45s var(--ease-out)}
+#c .heroi .foto{position:absolute;inset:0;border-radius:0;cursor:zoom-in}
+#c .heroi .foto img{object-position:50% 46%}
+#c .heroi::after{content:"";position:absolute;inset:auto 0 0 0;height:58%;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(14,14,14,0),rgba(14,14,14,.82) 62%,var(--paper))}
+#c .heroi-topo{position:absolute;top:16px;left:18px;right:18px;z-index:2;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+#c .heroi-topo > *{pointer-events:auto}
+#c .heroi-topo .bt-redondo{background:rgba(14,14,14,.72)}
+#c .heroi-texto{position:absolute;left:18px;right:18px;bottom:14px;z-index:2;pointer-events:none}
+#c .heroi-texto .pos{color:var(--ink-dim)}
+#c .heroi-texto .nome{margin-top:4px}
+#c .barra{position:absolute;top:0;left:0;right:0;z-index:6;display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(14,14,14,.94);
+  border-bottom:1px solid var(--line);transform:translateY(-100%);transition:transform .28s var(--ease-out)}
+#c .barra.visivel{transform:none}
+#c .barra .mini{width:44px;height:44px;flex:0 0 auto;border:none;padding:0;border-radius:12px;overflow:hidden;background:var(--foto);cursor:zoom-in}
+#c .barra .mini img{width:100%;height:100%;object-fit:cover;transform:scale(1.3);object-position:50% 58%}
+#c .barra .txt{flex:1;min-width:0}
+#c .barra .txt strong{display:block;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#c .barra .txt em{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+#c.compacto .depois-heroi .relogio{display:none}
+#c .barra .txt span{font-family:var(--font-mono);font-size:12px;font-weight:800;color:var(--accent)}
+#c .depois-heroi{padding-top:14px}
+#c.compacto .heroi{height:0}
+#c.compacto .rolagem{padding-top:76px}
+
+@media (prefers-reduced-motion: reduce){
+  .veu,.folha,#c .heroi,#c .barra{transition:none}
+}
+</style>
+</head>
+<body>
+<main class="pag">
+  <h1>Imagem do exercício na tela da série</h1>
+  <p class="lede">Hoje, a imagem só aparece na lista do treino. Na tela onde você ajusta a carga e toca em <b>“Comecei a série 1”</b>, o exercício é só um nome. Pra lembrar qual é a máquina, você tem que voltar. Três jeitos de trazer a imagem pra essa tela, com o treino de costas de verdade (remada serrote) e as imagens que você subiu.</p>
+  <p class="comum"><b>Nas três:</b> os quatro botões soltos do cabeçalho (Trocar, Deixar pra depois, Opções, Dia do ciclo) viram um menu <b>⋯</b>, e tocar na imagem abre ela grande, com o “como executar” junto. Toque em tudo dentro dos celulares: é interativo.</p>
+
+  <div class="abas" role="tablist" aria-label="Direções">
+    <button class="aba" role="tab" aria-selected="true" aria-controls="painel-a" data-alvo="painel-a"><span class="letra">A</span>Vitrine</button>
+    <button class="aba" role="tab" aria-selected="false" aria-controls="painel-b" data-alvo="painel-b"><span class="letra">B</span>Miniatura</button>
+    <button class="aba" role="tab" aria-selected="false" aria-controls="painel-c" data-alvo="painel-c"><span class="letra">C</span>Encolhe ao começar</button>
+  </div>
+
+  <!-- ═══════════ A ═══════════ -->
+  <section class="painel" id="painel-a" role="tabpanel">
+    <div class="palco"><div class="fone"><div class="tela" id="a">
+      <div class="rolagem">
+        <header class="cab" data-slot="cab"></header>
+        <button class="foto" data-abre="visor" aria-label="Ver a imagem grande"><img data-img alt="Remada serrote: joelho e mão no banco, puxando o halter"><span class="lupa" data-icone="ampliar"></span></button>
+        <h2 class="nome">Remada serrote (unilateral com halter)</h2>
+        <p class="musculo">Costas · um lado de cada vez</p>
+        <div data-slot="chips"></div>
+        <div data-slot="controles"></div>
+      </div>
+      <div data-slot="rodape"></div>
+      <div data-slot="sobreposicoes"></div>
+    </div></div></div>
+    <div class="notas">
+      <h2>A · Vitrine</h2>
+      <p class="sub">A imagem é a primeira coisa da tela, grande, e o nome vem logo embaixo. Você bate o olho e reconhece o banco ou a máquina, como numa vitrine.</p>
+      <h3>Por que funciona</h3>
+      <ul>
+        <li class="mais">É o jeito mais rápido de reconhecer: a máquina aparece grande, sem precisar tocar em nada.</li>
+        <li class="mais">O nome ganha a largura toda. Acaba o título espremido em 2 linhas ao lado dos botões.</li>
+        <li class="mais">Carga, reps e RIR continuam na primeira tela, sem rolar.</li>
+      </ul>
+      <h3>O que custa</h3>
+      <ul>
+        <li class="menos">A imagem ocupa ~260 px o tempo todo, inclusive na 3ª série, quando você já sabe qual exercício é. O ritmo e a última vez ficam abaixo da dobra.</li>
+      </ul>
+      <div class="teste"><b>Teste:</b> toque na imagem pra ver grande, e no <b>⋯</b> pra ver o menu.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════ B ═══════════ -->
+  <section class="painel" id="painel-b" role="tabpanel" hidden>
+    <div class="palco"><div class="fone"><div class="tela" id="b">
+      <div class="rolagem">
+        <header class="cab" data-slot="cab"></header>
+        <div class="id">
+          <button class="foto" data-abre="visor" aria-label="Ver a imagem grande"><img data-img alt="Remada serrote: joelho e mão no banco, puxando o halter"><span class="lupa" data-icone="ampliar"></span></button>
+          <div>
+            <h2 class="nome">Remada serrote (unilateral com halter)</h2>
+            <p class="musculo">Costas · um lado de cada vez</p>
+          </div>
+        </div>
+        <div data-slot="chips"></div>
+        <div data-slot="controles"></div>
+      </div>
+      <div data-slot="rodape"></div>
+      <div data-slot="sobreposicoes"></div>
+    </div></div></div>
+    <div class="notas">
+      <h2>B · Miniatura</h2>
+      <p class="sub">A imagem vira uma miniatura ao lado do nome, no mesmo formato do card “Agora” da lista do treino. Pra ver grande, um toque.</p>
+      <h3>Por que funciona</h3>
+      <ul>
+        <li class="mais">Quase não muda a altura da tela: tudo o que existe hoje continua no mesmo lugar.</li>
+        <li class="mais">É coerente com o app: a lista do treino já mostra a imagem assim.</li>
+        <li class="mais">É a mais simples de construir.</li>
+      </ul>
+      <h3>O que custa</h3>
+      <ul>
+        <li class="menos">96 px mostram bem o boneco, mas detalhes da máquina (onde fica o apoio, a altura da polia) pedem o toque pra ampliar.</li>
+      </ul>
+      <div class="teste"><b>Teste:</b> toque na miniatura. A imagem sobe numa folha, com o “como executar” e o cuidado do exercício.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════ C ═══════════ -->
+  <section class="painel" id="painel-c" role="tabpanel" hidden>
+    <div class="palco"><div class="fone"><div class="tela" id="c">
+      <div class="barra" aria-hidden="true">
+        <button class="bt-redondo" aria-label="Voltar pra lista" tabindex="-1" data-icone="voltar"></button>
+        <button class="mini" data-abre="visor" aria-label="Ver a imagem grande" tabindex="-1"><img data-img alt=""></button>
+        <div class="txt"><strong>Remada serrote (unilateral com halter)</strong><em>Sessão</em> <span data-relogio>12:34</span></div>
+        <button class="bt-redondo" data-abre="menu" aria-label="Mais opções" tabindex="-1" data-icone="mais"></button>
+      </div>
+      <div class="rolagem">
+        <div class="heroi">
+          <button class="foto" data-abre="visor" aria-label="Ver a imagem grande"><img data-img alt="Remada serrote: joelho e mão no banco, puxando o halter"></button>
+          <div class="heroi-topo">
+            <button class="bt-redondo" aria-label="Voltar pra lista" data-icone="voltar"></button>
+            <button class="bt-redondo" data-abre="menu" aria-label="Mais opções" data-icone="mais"></button>
+          </div>
+          <div class="heroi-texto">
+            <span class="pos">Exercício 2 de 6</span>
+            <h2 class="nome">Remada serrote (unilateral com halter)</h2>
+          </div>
+        </div>
+        <div class="depois-heroi">
+          <div class="cab-meio"><span class="relogio"><span class="rot">Sessão</span><span class="t" data-relogio>12:34</span></span><span class="musculo" style="margin:0">Costas · um lado de cada vez</span></div>
+          <div data-slot="chips"></div>
+          <div data-slot="controles"></div>
+        </div>
+      </div>
+      <div data-slot="rodape"></div>
+      <div data-slot="sobreposicoes"></div>
+    </div></div></div>
+    <div class="notas">
+      <h2>C · Encolhe ao começar</h2>
+      <p class="sub">A imagem é enorme quando você chega no exercício, que é a hora em que precisa achar a máquina. Depois da 1ª série ela encolhe numa barra com miniatura, porque aí você já está nela.</p>
+      <h3>Por que funciona</h3>
+      <ul>
+        <li class="mais">Mostra a imagem grande na hora em que você precisa dela e libera o espaço quando não precisa mais.</li>
+        <li class="mais">Rolando pra baixo, a barra com miniatura aparece sozinha no topo. O exercício nunca some de vista.</li>
+        <li class="mais">A imagem ocupa a largura toda da tela, sem moldura: dá a cara mais “de app de treino” das três.</li>
+      </ul>
+      <h3>O que custa</h3>
+      <ul>
+        <li class="menos">É a mais trabalhosa de construir: depende do estado (já fez série?) e da rolagem.</li>
+        <li class="menos">O nome em cima da imagem depende do degradê escuro embaixo dela pra ficar legível.</li>
+      </ul>
+      <div class="teste"><b>Teste:</b> role a tela pra ver a barra aparecer. Depois toque em <b>“Comecei a série 1”</b>: a demo registra a série e a imagem encolhe.<br><button class="reset" id="reset-c">Voltar ao início da demo</button></div>
+    </div>
+  </section>
+</main>
+
+<template id="tpl-cab">
+  <button class="bt-redondo" aria-label="Voltar pra lista" data-icone="voltar"></button>
+  <div class="cab-meio"><span class="pos">Exercício 2 de 6</span><span class="relogio"><span class="rot">Sessão</span><span class="t" data-relogio>12:34</span></span></div>
+  <button class="bt-redondo" data-abre="menu" aria-label="Mais opções" data-icone="mais"></button>
+</template>
+
+<template id="tpl-chips">
+  <div class="chips"><span class="chip"><b>3</b> séries</span><span class="chip"><b>8–12</b> reps</span><span class="chip">RIR <b>1</b></span><span class="chip"><b>90</b> s de descanso</span></div>
+</template>
+
+<template id="tpl-controles">
+  <div class="trilho" data-trilho><div class="on"><i></i><span>agora</span></div><div><i></i><span>—</span></div><div><i></i><span>—</span></div></div>
+  <div class="campos">
+    <button class="campo ativo"><small>Carga</small><strong>14 kg</strong></button>
+    <button class="campo"><small>Reps</small><strong>12</strong></button>
+    <button class="campo"><small>RIR</small><strong>1</strong></button>
+  </div>
+  <div class="ajuste"><button aria-label="Diminuir" data-icone="menos"></button><div>Ajustando<b>Carga · kg</b></div><button aria-label="Aumentar" data-icone="mais-sinal"></button></div>
+  <p class="alvo">Alvo <b>8–12</b> reps, parando com <b>1</b> sobrando. Comece pelo lado <b>mais fraco</b>.</p>
+  <div class="ultima">Última vez <b>12 kg · 12 · 12 · 12</b></div>
+  <div class="ritmo">Ritmo: 2 s puxando · 3 s voltando <b>Ajustar</b></div>
+</template>
+
+<template id="tpl-rodape">
+  <div class="rodape">
+    <button class="sq" aria-label="Descanso" data-icone="relogio"></button>
+    <button class="sec">Já fiz</button>
+    <button class="prim" data-prim>Comecei a série 1</button>
+  </div>
+</template>
+
+<template id="tpl-sobreposicoes">
+  <div class="veu" data-fecha></div>
+  <div class="folha" data-folha="menu" role="dialog" aria-label="Mais opções">
+    <div class="alca"></div>
+    <button class="menu-item" data-fecha data-icone-item="trocar"><div>Trocar exercício<span>Só hoje. A ficha não muda.</span></div></button>
+    <button class="menu-item" data-fecha data-icone-item="adiar"><div>Deixar pra depois<span>Vai pro fim da fila de hoje.</span></div></button>
+    <button class="menu-item" data-fecha data-icone-item="opcoes"><div>Opções do exercício<span>Já fiz tudo, não vou fazer hoje, superset.</span></div></button>
+    <button class="menu-item leve" data-fecha data-icone-item="ciclo"><div>Dia do ciclo</div></button>
+  </div>
+  <div class="folha visor" data-folha="visor" role="dialog" aria-label="Imagem do exercício">
+    <div class="alca"></div>
+    <img class="visor-img" data-img alt="Remada serrote: joelho e mão no banco, puxando o halter">
+    <h3 class="visor-nome">Remada serrote (unilateral com halter)</h3>
+    <h4>Como executar</h4>
+    <p>Joelho e mão do mesmo lado apoiados no banco, costas retas e paralelas ao chão. Puxe o halter em direção ao quadril (não ao ombro), cotovelo rente ao corpo, deixando a escápula ir pra trás. Desça em 3 s até o braço esticar. Comece pelo lado mais fraco e faça no lado forte o mesmo número de repetições.</p>
+    <div class="cuidado"><h4>Cuidado</h4><p>Não gire o tronco pra ajudar. Se o ombro subir junto ou o tronco rodar, o peso está alto.</p></div>
+    <button class="bt-video" data-icone-item="video">Ver vídeo da execução</button>
+  </div>
+</template>
+
+<script>
+const IMAGEM = "https://ydlzdxqtjxbocwuzurzv.supabase.co/storage/v1/object/public/exercicio-imagens/remada_serrote_halter-1787600807290.png";
+const ICONES = {
+  voltar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  mais: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  ampliar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+  menos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  "mais-sinal": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  relogio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>',
+  trocar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+  adiar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h12M13 7l5 5-5 5"/><path d="M5 5v14" opacity=".5"/></svg>',
+  opcoes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+  ciclo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  video: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
+};
+
+function preencherTela(tela) {
+  for (const slot of tela.querySelectorAll("[data-slot]")) {
+    const tpl = document.getElementById("tpl-" + slot.dataset.slot);
+    if (!tpl) continue;
+    if (slot.tagName === "HEADER") slot.append(tpl.content.cloneNode(true));
+    else slot.replaceWith(tpl.content.cloneNode(true));
+  }
+  tela.querySelectorAll("[data-img]").forEach((img) => { img.src = IMAGEM; img.loading = "lazy"; });
+  tela.querySelectorAll("[data-icone]").forEach((el) => { el.insertAdjacentHTML("afterbegin", ICONES[el.dataset.icone] ?? ""); });
+  tela.querySelectorAll("[data-icone-item]").forEach((el) => { el.insertAdjacentHTML("afterbegin", ICONES[el.dataset.iconeItem] ?? ""); });
+
+  const veu = tela.querySelector(".veu");
+  const fechar = () => { veu.classList.remove("aberto"); tela.querySelectorAll(".folha").forEach((f) => f.classList.remove("aberta")); };
+  tela.addEventListener("click", (e) => {
+    const abre = e.target.closest("[data-abre]");
+    if (abre) {
+      tela.querySelector(`[data-folha="${abre.dataset.abre}"]`).scrollTop = 0;
+      tela.querySelector(`[data-folha="${abre.dataset.abre}"]`).classList.add("aberta");
+      veu.classList.add("aberto");
+      return;
+    }
+    if (e.target.closest("[data-fecha]")) fechar();
+  });
+  return tela;
+}
+
+const telas = ["a", "b", "c"].map((id) => preencherTela(document.getElementById(id)));
+
+// Relógio da sessão andando, igual ao app (começa em 12:34).
+let segundos = 12 * 60 + 34;
+setInterval(() => {
+  segundos++;
+  const t = `${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}`;
+  document.querySelectorAll("[data-relogio]").forEach((el) => { el.textContent = t; });
+}, 1000);
+
+// C: barra compacta aparece quando a imagem sai de vista; "Comecei a série 1" encolhe a imagem.
+const c = document.getElementById("c");
+const barra = c.querySelector(".barra");
+const rolagemC = c.querySelector(".rolagem");
+const heroi = c.querySelector(".heroi");
+const atualizarBarra = () => {
+  const compacto = c.classList.contains("compacto");
+  const visivel = compacto || rolagemC.scrollTop > heroi.offsetHeight - 70;
+  barra.classList.toggle("visivel", visivel);
+  barra.querySelectorAll("button").forEach((b) => { b.tabIndex = visivel ? 0 : -1; });
+  barra.setAttribute("aria-hidden", String(!visivel));
+};
+rolagemC.addEventListener("scroll", atualizarBarra, { passive: true });
+const primC = c.querySelector("[data-prim]");
+const trilhoC = c.querySelector("[data-trilho]");
+function estadoInicialC() {
+  c.classList.remove("compacto");
+  primC.textContent = "Comecei a série 1";
+  trilhoC.children[0].className = "on"; trilhoC.children[0].querySelector("span").textContent = "agora";
+  trilhoC.children[1].className = ""; trilhoC.children[1].querySelector("span").textContent = "—";
+  rolagemC.scrollTop = 0;
+  atualizarBarra();
+}
+primC.addEventListener("click", () => {
+  if (c.classList.contains("compacto")) return;
+  c.classList.add("compacto");
+  trilhoC.children[0].className = "feita"; trilhoC.children[0].querySelector("span").textContent = "14×12";
+  trilhoC.children[1].className = "on"; trilhoC.children[1].querySelector("span").textContent = "agora";
+  primC.textContent = "Comecei a série 2";
+  rolagemC.scrollTop = 0;
+  atualizarBarra();
+});
+document.getElementById("reset-c").addEventListener("click", estadoInicialC);
+
+// Abas
+const abas = [...document.querySelectorAll(".aba")];
+abas.forEach((aba) => aba.addEventListener("click", () => {
+  abas.forEach((a) => a.setAttribute("aria-selected", String(a === aba)));
+  document.querySelectorAll(".painel").forEach((p) => { p.hidden = p.id !== aba.dataset.alvo; });
+  ajustarCelulares();
+}));
+
+// O celular tem 414 px de largura real; em tela estreita, escala pra caber.
+function ajustarCelulares() {
+  document.querySelectorAll(".palco").forEach((palco) => {
+    const fone = palco.querySelector(".fone");
+    const escala = Math.min(1, palco.clientWidth / 414);
+    fone.style.transform = escala < 1 ? `scale(${escala})` : "";
+    palco.style.height = `${868 * escala}px`;
+  });
+}
+addEventListener("resize", ajustarCelulares);
+ajustarCelulares();
+</script>
+</body>
+</html>

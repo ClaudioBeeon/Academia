@@ -233,23 +233,80 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .swap-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .swap-pill.selecionada { background: var(--accent); color: var(--accent-ink); }
 
-/* Ações do cabeçalho da execução — "Trocar" e "Deixar pra depois", as duas
-   folgas de hoje que não tocam a ficha. Empilhadas (não lado a lado) pra
-   caberem sem espremer o nome do exercício num telefone estreito. */
-.exec-acoes-header { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 0 auto; }
-.exec-acoes-header .swap-pill { min-height: 36px; padding: 6px 12px; font-size: 0.78rem; }
-/* Nome do exercício pode ser bem longo ("Remada serrote (unilateral com
-   halter)") — sem limite de linhas, o título empurrava a coluna de botões
-   (Trocar/Deixar pra depois/Dia do ciclo) pra cima de um jeito desalinhado,
-   com um vão vazio enorme ao lado das linhas de baixo. 2 linhas com reticências
-   mantém o cabeçalho compacto; o nome completo ainda aparece no card do
-   exercício logo abaixo. */
+/* Cabeçalho da execução sem imagem (exercício que ainda não tem foto): nome
+   em até 2 linhas e o menu "⋯" à direita. Nome longo ("Remada serrote
+   (unilateral com halter)") sem limite de linhas empurrava o resto. */
 .exec-header { align-items: flex-start; }
 .exec-titulo {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; font-size: 1.4rem;
 }
-.adiar-pill { color: var(--ink-faint); }
+
+/* Topo da execução com imagem (js/screens/execucao.js; direção C de
+   prototypes/execucao-imagem-3-direcoes.html). A imagem abre de borda a
+   borda — é ao chegar no exercício que se procura a máquina — e encolhe
+   (grid-template-rows 1fr → 0fr, mesma técnica do .ferramentas-painel)
+   depois da 1ª série, quando a barra fixa com miniatura assume. */
+.exec-heroi { margin: 0 -20px; display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--duration-standard) var(--ease-out); }
+.exec-heroi-corpo { position: relative; min-height: 0; overflow: hidden; }
+.exec-heroi-foto { display: block; width: 100%; height: 330px; padding: 0; border: none; background: #2C2C2C; cursor: zoom-in; }
+.exec-heroi-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 46%; }
+/* Em tela larga (tablet/computador) a faixa fica muito mais larga que alta
+   e o recorte cortava a cabeça do boneco — mostra a imagem inteira, com o
+   mesmo cinza do fundo das imagens nas laterais. */
+@media (min-width: 600px) { .exec-heroi-foto img { object-fit: contain; } }
+/* Degradê pra cor do fundo embaixo da imagem: é ele que deixa o nome
+   legível em cima dela, nos dois temas (o texto usa --ink, e o degradê
+   termina em --paper). */
+.exec-heroi-corpo::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 58%; pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 0%, transparent), color-mix(in srgb, var(--paper) 84%, transparent) 62%, var(--paper));
+}
+.exec-heroi-topo { position: absolute; top: 14px; left: 20px; right: 20px; z-index: 1; display: flex; justify-content: space-between; }
+.exec-heroi-topo .icon-btn { background: color-mix(in srgb, var(--paper) 72%, transparent); }
+.exec-heroi-texto { position: absolute; left: 20px; right: 20px; bottom: 12px; z-index: 1; pointer-events: none; }
+.exec-heroi-texto .date-label { color: var(--ink-dim); }
+.exec-heroi-nome { margin: 4px 0 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.12; text-wrap: balance; }
+.exec-heroi-info { display: flex; margin: 0 0 12px; }
+.tela-execucao.exec-compacto .exec-heroi { grid-template-rows: 0fr; }
+.tela-execucao.exec-compacto .exec-heroi-info { display: none; }
+.tela-execucao.exec-compacto { padding-top: 68px; }
+
+.exec-barra {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top)) 20px 10px; background: color-mix(in srgb, var(--paper) 95%, transparent);
+  border-bottom: 1px solid var(--line); transform: translateY(-100%); visibility: hidden;
+  transition: transform 0.28s var(--ease-out), visibility 0s 0.28s;
+}
+.exec-barra.visivel { transform: none; visibility: visible; transition: transform 0.28s var(--ease-out); }
+.exec-barra-mini { width: 44px; height: 44px; flex: 0 0 auto; padding: 0; border: none; border-radius: 12px; overflow: hidden; background: #2C2C2C; cursor: zoom-in; }
+.exec-barra-mini img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; transform: scale(1.3); }
+.exec-barra-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.exec-barra-txt { flex: 1; min-width: 0; }
+.exec-barra-txt strong { display: block; font-size: 0.95rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exec-barra-txt .relogio-sessao { margin: 2px 0 0; }
+@media (prefers-reduced-motion: reduce) {
+  .exec-heroi, .exec-barra, .exec-barra.visivel { transition: none; }
+}
+
+/* Menu "⋯" e visor da imagem (js/screens/folhasExercicio.js). */
+.exec-menu-sheet { align-items: stretch; }
+.exec-menu-item {
+  display: block; width: 100%; min-height: 58px; padding: 12px 4px; border: none; border-bottom: 1px solid var(--card-2);
+  background: transparent; color: var(--ink); font-family: inherit; text-align: left; cursor: pointer;
+}
+.exec-menu-item:last-child { border-bottom: none; }
+.exec-menu-item b { display: block; font-size: 1rem; font-weight: 700; }
+.exec-menu-item span { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--ink-faint); }
+.exec-menu-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
+.exec-visor-sheet { align-items: stretch; max-height: 90vh; overflow-y: auto; }
+.exec-visor-img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 20px; background: #2C2C2C; }
+.exec-visor-sheet .exec-visor-nome { margin: 16px 0 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); text-transform: none; }
+.exec-visor-sheet h4 { margin: 16px 0 0; font-size: 0.85rem; font-weight: 800; color: var(--accent); }
+.exec-visor-sheet p { margin: 6px 0 0; font-size: 0.9rem; line-height: 1.6; color: var(--ink-dim); }
+.exec-visor-cuidado { margin-top: 14px; background: var(--card-2); border-radius: 14px; padding: 12px 14px; }
+.exec-visor-cuidado h4 { margin: 0; color: var(--aviso); }
+.exec-visor-video { margin-top: 16px; text-decoration: none; }
 
 .sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
 /* Técnica grid-template-rows: 0fr → 1fr — não precisa de um teto de altura

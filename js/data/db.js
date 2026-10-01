@@ -1,5 +1,5 @@
 const DB_NAME = "academiaDB";
-const DB_VERSION = 13;
+const DB_VERSION = 14;
 
 const STORES = {
   perfil: "versao",
@@ -35,6 +35,10 @@ const STORES = {
   // próprio Supabase têm (essas continuam em localStorage). Sincronizar é o
   // que permite a chave sobreviver a reinstalar o app ou trocar de aparelho.
   chavesApi: "chave",
+  // Recado do "personal" por exercício (js/data/recadosPersonal.js): escrito
+  // pela análise do treino direto no servidor e baixado ao abrir o app. Só
+  // leitura no aparelho — fora da sincronização de saída (js/data/sync.js).
+  recadosPersonal: "exercicioId",
 };
 
 // Stores cuja chave é numérica autoIncrement (as demais usam chave string:

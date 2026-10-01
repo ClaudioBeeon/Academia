@@ -290,7 +290,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 }
 
 /* Menu "⋯" e visor da imagem (js/screens/folhasExercicio.js). */
-.exec-menu-sheet { align-items: stretch; }
+.carga-sheet.exec-menu-sheet { align-items: stretch; }
 .exec-menu-item {
   display: block; width: 100%; min-height: 58px; padding: 12px 4px; border: none; border-bottom: 1px solid var(--card-2);
   background: transparent; color: var(--ink); font-family: inherit; text-align: left; cursor: pointer;
@@ -299,7 +299,7 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-menu-item b { display: block; font-size: 1rem; font-weight: 700; }
 .exec-menu-item span { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--ink-faint); }
 .exec-menu-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
-.exec-visor-sheet { align-items: stretch; max-height: 90vh; overflow-y: auto; }
+.carga-sheet.exec-visor-sheet { align-items: stretch; max-height: 90vh; overflow-y: auto; }
 .exec-visor-img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 20px; background: #2C2C2C; }
 .exec-visor-sheet .exec-visor-nome { margin: 16px 0 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); text-transform: none; }
 .exec-visor-sheet h4 { margin: 16px 0 0; font-size: 0.85rem; font-weight: 800; color: var(--accent); }
@@ -307,6 +307,38 @@ main { padding: 18px 0 0; display: flex; flex-direction: column; gap: 12px; }
 .exec-visor-cuidado { margin-top: 14px; background: var(--card-2); border-radius: 14px; padding: 12px 14px; }
 .exec-visor-cuidado h4 { margin: 0; color: var(--aviso); }
 .exec-visor-video { margin-top: 16px; text-decoration: none; }
+
+/* "Seu personal" (js/engine/personal.js + js/screens/folhasExercicio.js):
+   abre sozinho na 1ª vez do dia em cada exercício e pelo botão abaixo do
+   nome. Lista de definições: o rótulo à esquerda, o número que importa em
+   destaque e a explicação embaixo — lê de relance, entre uma série e outra. */
+.exec-heroi-info { align-items: center; gap: 8px; flex-wrap: wrap; }
+.exec-heroi-info .relogio-sessao { margin-top: 0; }
+.exec-personal-chip {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px 0 11px;
+  border: none; border-radius: 999px; background: var(--card); color: var(--ink);
+  font-family: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.exec-personal-chip svg { width: 16px; height: 16px; color: var(--accent); }
+.exec-personal-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.carga-sheet.exec-personal-sheet { align-items: stretch; max-height: 90vh; overflow-y: auto; }
+.exec-personal-topo { text-align: left; }
+.exec-personal-sheet .exec-personal-topo h3 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); text-transform: none; }
+.exec-personal-topo p { margin: 3px 0 0; font-size: 0.85rem; color: var(--ink-dim); }
+.exec-personal-recado { margin-top: 16px; padding: 14px 16px; border-radius: 16px; background: var(--card-2); }
+.exec-personal-recado span { display: block; font-size: 0.75rem; font-weight: 800; color: var(--accent); }
+.exec-personal-recado p { margin: 5px 0 0; font-size: 0.95rem; line-height: 1.5; color: var(--ink); }
+.exec-personal-lista { margin: 8px 0 0; }
+.exec-personal-lista > div { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--card-2); }
+.exec-personal-lista > div:last-child { border-bottom: none; }
+.exec-personal-lista dt { font-size: 0.78rem; font-weight: 700; color: var(--ink-faint); line-height: 1.4; padding-top: 2px; }
+.exec-personal-lista dd { margin: 0; font-size: 0.88rem; line-height: 1.5; color: var(--ink-dim); }
+.exec-personal-lista dd b { display: block; margin-bottom: 2px; font-family: var(--font-mono); font-size: 1.15rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.exec-personal-bora {
+  margin-top: 16px; min-height: 52px; border: none; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-family: inherit; font-weight: 800; font-size: 1rem; cursor: pointer;
+}
+.exec-personal-bora:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .sets { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 8px; }
 /* Técnica grid-template-rows: 0fr → 1fr — não precisa de um teto de altura

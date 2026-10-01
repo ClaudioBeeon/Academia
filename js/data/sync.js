@@ -31,7 +31,9 @@ const INTERVALO_FLUSH_MS = 30000;
 
 // syncOutbox nunca é sincronizada (seria recursivo), e config guarda inclusive
 // a chave da API do Gemini/Supabase — nada aqui deveria ir pro servidor.
-const STORES_EXCLUIDAS_DO_SYNC = new Set(["syncOutbox", "config"]);
+// recadosPersonal vem do servidor (escrito pela análise do treino) e nunca
+// é editado no aparelho — mandar de volta seria só eco.
+const STORES_EXCLUIDAS_DO_SYNC = new Set(["syncOutbox", "config", "recadosPersonal"]);
 
 export function ehStoreNumerica(storeName) {
   return STORES_COM_CHAVE_NUMERICA.includes(storeName);

@@ -26,6 +26,7 @@ import { montarWidgetFlutuante } from "./screens/widgetFlutuante.js";
 import { definirCronometroFlutuante, limparCronometroFlutuante } from "./lib/timerFlutuante.js";
 import { getCardioEmAndamento, limparCardioEmAndamento } from "./data/cardioEmAndamento.js";
 import { religarImagensExercicios } from "./data/imagensExercicio.js";
+import { baixarRecadosPersonal } from "./data/recadosPersonal.js";
 import { obterTemaSalvo, aplicarTema, observarTemaDoSistema } from "./lib/tema.js";
 
 function criarMensagem(texto) {
@@ -73,6 +74,9 @@ async function bootstrap() {
   // traz as subidas por fora do app). Não é aguardado: a Início não mostra
   // imagem de exercício, e até abrir a fila/biblioteca já terminou.
   if (supabaseConfigurado()) religarImagensExercicios(db).catch((err) => console.error("Falha ao religar imagens:", err));
+  // Recados do personal escritos pela análise do treino (direto no servidor):
+  // baixa ao abrir, pra estarem no aparelho quando o exercício for aberto.
+  if (supabaseConfigurado()) baixarRecadosPersonal(db).catch((err) => console.error("Falha ao baixar recados do personal:", err));
 
   // Voltou do link de "esqueci a senha" (ou de um link vencido): abre direto
   // a Config, onde fica o campo da senha nova.

@@ -26,7 +26,9 @@ import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/pergu
 import { DIAS_SEQUENCIA, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
 import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
 import { montarRelogioSessao } from "../lib/relogioSessao.js";
-import { abrirMenuExercicio, abrirVisorExercicio } from "./folhasExercicio.js";
+import { abrirMenuExercicio, abrirVisorExercicio, abrirPersonalExercicio } from "./folhasExercicio.js";
+import { montarOrientacaoPersonal, recadoValido } from "../engine/personal.js";
+import { getRecadoPersonal } from "../data/recadosPersonal.js";
 
 const CONFIG_PADRAO = { repsMin: 8, repsMax: 12, rirAlvo: 2, descansoSegundos: 90 };
 const TOTAL_SERIES_ALVO_PADRAO = 3;
@@ -152,9 +154,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     .map((sessao) => ({ data: sessao.data, series: sessao.series.filter((x) => x.tipoSerie !== "aquecimento") }))
     .find((sessao) => sessao.series.length > 0) ?? null;
   const ultimaPorNumero = new Map((ultimaSessao?.series ?? []).map((x) => [x.serieNumero, x]));
-  const [notaDeHoje, ultimaNota] = await Promise.all([
+  const [notaDeHoje, ultimaNota, recadoPersonal] = await Promise.all([
     getNotaExercicio(db, exercicio.id, hoje),
     getUltimaNotaAnterior(db, exercicio.id, hoje),
+    getRecadoPersonal(db, exercicio.id).catch(() => null),
   ]);
 
   // Dupla progressão (js/engine/progressao.js): carga base = maior carga de
@@ -255,6 +258,29 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   const diaCicloBtn = document.createElement("button");
   diaCicloBtn.type = "button";
   acoesMenu.push({ rotulo: "Dia do ciclo", detalhe: "Trocar qual dia da ficha é hoje.", botao: diaCicloBtn, rolarAte: () => painelDiaCiclo });
+  // Personal: a orientação é montada na hora (a carga sugerida já está
+  // calculada acima); o recado só entra se ainda for pra esta vez.
+  function abrirPersonal() {
+    const potencia = Boolean(exercicio.prescricao?.potencia);
+    let aquecimento = [];
+    if (!potencia && cargaSelecionada > 0) {
+      if (exercicio.equipamento === "barra") aquecimento = gerarEscadaAquecimento(cargaSelecionada, equipamento.pesoBarra);
+      else if (precisaDeAquecimento(exercicio)) aquecimento = gerarAquecimentoComposto(cargaSelecionada, incrementoCarga);
+    }
+    abrirPersonalExercicio({
+      nome: exercicio.nome,
+      orientacao: montarOrientacaoPersonal({
+        sugestao: { ...sugestao, carga: sugestao.carga ?? (cargaSelecionada > 0 ? cargaSelecionada : null) },
+        cfg,
+        totalSeries: totalSeriesAlvo,
+        prescricao: exercicio.prescricao ?? {},
+        aquecimento,
+        recado: recadoValido(recadoPersonal, sessoesAnteriores[0] ?? null) ? recadoPersonal : null,
+      }),
+    });
+  }
+  acoesMenu.unshift({ rotulo: "Dicas do personal", detalhe: "Carga de hoje, séries, aquecimento e recado.", botao: { click: abrirPersonal } });
+
   const abrirMenu = () => abrirMenuExercicio(acoesMenu.map((acao) => ({
     rotulo: acao.rotulo,
     detalhe: acao.detalhe,
@@ -266,6 +292,15 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
 
   const ICONE_VOLTAR = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`;
   const ICONE_MAIS = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>`;
+  function criarBotaoPersonal() {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "exec-personal-chip";
+    botao.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.7 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h6M9 14.5h3.5"/></svg><span>Dicas do personal</span>`;
+    botao.addEventListener("click", () => abrirPersonal());
+    return botao;
+  }
+
   const temImagem = Boolean(exercicio.imagemUrl);
   let heroiEl = null;
   let barraEl = null;
@@ -294,12 +329,11 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     heroiEl.querySelector("img").src = exercicio.imagemUrl;
     heroiEl.querySelector(".exec-heroi-nome").textContent = exercicio.nome;
     root.appendChild(heroiEl);
-    if (relogiosSessao.length > 0) {
-      const info = document.createElement("div");
-      info.className = "exec-heroi-info";
-      info.appendChild(relogiosSessao[0].elemento);
-      root.appendChild(info);
-    }
+    const info = document.createElement("div");
+    info.className = "exec-heroi-info";
+    if (relogiosSessao.length > 0) info.appendChild(relogiosSessao[0].elemento);
+    info.appendChild(criarBotaoPersonal());
+    root.appendChild(info);
 
     barraEl = document.createElement("div");
     barraEl.className = "exec-barra";
@@ -335,6 +369,10 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
     header.querySelector(".exec-titulo").textContent = exercicio.nome;
     if (relogiosSessao.length > 0) header.querySelector(".exec-titulo").after(relogiosSessao[0].elemento);
     root.appendChild(header);
+    const info = document.createElement("div");
+    info.className = "exec-heroi-info";
+    info.appendChild(criarBotaoPersonal());
+    root.appendChild(info);
   }
   root.querySelectorAll(".voltar-btn").forEach((botao) => botao.addEventListener("click", voltar));
   root.querySelectorAll(".exec-mais-btn").forEach((botao) => botao.addEventListener("click", abrirMenu));
@@ -1376,6 +1414,20 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   if (descansoInicialSegundos > 0) iniciarDescanso(descansoInicialSegundos);
 
   root._dispose = pararTudo;
+
+  // Personal abre sozinho ao chegar no exercício pela 1ª vez no dia, antes
+  // da 1ª série. Não no meio de um superset (já entra com descanso rodando).
+  // Lembrado por aparelho (localStorage) — é preferência de exibição.
+  const chaveVisto = `personalVisto:${hoje}:${exercicio.id}`;
+  let jaViu = true;
+  try { jaViu = localStorage.getItem(chaveVisto) === "1"; } catch { /* sem storage: não abre sozinho */ }
+  if (!jaViu && seriesHoje.length === 0 && descansoInicialSegundos <= 0) {
+    setTimeout(() => {
+      if (!root.isConnected) return;
+      try { localStorage.setItem(chaveVisto, "1"); } catch { /* segue */ }
+      abrirPersonal();
+    }, 450);
+  }
 
   return root;
 }

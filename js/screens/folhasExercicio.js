@@ -55,6 +55,45 @@ export function abrirMenuExercicio(itens) {
   });
 }
 
+// orientacao: saída de montarOrientacaoPersonal (js/engine/personal.js).
+export function abrirPersonalExercicio({ nome, orientacao }) {
+  return abrirFolha("exec-personal-sheet", `Seu personal: ${nome}`, (folha, fechar) => {
+    const topo = document.createElement("div");
+    topo.className = "exec-personal-topo";
+    topo.innerHTML = "<h3>Seu personal</h3><p></p>";
+    topo.querySelector("p").textContent = nome;
+    folha.appendChild(topo);
+
+    if (orientacao.recado) {
+      const recado = document.createElement("div");
+      recado.className = "exec-personal-recado";
+      recado.innerHTML = "<span></span><p></p>";
+      recado.querySelector("span").textContent = `Recado de ${orientacao.recado.data}`;
+      recado.querySelector("p").textContent = orientacao.recado.texto;
+      folha.appendChild(recado);
+    }
+
+    const lista = document.createElement("dl");
+    lista.className = "exec-personal-lista";
+    for (const item of orientacao.itens) {
+      const linha = document.createElement("div");
+      linha.innerHTML = `<dt></dt><dd>${item.destaque ? "<b></b>" : ""}<span></span></dd>`;
+      linha.querySelector("dt").textContent = item.titulo;
+      if (item.destaque) linha.querySelector("b").textContent = item.destaque;
+      linha.querySelector("span").textContent = item.texto;
+      lista.appendChild(linha);
+    }
+    folha.appendChild(lista);
+
+    const bora = document.createElement("button");
+    bora.type = "button";
+    bora.className = "exec-personal-bora";
+    bora.textContent = "Bora";
+    bora.addEventListener("click", fechar);
+    folha.appendChild(bora);
+  });
+}
+
 export function abrirVisorExercicio(exercicio) {
   return abrirFolha("exec-visor-sheet", `Imagem de ${exercicio.nome}`, (folha) => {
     if (exercicio.imagemUrl) {

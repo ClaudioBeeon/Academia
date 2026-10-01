@@ -9,16 +9,13 @@ import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
 import { getCardioRecente } from "../data/cardio.js";
-import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
-import { calcularSemanaDoBloco, inicioParaDeloadAgora, SEMANA_DELOAD } from "../engine/fichaFixa.js";
+import { getFicha, getInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
 import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
-import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
-import { resumirSemana } from "../engine/resumoSemana.js";
 import { getSessoesVolei, getInicioVolei } from "../data/volei.js";
 import { calcularSemanaVolei } from "../engine/volei.js";
 import { SEMANAS_VOLEI } from "../data/programaVolei.js";
 import { getCheckinsRecentes } from "../data/checkin.js";
-import { confirmarAcao } from "./confirmarAcao.js";
 import { planejarPausasPosturais, proximaPausaPostural, pausasPendentes } from "../engine/lembretes.js";
 import { calcularSequenciaDias } from "../engine/consistencia.js";
 import { calcularReadiness } from "../engine/readiness.js";
@@ -116,12 +113,8 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   const cardioDeHojeLogado = ultimoCardioGeral?.data === hoje ? ultimoCardioGeral : null;
   const semanaDoBloco = calcularSemanaDoBloco(inicioDoBloco, hoje);
   const estadoTreino = avaliarEstadoDoTreino({ todasAsSeries, checkinsRecentes: await getCheckinsRecentes(db), hoje });
-  // Com queda de desempenho, aponta a causa mais provável antes de culpar
-  // o programa (sono e álcool primeiro — js/engine/autorregulacao.js).
-  if (estadoTreino.alertasDesempenho.length > 0) {
-    const habitosRecentes = (await getAll(db, "habitos")).sort((a, b) => b.data.localeCompare(a.data));
-    estadoTreino.causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes });
-  }
+  // Só a fadiga importa aqui (segura a série extra das semanas 4–6). Os
+  // sinais do treino em si aparecem na aba Treinos (cardsAcompanhamento.js).
   const { fadigaDetectada } = estadoTreino;
   const { exerciciosHoje } = prepararSessaoDoDia({
     todosExercicios, protocolo, todasAsSeries, hoje, diaInfo, ficha, semanaDoBloco, fadigaDetectada,
@@ -175,21 +168,6 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   root.appendChild(main);
 
   main.appendChild(montarCardReadiness(readiness));
-  const cardAlertas = montarCardAlertasTreino(estadoTreino, todosExercicios, semanaDoBloco, async () => {
-    const confirmou = await confirmarAcao({
-      titulo: "Fazer deload agora?",
-      mensagem: "Esta semana vira a semana de deload (metade das séries, mesma carga, RIR mais alto). Depois de 7 dias o bloco recomeça sozinho na semana 1.",
-      textoConfirmar: "Começar deload",
-    });
-    if (!confirmou) return;
-    await definirInicioDoBloco(db, inicioParaDeloadAgora(hoje));
-    if (onAtividadeAdicionada) onAtividadeAdicionada();
-  });
-  if (cardAlertas) main.appendChild(cardAlertas);
-  const idsDaFicha = new Set((ficha?.dias ?? []).flatMap((d) => d.exercicios.map((e) => e.exercicioId)));
-  const musculosDaFicha = [...new Set(todosExercicios.filter((e) => idsDaFicha.has(e.id)).map((e) => e.musculoPrimario))];
-  const cardSemana = montarCardResumoSemana(resumirSemana({ todasAsSeries, catalogo: todosExercicios, musculosDaFicha, hoje }));
-  if (cardSemana) main.appendChild(cardSemana);
   main.appendChild(montarChipsHabitos(controladorHabitos));
 
   const totalSeriesPrevistas = exerciciosHoje.reduce((soma, e) => soma + (e.seriesAlvo ?? 3), 0);
@@ -285,102 +263,6 @@ function montarCardVolei(sessoesVolei, inicioVolei, hoje, aoAbrir) {
     : "Programa de 6 semanas pra toque e direção, em casa · 20–25 min";
   card.querySelector("button").textContent = feitoHoje ? "Ver" : "Começar";
   card.addEventListener("click", aoAbrir);
-  return card;
-}
-
-// Resumo dos últimos 7 dias contra os 7 anteriores. Fechado por padrão —
-// é leitura de acompanhamento, não algo pra agir na hora.
-const NOME_MUSCULO_CURTO = {
-  peito: "peito", costas: "costas", biceps: "bíceps", triceps: "tríceps", ombro: "ombro lateral",
-  deltoide_posterior: "deltoide posterior", quadriceps: "quadríceps", posterior_coxa: "posterior de coxa",
-  gluteo: "glúteo", panturrilha: "panturrilha", abdomen: "abdômen", antebraco: "antebraço", ombro_anterior: "ombro anterior",
-};
-
-function montarCardResumoSemana(resumo) {
-  if (resumo.treinos === 0 && resumo.treinosAnterior === 0) return null;
-  const kg = (v) => String(v).replace(".", ",");
-  const card = document.createElement("details");
-  card.className = "exercise-card resumo-semana-card";
-  card.innerHTML = `
-    <summary class="exercise-head"><div><div class="exercise-name">Resumo da semana</div><div class="exercise-meta"></div></div></summary>
-    <div class="resumo-semana-corpo" style="padding:0 18px 18px;"></div>
-  `;
-  card.querySelector(".exercise-meta").textContent =
-    `${resumo.treinos} treino${resumo.treinos === 1 ? "" : "s"} · ${resumo.series} séries (semana anterior: ${resumo.treinosAnterior} · ${resumo.seriesAnterior})`;
-  const corpo = card.querySelector(".resumo-semana-corpo");
-  const linha = (texto) => {
-    const p = document.createElement("p");
-    p.className = "prev-hint";
-    p.style.padding = "0 0 8px";
-    p.textContent = texto;
-    corpo.appendChild(p);
-  };
-  if (resumo.subiram.length > 0) {
-    linha(`Subiu de carga: ${resumo.subiram.map((x) => `${x.nome} (${kg(x.de)} → ${kg(x.para)} kg)`).join(", ")}.`);
-  } else {
-    linha("Nenhuma carga subiu nesta semana — normal em semanas de ganhar repetição.");
-  }
-  if (resumo.recordes > 0) linha(`Recorde de carga em ${resumo.recordes} exercício${resumo.recordes === 1 ? "" : "s"}.`);
-  if (resumo.semTreinoDireto.length > 0) {
-    linha(`Sem série direta nos últimos 7 dias: ${resumo.semTreinoDireto.map((m) => NOME_MUSCULO_CURTO[m] ?? m).join(", ")}.`);
-  }
-  return card;
-}
-
-// Alertas do treino (auditoria 2026-09-24): os motores de queda de
-// desempenho, estagnação e recuperação existiam mas nenhuma tela mostrava.
-// Só aparece quando há algo a dizer. Nunca aplica nada sozinho — o deload
-// antecipado só acontece se a pessoa confirmar.
-function montarCardAlertasTreino(estado, todosExercicios, semanaDoBloco, aoIniciarDeload) {
-  const nomePorId = new Map(todosExercicios.map((e) => [e.id, e.nome]));
-  const linhas = [];
-  for (const a of estado.alertasDesempenho) linhas.push(`${nomePorId.get(a.exercicioId) ?? a.exercicioId}: ${a.mensagem}`);
-  for (const a of estado.alertasVolume) {
-    if (a.tipo === "sem_progressao_exercicio") linhas.push(`${nomePorId.get(a.exercicioId) ?? a.exercicioId}: ${a.mensagem}`);
-  }
-  for (const a of estado.alertasRecuperacao) linhas.push(a.mensagem);
-  if (estado.causaProvavel) linhas.push(estado.causaProvavel.mensagem);
-  const sugerirDeload = estado.sugestaoDeload.sugerir && semanaDoBloco !== SEMANA_DELOAD;
-  if (linhas.length === 0 && !sugerirDeload) return null;
-
-  const card = document.createElement("section");
-  card.className = "exercise-card card-alertas-treino";
-  card.innerHTML = `
-    <div class="exercise-head">
-      <div>
-        <div class="exercise-name">Sinais do treino</div>
-        <div class="exercise-meta"></div>
-      </div>
-    </div>
-    <div class="alertas-corpo" style="padding:0 18px 18px;"></div>
-  `;
-  card.querySelector(".exercise-meta").textContent = sugerirDeload
-    ? `Sugestão de deload: ${estado.sugestaoDeload.motivos.join(", ")}`
-    : `${linhas.length} ponto${linhas.length === 1 ? "" : "s"} de atenção`;
-  const corpo = card.querySelector(".alertas-corpo");
-  for (const texto of linhas.slice(0, 5)) {
-    const p = document.createElement("p");
-    p.className = "prev-hint";
-    p.style.padding = "0 0 8px";
-    p.textContent = texto;
-    corpo.appendChild(p);
-  }
-  if (estado.fadigaDetectada && semanaDoBloco >= 4 && semanaDoBloco < SEMANA_DELOAD) {
-    const p = document.createElement("p");
-    p.className = "prev-hint";
-    p.style.padding = "0 0 8px";
-    p.textContent = "Por causa da queda de desempenho, a série extra de peito e bíceps desta semana foi suspensa.";
-    corpo.appendChild(p);
-  }
-  if (sugerirDeload) {
-    const botao = document.createElement("button");
-    botao.type = "button";
-    botao.className = "swap-pill";
-    botao.style.width = "100%";
-    botao.textContent = "Fazer deload agora";
-    botao.addEventListener("click", aoIniciarDeload);
-    corpo.appendChild(botao);
-  }
   return card;
 }
 

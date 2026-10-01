@@ -9,7 +9,14 @@ import { getSeriesDesde, getSessoesAgrupadasPorDia } from "../data/historico.js"
 import { obterDiaPeloMusculo } from "../engine/sequenciaSemanal.js";
 import { registrarCardio, getCardioDesde } from "../data/cardio.js";
 import { avaliarCardio } from "../engine/cardio.js";
-import { getFicha } from "../data/ficha.js";
+import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
+import { calcularSemanaDoBloco, inicioParaDeloadAgora } from "../engine/fichaFixa.js";
+import { avaliarEstadoDoTreino } from "../engine/estadoTreino.js";
+import { apontarCausaProvavelDesempenho } from "../engine/autorregulacao.js";
+import { resumirSemana } from "../engine/resumoSemana.js";
+import { getCheckinsRecentes } from "../data/checkin.js";
+import { montarCardAlertasTreino, montarCardResumoSemana } from "./cardsAcompanhamento.js";
+import { confirmarAcao } from "./confirmarAcao.js";
 import { calcularCoberturaMuscular } from "../engine/cobertura.js";
 import { resumirMes } from "../engine/atividade.js";
 import { expandirContribuicoes } from "../engine/volume.js";
@@ -94,9 +101,43 @@ export async function montarTelaDivisao(db, { onAbrirHistoricoTreinos } = {}) {
 
   main.appendChild(montarFaixaDias(todasAsSeries, cardioTodos, hoje));
 
+  // Sinais do treino logo no topo (é o que pede alguma ação, como o deload);
+  // o resumo da semana vem depois do relatório/cobertura. Os dois vieram da
+  // Início (01/10/2026). Cada um só aparece quando há algo a dizer.
+  const lugarAlertas = document.createElement("div");
+  lugarAlertas.style.display = "contents";
+  main.appendChild(lugarAlertas);
+  async function desenharAlertas() {
+    const semanaDoBloco = calcularSemanaDoBloco(await getInicioDoBloco(db), hoje);
+    const estado = avaliarEstadoDoTreino({ todasAsSeries, checkinsRecentes: await getCheckinsRecentes(db), hoje });
+    // Com queda de desempenho, aponta a causa mais provável antes de culpar
+    // o programa (sono e álcool primeiro — js/engine/autorregulacao.js).
+    if (estado.alertasDesempenho.length > 0) {
+      const habitosRecentes = (await getAll(db, "habitos")).sort((a, b) => b.data.localeCompare(a.data));
+      estado.causaProvavel = apontarCausaProvavelDesempenho({ habitosRecentes });
+    }
+    const card = montarCardAlertasTreino(estado, catalogo, semanaDoBloco, async () => {
+      const confirmou = await confirmarAcao({
+        titulo: "Fazer deload agora?",
+        mensagem: "Esta semana vira a semana de deload (metade das séries, mesma carga, RIR mais alto). Depois de 7 dias o bloco recomeça sozinho na semana 1.",
+        textoConfirmar: "Começar deload",
+      });
+      if (!confirmou) return;
+      await definirInicioDoBloco(db, inicioParaDeloadAgora(hoje));
+      await desenharAlertas();
+    });
+    lugarAlertas.replaceChildren(...(card ? [card] : []));
+  }
+  await desenharAlertas();
+
   const definicaoFase = protocolo?.volumeSemanalPorFase?.[perfil?.fase?.atual ?? "definicao"];
   const cobertura = calcularCoberturaMuscular({ seriesUltimos7Dias: expandirContribuicoes(seriesUltimos7Dias, catalogo), definicaoFase });
   main.appendChild(montarParRelatorioECobertura(seriesUltimos7Dias, ficha, cobertura));
+
+  const idsDaFicha = new Set((ficha?.dias ?? []).flatMap((d) => d.exercicios.map((e) => e.exercicioId)));
+  const musculosDaFicha = [...new Set(catalogo.filter((e) => idsDaFicha.has(e.id)).map((e) => e.musculoPrimario))];
+  const cardSemana = montarCardResumoSemana(resumirSemana({ todasAsSeries, catalogo, musculosDaFicha, hoje }));
+  if (cardSemana) main.appendChild(cardSemana);
 
   // Editar um dia no detalhe (js/screens/historicoSessoes.js, aberto daqui
   // pelo calendário e pela lista de sessões) pode mudar séries e cardio de

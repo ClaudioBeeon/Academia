@@ -30,11 +30,11 @@ test("calcularMetaCalorica sinaliza fase de calibração com poucos dados de pes
 
 test("calcularMetaCalorica aplica déficit moderado de 20% na fase de definição sem furar o piso", () => {
   const meta = calcularMetaCalorica({ tmb: 1700, fase: "definicao", historicoPesoTendencia: [] });
-  assert.equal(meta.meta_kcal, Math.max(1700, Math.round(1700 * 0.8)));
+  assert.equal(meta.meta_kcal, Math.max(1700, Math.round(1700 * 1.55 * 0.8)));
 });
 
 test("calcularMetaCalorica nunca cai abaixo do piso de segurança mesmo com TMB baixa", () => {
-  const meta = calcularMetaCalorica({ tmb: 1400, fase: "definicao", historicoPesoTendencia: [] });
+  const meta = calcularMetaCalorica({ tmb: 1100, fase: "definicao", historicoPesoTendencia: [] });
   assert.equal(meta.meta_kcal, 1500);
 });
 

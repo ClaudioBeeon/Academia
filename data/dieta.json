@@ -1,19 +1,158 @@
 {
   "versao": "1.0",
-  "dataAtualizacao": "2026-08-19",
+  "dataAtualizacao": "2026-10-17",
   "obs": "todos os valores nutricionais são ESTIMATIVAS baseadas em porções médias, não pesagem exata. Sempre exibir com margem, nunca como número preciso.",
-
   "dietaBase": {
     "cafeDaManha": {
       "nome": "Café da manhã",
       "opcoes": [
         {
+          "id": "plano_cafe_ovos",
+          "nome": "Plano: 3 ovos + pão + banana + leite",
+          "alimentos": [
+            {
+              "nome": "ovos mexidos (pouco óleo)",
+              "quantidade": "3 unidades",
+              "kcal": 230,
+              "proteina_g": 19,
+              "carboidrato_g": 1,
+              "gordura_g": 16,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "pão francês",
+              "quantidade": "1 unidade",
+              "kcal": 150,
+              "proteina_g": 4,
+              "carboidrato_g": 29,
+              "gordura_g": 1.5,
+              "fibra_g": 1.2,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "banana",
+              "quantidade": "1 unidade média",
+              "kcal": 105,
+              "proteina_g": 1.3,
+              "carboidrato_g": 27,
+              "gordura_g": 0.4,
+              "fibra_g": 3.1,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "leite desnatado",
+              "quantidade": "1 copo (200 ml)",
+              "kcal": 70,
+              "proteina_g": 6.6,
+              "carboidrato_g": 10,
+              "gordura_g": 0.2,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 555,
+            "proteina_g": 30.9,
+            "carboidrato_g": 67,
+            "gordura_g": 18.1,
+            "fibra_g": 4.3
+          }
+        },
+        {
+          "id": "plano_cafe_iogurte",
+          "nome": "Plano: iogurte + whey + aveia + banana",
+          "alimentos": [
+            {
+              "nome": "iogurte caseiro",
+              "quantidade": "200 g",
+              "kcal": 138,
+              "proteina_g": 15.5,
+              "carboidrato_g": 13.9,
+              "gordura_g": 1.2,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30 g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "aveia em flocos",
+              "quantidade": "3 colheres de sopa (30 g)",
+              "kcal": 114,
+              "proteina_g": 4,
+              "carboidrato_g": 20,
+              "gordura_g": 2.1,
+              "fibra_g": 3,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "banana",
+              "quantidade": "1 unidade média",
+              "kcal": 105,
+              "proteina_g": 1.3,
+              "carboidrato_g": 27,
+              "gordura_g": 0.4,
+              "fibra_g": 3.1,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 477,
+            "proteina_g": 44.8,
+            "carboidrato_g": 63.9,
+            "gordura_g": 5.2,
+            "fibra_g": 6.1
+          }
+        },
+        {
           "id": "unica",
           "alimentos": [
-            { "nome": "banana", "quantidade": "2 unidades médias", "kcal": 210, "proteina_g": 2.6, "carboidrato_g": 54, "gordura_g": 0.8, "fibra_g": 6.2, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "morango", "quantidade": "4 unidades médias", "kcal": 16, "proteina_g": 0.3, "carboidrato_g": 4, "gordura_g": 0.1, "fibra_g": 1.5, "estimativa": true, "margemPercentual": 20 }
+            {
+              "nome": "banana",
+              "quantidade": "2 unidades médias",
+              "kcal": 210,
+              "proteina_g": 2.6,
+              "carboidrato_g": 54,
+              "gordura_g": 0.8,
+              "fibra_g": 6.2,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "morango",
+              "quantidade": "4 unidades médias",
+              "kcal": 16,
+              "proteina_g": 0.3,
+              "carboidrato_g": 4,
+              "gordura_g": 0.1,
+              "fibra_g": 1.5,
+              "estimativa": true,
+              "margemPercentual": 20
+            }
           ],
-          "totalEstimado": { "kcal": 226, "proteina_g": 2.9, "carboidrato_g": 58, "gordura_g": 0.9, "fibra_g": 7.7 }
+          "totalEstimado": {
+            "kcal": 226,
+            "proteina_g": 2.9,
+            "carboidrato_g": 58,
+            "gordura_g": 0.9,
+            "fibra_g": 7.7
+          }
         }
       ]
     },
@@ -21,11 +160,152 @@
       "nome": "Almoço",
       "opcoes": [
         {
+          "id": "plano_almoco_frango",
+          "nome": "Plano: arroz, feijão, frango 150 g e salada",
+          "alimentos": [
+            {
+              "nome": "arroz branco",
+              "quantidade": "6 colheres de sopa (150 g)",
+              "kcal": 192,
+              "proteina_g": 3.8,
+              "carboidrato_g": 42,
+              "gordura_g": 0.3,
+              "fibra_g": 0.6,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "feijão",
+              "quantidade": "1 concha (100 g)",
+              "kcal": 76,
+              "proteina_g": 4.8,
+              "carboidrato_g": 13.6,
+              "gordura_g": 0.5,
+              "fibra_g": 8.5,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "peito de frango grelhado",
+              "quantidade": "150 g",
+              "kcal": 240,
+              "proteina_g": 48,
+              "carboidrato_g": 0,
+              "gordura_g": 5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "salada (alface, tomate, repolho, cenoura)",
+              "quantidade": "à vontade",
+              "kcal": 40,
+              "proteina_g": 2,
+              "carboidrato_g": 8,
+              "gordura_g": 0.3,
+              "fibra_g": 3,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "azeite",
+              "quantidade": "1 colher de chá",
+              "kcal": 40,
+              "proteina_g": 0,
+              "carboidrato_g": 0,
+              "gordura_g": 4.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 588,
+            "proteina_g": 58.6,
+            "carboidrato_g": 63.6,
+            "gordura_g": 10.6,
+            "fibra_g": 12.1
+          }
+        },
+        {
+          "id": "plano_almoco_carne",
+          "nome": "Plano: arroz, feijão, carne moída 120 g e legumes",
+          "alimentos": [
+            {
+              "nome": "arroz branco",
+              "quantidade": "6 colheres de sopa (150 g)",
+              "kcal": 192,
+              "proteina_g": 3.8,
+              "carboidrato_g": 42,
+              "gordura_g": 0.3,
+              "fibra_g": 0.6,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "feijão",
+              "quantidade": "1 concha (100 g)",
+              "kcal": 76,
+              "proteina_g": 4.8,
+              "carboidrato_g": 13.6,
+              "gordura_g": 0.5,
+              "fibra_g": 8.5,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "carne moída (patinho)",
+              "quantidade": "120 g",
+              "kcal": 260,
+              "proteina_g": 31,
+              "carboidrato_g": 0,
+              "gordura_g": 15,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "legumes (abobrinha, chuchu, cenoura, brócolis)",
+              "quantidade": "1 prato raso",
+              "kcal": 50,
+              "proteina_g": 2,
+              "carboidrato_g": 10,
+              "gordura_g": 0.3,
+              "fibra_g": 3,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 578,
+            "proteina_g": 41.6,
+            "carboidrato_g": 65.6,
+            "gordura_g": 16.1,
+            "fibra_g": 12.1
+          }
+        },
+        {
           "id": "unica",
           "alimentos": [
-            { "nome": "bife de frango grelhado", "quantidade": "3 unidades (~100-120g cada)", "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
+            {
+              "nome": "bife de frango grelhado",
+              "quantidade": "3 unidades (~100-120g cada)",
+              "kcal": 570,
+              "proteina_g": 105,
+              "carboidrato_g": 0,
+              "gordura_g": 12,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 20
+            }
           ],
-          "totalEstimado": { "kcal": 570, "proteina_g": 105, "carboidrato_g": 0, "gordura_g": 12, "fibra_g": 0 }
+          "totalEstimado": {
+            "kcal": 570,
+            "proteina_g": 105,
+            "carboidrato_g": 0,
+            "gordura_g": 12,
+            "fibra_g": 0
+          }
         }
       ]
     },
@@ -33,29 +313,233 @@
       "nome": "Café da tarde",
       "opcoes": [
         {
+          "id": "plano_tarde_whey_banana",
+          "nome": "Plano: whey + banana",
+          "alimentos": [
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30 g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "banana",
+              "quantidade": "1 unidade média",
+              "kcal": 105,
+              "proteina_g": 1.3,
+              "carboidrato_g": 27,
+              "gordura_g": 0.4,
+              "fibra_g": 3.1,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 225,
+            "proteina_g": 25.3,
+            "carboidrato_g": 30,
+            "gordura_g": 1.9,
+            "fibra_g": 3.1
+          }
+        },
+        {
+          "id": "plano_tarde_iogurte_whey",
+          "nome": "Plano: iogurte + whey",
+          "alimentos": [
+            {
+              "nome": "iogurte caseiro",
+              "quantidade": "200 g",
+              "kcal": 138,
+              "proteina_g": 15.5,
+              "carboidrato_g": 13.9,
+              "gordura_g": 1.2,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30 g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 258,
+            "proteina_g": 39.5,
+            "carboidrato_g": 16.9,
+            "gordura_g": 2.7,
+            "fibra_g": 0
+          }
+        },
+        {
+          "id": "plano_tarde_volei",
+          "nome": "Dia de vôlei: whey + 2 bananas + aveia",
+          "alimentos": [
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30 g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "banana",
+              "quantidade": "2 unidades médias",
+              "kcal": 210,
+              "proteina_g": 2.6,
+              "carboidrato_g": 54,
+              "gordura_g": 0.8,
+              "fibra_g": 6.2,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "aveia em flocos",
+              "quantidade": "2 colheres de sopa (20 g)",
+              "kcal": 76,
+              "proteina_g": 2.7,
+              "carboidrato_g": 13,
+              "gordura_g": 1.4,
+              "fibra_g": 2,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 406,
+            "proteina_g": 29.3,
+            "carboidrato_g": 70,
+            "gordura_g": 3.7,
+            "fibra_g": 8.2
+          }
+        },
+        {
           "id": "whey",
           "alimentos": [
-            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 }
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 10
+            }
           ],
-          "totalEstimado": { "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0 }
+          "totalEstimado": {
+            "kcal": 120,
+            "proteina_g": 24,
+            "carboidrato_g": 3,
+            "gordura_g": 1.5,
+            "fibra_g": 0
+          }
         },
         {
           "id": "fruta",
           "alimentos": [
-            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "fibra_g": 3.1, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "morango", "quantidade": "3 unidades médias", "kcal": 12, "proteina_g": 0.3, "carboidrato_g": 3, "gordura_g": 0.1, "fibra_g": 1.2, "estimativa": true, "margemPercentual": 20 }
+            {
+              "nome": "banana",
+              "quantidade": "1 unidade média",
+              "kcal": 105,
+              "proteina_g": 1.3,
+              "carboidrato_g": 27,
+              "gordura_g": 0.4,
+              "fibra_g": 3.1,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "morango",
+              "quantidade": "3 unidades médias",
+              "kcal": 12,
+              "proteina_g": 0.3,
+              "carboidrato_g": 3,
+              "gordura_g": 0.1,
+              "fibra_g": 1.2,
+              "estimativa": true,
+              "margemPercentual": 20
+            }
           ],
-          "totalEstimado": { "kcal": 117, "proteina_g": 1.6, "carboidrato_g": 30, "gordura_g": 0.5, "fibra_g": 4.3 }
+          "totalEstimado": {
+            "kcal": 117,
+            "proteina_g": 1.6,
+            "carboidrato_g": 30,
+            "gordura_g": 0.5,
+            "fibra_g": 4.3
+          }
         },
         {
           "id": "iogurte_whey_fruta_aveia",
           "alimentos": [
-            { "nome": "iogurte grego caseiro (leite proteico Camponesa + fermento + leite em pó)", "quantidade": "200g", "kcal": 138, "proteina_g": 15.5, "carboidrato_g": 13.9, "gordura_g": 1.2, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 },
-            { "nome": "banana", "quantidade": "1 unidade média", "kcal": 105, "proteina_g": 1.3, "carboidrato_g": 27, "gordura_g": 0.4, "fibra_g": 3.1, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "whey protein", "quantidade": "1 dose (~30g)", "kcal": 120, "proteina_g": 24, "carboidrato_g": 3, "gordura_g": 1.5, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 },
-            { "nome": "aveia em flocos", "quantidade": "30g (3 colheres de sopa)", "kcal": 117, "proteina_g": 4.2, "carboidrato_g": 20.1, "gordura_g": 2.1, "fibra_g": 3, "estimativa": true, "margemPercentual": 15 }
+            {
+              "nome": "iogurte grego caseiro (leite proteico Camponesa + fermento + leite em pó)",
+              "quantidade": "200g",
+              "kcal": 138,
+              "proteina_g": 15.5,
+              "carboidrato_g": 13.9,
+              "gordura_g": 1.2,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 20
+            },
+            {
+              "nome": "banana",
+              "quantidade": "1 unidade média",
+              "kcal": 105,
+              "proteina_g": 1.3,
+              "carboidrato_g": 27,
+              "gordura_g": 0.4,
+              "fibra_g": 3.1,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "whey protein",
+              "quantidade": "1 dose (~30g)",
+              "kcal": 120,
+              "proteina_g": 24,
+              "carboidrato_g": 3,
+              "gordura_g": 1.5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 10
+            },
+            {
+              "nome": "aveia em flocos",
+              "quantidade": "30g (3 colheres de sopa)",
+              "kcal": 117,
+              "proteina_g": 4.2,
+              "carboidrato_g": 20.1,
+              "gordura_g": 2.1,
+              "fibra_g": 3,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
           ],
-          "totalEstimado": { "kcal": 480, "proteina_g": 45, "carboidrato_g": 64, "gordura_g": 5.2, "fibra_g": 6.1 }
+          "totalEstimado": {
+            "kcal": 480,
+            "proteina_g": 45,
+            "carboidrato_g": 64,
+            "gordura_g": 5.2,
+            "fibra_g": 6.1
+          }
         }
       ],
       "obs": "usuário alterna entre as opções; app deve perguntar qual foi usada no dia, não presumir a primeira"
@@ -64,39 +548,206 @@
       "nome": "Janta",
       "opcoes": [
         {
+          "id": "plano_janta_frango",
+          "nome": "Plano: frango 150 g + batata-doce + legumes",
+          "alimentos": [
+            {
+              "nome": "peito de frango grelhado",
+              "quantidade": "150 g",
+              "kcal": 240,
+              "proteina_g": 48,
+              "carboidrato_g": 0,
+              "gordura_g": 5,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "batata-doce cozida",
+              "quantidade": "200 g",
+              "kcal": 153,
+              "proteina_g": 2,
+              "carboidrato_g": 36,
+              "gordura_g": 0.2,
+              "fibra_g": 4.6,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "legumes (abobrinha, chuchu, cenoura, brócolis)",
+              "quantidade": "1 prato raso",
+              "kcal": 50,
+              "proteina_g": 2,
+              "carboidrato_g": 10,
+              "gordura_g": 0.3,
+              "fibra_g": 3,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 443,
+            "proteina_g": 52,
+            "carboidrato_g": 46,
+            "gordura_g": 5.5,
+            "fibra_g": 7.6
+          }
+        },
+        {
+          "id": "plano_janta_omelete",
+          "nome": "Plano: omelete de 3 ovos com legumes + pão + leite",
+          "alimentos": [
+            {
+              "nome": "ovos mexidos (pouco óleo)",
+              "quantidade": "3 unidades",
+              "kcal": 230,
+              "proteina_g": 19,
+              "carboidrato_g": 1,
+              "gordura_g": 16,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "legumes (abobrinha, chuchu, cenoura, brócolis)",
+              "quantidade": "no omelete",
+              "kcal": 30,
+              "proteina_g": 1.5,
+              "carboidrato_g": 6,
+              "gordura_g": 0.3,
+              "fibra_g": 2,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "pão francês",
+              "quantidade": "1 unidade",
+              "kcal": 150,
+              "proteina_g": 4,
+              "carboidrato_g": 29,
+              "gordura_g": 1.5,
+              "fibra_g": 1.2,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "leite desnatado",
+              "quantidade": "1 copo (200 ml)",
+              "kcal": 70,
+              "proteina_g": 6.6,
+              "carboidrato_g": 10,
+              "gordura_g": 0.2,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 15
+            }
+          ],
+          "totalEstimado": {
+            "kcal": 480,
+            "proteina_g": 31.1,
+            "carboidrato_g": 46,
+            "gordura_g": 18,
+            "fibra_g": 3.2
+          }
+        },
+        {
           "id": "ovos_cozidos",
           "alimentos": [
-            { "nome": "ovo cozido", "quantidade": "3 unidades", "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16, "fibra_g": 0, "estimativa": true, "margemPercentual": 10 }
+            {
+              "nome": "ovo cozido",
+              "quantidade": "3 unidades",
+              "kcal": 234,
+              "proteina_g": 19,
+              "carboidrato_g": 2,
+              "gordura_g": 16,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 10
+            }
           ],
-          "totalEstimado": { "kcal": 234, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 16, "fibra_g": 0 }
+          "totalEstimado": {
+            "kcal": 234,
+            "proteina_g": 19,
+            "carboidrato_g": 2,
+            "gordura_g": 16,
+            "fibra_g": 0
+          }
         },
         {
           "id": "omelete",
           "alimentos": [
-            { "nome": "omelete de 3 ovos", "quantidade": "3 ovos + fio de óleo", "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
+            {
+              "nome": "omelete de 3 ovos",
+              "quantidade": "3 ovos + fio de óleo",
+              "kcal": 270,
+              "proteina_g": 19,
+              "carboidrato_g": 2,
+              "gordura_g": 20,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 20
+            }
           ],
-          "totalEstimado": { "kcal": 270, "proteina_g": 19, "carboidrato_g": 2, "gordura_g": 20, "fibra_g": 0 }
+          "totalEstimado": {
+            "kcal": 270,
+            "proteina_g": 19,
+            "carboidrato_g": 2,
+            "gordura_g": 20,
+            "fibra_g": 0
+          }
         },
         {
           "id": "pao_com_ovos",
           "alimentos": [
-            { "nome": "pão francês", "quantidade": "1 unidade", "kcal": 150, "proteina_g": 4, "carboidrato_g": 28, "gordura_g": 1.5, "fibra_g": 1.6, "estimativa": true, "margemPercentual": 15 },
-            { "nome": "ovo mexido/frito", "quantidade": "2 unidades", "kcal": 210, "proteina_g": 13, "carboidrato_g": 1, "gordura_g": 16, "fibra_g": 0, "estimativa": true, "margemPercentual": 20 }
+            {
+              "nome": "pão francês",
+              "quantidade": "1 unidade",
+              "kcal": 150,
+              "proteina_g": 4,
+              "carboidrato_g": 28,
+              "gordura_g": 1.5,
+              "fibra_g": 1.6,
+              "estimativa": true,
+              "margemPercentual": 15
+            },
+            {
+              "nome": "ovo mexido/frito",
+              "quantidade": "2 unidades",
+              "kcal": 210,
+              "proteina_g": 13,
+              "carboidrato_g": 1,
+              "gordura_g": 16,
+              "fibra_g": 0,
+              "estimativa": true,
+              "margemPercentual": 20
+            }
           ],
-          "totalEstimado": { "kcal": 360, "proteina_g": 17, "carboidrato_g": 29, "gordura_g": 17.5, "fibra_g": 1.6 }
+          "totalEstimado": {
+            "kcal": 360,
+            "proteina_g": 17,
+            "carboidrato_g": 29,
+            "gordura_g": 17.5,
+            "fibra_g": 1.6
+          }
         }
       ],
       "obs": "usuário alterna entre as três opções; app deve perguntar qual foi usada no dia, não presumir a primeira"
     }
   },
-
   "totalDiaTipico": {
     "obs": "soma usando a primeira opção de cada refeição com opções múltiplas — apenas referência, o total real do dia depende de quais opções o usuário marcar",
-    "kcal_min_max": [1150, 1430],
+    "kcal_min_max": [
+      1150,
+      1430
+    ],
     "baseadoEmEstimativaDoUsuario": "usuário estimou 1.100-1.400 kcal/dia por cima; nossa soma bate com essa faixa"
   },
-
   "listaAlimentosPessoal": [],
-
-  "checagemNutricionalObs": "ver protocolo.json > regrasNutricao > checagemTresEixos: esta dieta é baixa em gordura e não tem fontes de fibra/vegetais — o app deve sinalizar isso como informação, nunca reescrever a dieta"
+  "checagemNutricionalObs": "ver protocolo.json > regrasNutricao > checagemTresEixos: esta dieta é baixa em gordura e não tem fontes de fibra/vegetais — o app deve sinalizar isso como informação, nunca reescrever a dieta",
+  "revisao": "2026-10-17",
+  "planoSecar": {
+    "inicio": "2026-10-17",
+    "semanas": 3,
+    "resumo": "Plano de 3 semanas pra secar sem perder músculo: ~1.900 kcal nos dias normais e ~2.100 nos dias de vôlei, 150 g ou mais de proteína, comida barata (ovo, frango, carne moída, arroz, feijão, legumes, banana, aveia). Escolha uma opção marcada \"Plano\" em cada refeição."
+  }
 }

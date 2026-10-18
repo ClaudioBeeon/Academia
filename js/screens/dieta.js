@@ -157,8 +157,11 @@ export async function montarTelaDieta(db) {
     // Proteína só depende do peso, então é montada fora da porteira da idade:
     // a meta calórica precisa de idade (Mifflin-St Jeor), a de proteína não, e
     // em déficit ela é o número mais importante da tela.
+    // Peso mais recente das medidas (Evolução); o do perfil é o do começo.
+    const medidasPeso = (await getMedidas(db)).filter((m) => m.peso_kg > 0).sort((a, b) => a.data.localeCompare(b.data));
+    const pesoAtual = medidasPeso.at(-1)?.peso_kg ?? perfil?.dadosBasicos?.peso_kg;
     const metaProteina = calcularMetaProteina({
-      pesoKg: perfil?.dadosBasicos?.peso_kg,
+      pesoKg: pesoAtual,
       fase: perfil?.fase?.atual,
     });
     const barraProteina = montarBarraProteina(total.proteina_g, metaProteina);
@@ -187,7 +190,7 @@ export async function montarTelaDieta(db) {
 
     const tmb = calcularTMB({
       sexo: perfil.dadosBasicos.sexo,
-      pesoKg: perfil.dadosBasicos.peso_kg,
+      pesoKg: pesoAtual,
       alturaCm: perfil.dadosBasicos.altura_cm,
       idade: perfil.dadosBasicos.idade,
     });
@@ -269,7 +272,7 @@ export async function montarTelaDieta(db) {
         btn.type = "button";
         btn.className = "swap-pill";
         btn.classList.toggle("selecionada", idsSelecionados.includes(opcao.id));
-        btn.textContent = opcao.alimentos.map((a) => a.nome).join(" + ");
+        btn.textContent = opcao.nome ?? opcao.alimentos.map((a) => a.nome).join(" + ");
         btn.addEventListener("click", async () => {
           selecoes = await salvarSelecaoRefeicao(db, dataDeHoje, chave, opcao.id);
           const idsAtualizados = selecoes[chave] ?? [];

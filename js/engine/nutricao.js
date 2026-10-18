@@ -30,13 +30,22 @@ export function pisoCaloricoSeguranca(tmb) {
 // calibrar de verdade, usa um déficit padrão conservador sobre a TMB e avisa
 // que a estimativa ainda não foi calibrada com dados reais do usuário
 // (protocolo.json > regrasNutricao > faseCalibracao).
+// Musculação 4–5x por semana + vôlei 2–3x: "moderadamente ativo" na
+// convenção de Mifflin-St Jeor. A meta adaptativa substitui isso pelo gasto
+// real assim que houver 14 dias de peso e comida registrados.
+export const FATOR_ATIVIDADE = 1.55;
+
 export function calcularMetaCalorica({ tmb, fase = "definicao", historicoPesoTendencia = [] }) {
   if (!(tmb > 0)) return null;
   const piso = pisoCaloricoSeguranca(tmb);
   const emCalibracao = historicoPesoTendencia.length < DIAS_MINIMOS_CALIBRACAO;
 
   const deficitPadrao = fase === "definicao" ? 0.2 : 0;
-  let meta = Math.round(tmb * (1 - deficitPadrao));
+  // O déficit é em cima do gasto do dia (TMB × atividade), não da TMB:
+  // antes a meta saía igual à TMB (~1.670 kcal pra 74 kg), uns 35% abaixo do
+  // gasto de quem treina 4–5x e joga vôlei — fome na semana e compensação no
+  // fim de semana (visto nos registros de set–out/2026).
+  let meta = Math.round(tmb * FATOR_ATIVIDADE * (1 - deficitPadrao));
   meta = Math.max(meta, piso);
 
   return {

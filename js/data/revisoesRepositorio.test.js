@@ -77,3 +77,25 @@ test("catálogo: imagem da pessoa não conta como diferença e nunca é apagada"
   assert.equal(a.imagemUrl, "https://x/a.png", "e manteve a imagem");
   db.close();
 });
+
+test("dieta: põe as opções do plano no topo sem apagar as da pessoa, uma vez por revisão", async () => {
+  const db = await bancoLimpo();
+  await clearStore(db, "dietaBase");
+  await putAll(db, "exercicios", catalogoRepo.exercicios);
+  const plano = { id: "plano_cafe_ovos", nome: "Plano: ovos", alimentos: [] };
+  const dietaRepo = { versao: "1.0", revisao: "2026-10-17", dietaBase: { cafeDaManha: { opcoes: [plano, { id: "unica", alimentos: [] }] } } };
+  const buscarComDieta = async (url) => ({
+    json: async () => (url === "data/dieta.json" ? dietaRepo : url === "data/ficha.json" ? fichaRepo : url === "data/protocolo.json" ? protocoloRepo : catalogoRepo),
+  });
+  await put(db, "dietaBase", { versao: "1.0", dietaBase: { cafeDaManha: { opcoes: [{ id: "2_bananas", alimentos: [] }] } } });
+
+  assert.ok((await trazerRevisoesDoRepositorio(db, buscarComDieta)).includes("dietaBase"));
+  const dieta = await get(db, "dietaBase", "1.0");
+  assert.deepEqual(dieta.dietaBase.cafeDaManha.opcoes.map((o) => o.id), ["plano_cafe_ovos", "2_bananas"]);
+  assert.equal(dieta.revisao, "2026-10-17");
+
+  dieta.dietaBase.cafeDaManha.opcoes = dieta.dietaBase.cafeDaManha.opcoes.filter((o) => o.id !== "plano_cafe_ovos");
+  await put(db, "dietaBase", dieta);
+  assert.ok(!(await trazerRevisoesDoRepositorio(db, buscarComDieta)).includes("dietaBase"), "opção removida pela pessoa não volta");
+  db.close();
+});

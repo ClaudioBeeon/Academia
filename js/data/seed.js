@@ -352,6 +352,27 @@ export async function trazerRevisoesDoRepositorio(db, fetchImpl = globalThis.fet
     }
   }
 
+  // Dieta: a do banco é editada pela pessoa (opções adicionadas/removidas),
+  // então não troca — só põe no topo de cada refeição as opções novas da
+  // revisão do repositório que ainda não estão lá. Uma vez por revisão: se a
+  // pessoa remover uma opção do plano depois, ela não volta.
+  const dietaAtual = await get(db, "dietaBase", "1.0");
+  if (dietaAtual?.dietaBase) {
+    const dietaRepo = await fetchImpl(ARQUIVOS_PESSOAIS.dietaBase).then((r) => r.json());
+    if (dietaRepo?.revisao && (dietaAtual.revisao ?? "") < dietaRepo.revisao) {
+      for (const [chave, refeicaoRepo] of Object.entries(dietaRepo.dietaBase ?? {})) {
+        const refeicao = dietaAtual.dietaBase[chave];
+        if (!refeicao) continue;
+        const novas = refeicaoRepo.opcoes.filter((o) => o.id.startsWith("plano_") && !refeicao.opcoes.some((x) => x.id === o.id));
+        refeicao.opcoes = [...novas, ...refeicao.opcoes];
+      }
+      dietaAtual.revisao = dietaRepo.revisao;
+      if (dietaRepo.planoSecar) dietaAtual.planoSecar = dietaRepo.planoSecar;
+      await put(db, "dietaBase", dietaAtual);
+      alterados.push("dietaBase");
+    }
+  }
+
   // Catálogo: compara o conteúdo sem o que é da pessoa — a observação que
   // ela pode ter reescrito e a imagem que ela subiu — e sem depender da ordem
   // das chaves (o servidor guarda em jsonb e devolve em outra ordem). A

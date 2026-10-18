@@ -4,7 +4,7 @@
   "nome": "Bloco 1 — Peito, bíceps e postura (revisão 24/09)",
   "duracaoSemanas": 4,
   "baseadoEm": "auditoria 2026-08-23 · base-cientifica-hipertrofia-forca.md · referencia-consolidada-app-treino.md · auditoria científica 2026-09-24",
-  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote). Em 29/09/2026 entraram potência de ataque pro vôlei (rotação explosiva no cabo e pullover no dia 2, lenhador no lugar da prancha no dia 3) e força de dedo pro toque (pinça com anilha no dia 5). Ainda em 29/09/2026 o lenhador do dia 3 virou explosivo (pedido do dono) e passou pro começo do dia. Em 17/10/2026, plano de 3 semanas pra secar: musculação continua pesada (é o sinal pra manter o músculo) e entrou cardio moderado de 15 min também nos treinos 1 e 3.",
+  "porqueEstaFichaExiste": "Ficha fixa, prescrita, em vez de gerada pelo app. A auditoria mostrou que o gerador invertia prioridade (tríceps 20,5 séries contra 12 do peito) e produzia 21 séries de empurrar contra 6 de puxar — proporção que reforça ombros e pescoço pra frente. Aqui cada exercício, série e descanso está definido de propósito. Revisada na auditoria científica de 24/09/2026: remada curvada virou puxada fechada, mesa flexora virou flexora sentada, uma rosca martelo virou rosca inclinada, o deltoide posterior deixou de se repetir em dias seguidos, cardio ficou só nos dias 2 e 5 e cada sessão cabe em ~60 min. Em 26/09/2026 o dia de pernas virou Pernas + Impulsão (pedido do dono, levantador de vôlei): força pesada + saltos, que rende mais salto que cada um sozinho, mantendo o volume de coxa. No mesmo dia o box jump virou salto vertical no chão (a academia não tem caixote). Em 29/09/2026 entraram potência de ataque pro vôlei (rotação explosiva no cabo e pullover no dia 2, lenhador no lugar da prancha no dia 3) e força de dedo pro toque (pinça com anilha no dia 5). Ainda em 29/09/2026 o lenhador do dia 3 virou explosivo (pedido do dono) e passou pro começo do dia. Em 17/10/2026, plano de 3 semanas pra secar: musculação continua pesada (é o sinal pra manter o músculo) e o cardio subiu pra 20 min nos treinos 1, 2, 3 e 5 (10 min leve depois de pernas). Em dia de vôlei o jogo é o cardio.",
   "objetivos": {
     "prioridade1": "reduzir gordura abdominal — resolvido pela dieta, o treino protege massa magra",
     "prioridade2": "hipertrofia de peito — 15 séries/semana, sempre primeiro na sessão",
@@ -156,7 +156,7 @@
       "notaDoDia": "O crucifixo inverso foi pro dia 3: aqui ele vinha logo depois do face pull, repetindo a mesma função. Sem cardio hoje — com o aquecimento a sessão já fica em ~55 min.",
       "cardio": {
         "modalidade": "bicicleta",
-        "duracaoMin": 15,
+        "duracaoMin": 20,
         "intensidade": "moderada"
       },
       "alongamentoFinal": "peitoralEPescoco",
@@ -300,7 +300,7 @@
       "notaDoDia": "Dia curto de propósito — é um dos dois dias com cardio. A remada curvada saiu (duas remadas seguidas, a segunda com a lombar e a pegada já cansadas) e entrou a puxada fechada, que dobra o trabalho vertical das costas na semana.",
       "cardio": {
         "modalidade": "escada",
-        "duracaoMin": 18,
+        "duracaoMin": 20,
         "intensidade": "moderada"
       },
       "alongamentoFinal": null,
@@ -460,7 +460,7 @@
       "notaDoDia": "O crucifixo inverso veio do dia 1: assim o deltoide posterior é treinado duas vezes na semana, com 48 h entre elas. O desenvolvimento de ombro segue fora — o deltoide anterior já cresce com os supinos. A prancha virou opcional. O lenhador virou explosivo e abre o dia: potência se treina descansado.",
       "cardio": {
         "modalidade": "eliptico",
-        "duracaoMin": 15,
+        "duracaoMin": 20,
         "intensidade": "moderada"
       },
       "alongamentoFinal": "peitoralEPescoco",
@@ -621,7 +621,11 @@
       "duracaoEstimadaMin": 55,
       "totalSeries": 23,
       "notaDoDia": "Os saltos vêm primeiro, com você descansado, e são poucos e no máximo: você já salta muito no vôlei. Se jogou vôlei ou futebol forte nas últimas 48 h, pule os dois primeiros exercícios e faça só a força. Pare uma série de salto se a altura cair ou a aterrissagem ficar barulhenta. Dor no tendão do joelho: tire os saltos e avise.",
-      "cardio": null,
+      "cardio": {
+        "modalidade": "bicicleta",
+        "duracaoMin": 10,
+        "intensidade": "leve"
+      },
       "alongamentoFinal": "coluna",
       "exercicios": [
         {
@@ -830,7 +834,7 @@
       "notaDoDia": "Fecha a rotação de ângulos do peito: inclinado no dia 1, reto no dia 3, alongado hoje. A segunda rosca martelo virou rosca inclinada, mais específica pro bíceps. A rosca de punho virou opcional.",
       "cardio": {
         "modalidade": "bicicleta",
-        "duracaoMin": 15,
+        "duracaoMin": 20,
         "intensidade": "moderada"
       },
       "alongamentoFinal": "peitoralEPescoco",
@@ -1057,5 +1061,5 @@
     "O obstáculo maior ao crescimento do peito não é o treino, é o tamanho do déficit calórico. Se a dieta ainda estiver perto de 1.100–1.400 kcal, nenhum ajuste de treino compensa — déficit moderado com proteína alta é o que preserva massa magra.",
     "A cintura registrada no perfil (62 cm) não bate com 170 cm e 71 kg — o esperado seria algo entre 80 e 90 cm. Remeça na altura do umbigo, com o ar solto no fim da expiração, e registre em Evolução: é a métrica principal do objetivo 1."
   ],
-  "revisao": "2026-10-17"
+  "revisao": "2026-10-17b"
 }

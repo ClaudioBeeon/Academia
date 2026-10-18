@@ -76,3 +76,43 @@ test("obterDiaPeloMusculo retorna o primeiro dia da sequência que contém o mú
 test("obterDiaPeloMusculo retorna null pra músculo não mapeado", () => {
   assert.equal(obterDiaPeloMusculo("core_customizado"), null);
 });
+
+// Dias de vôlei (seg, qui, dom): pernas nunca no dia do jogo nem na véspera.
+import { estadoDaSequencia, pernasRestritas, ehDiaDeVolei } from "./sequenciaSemanal.js";
+const VOLEI = [0, 1, 4];
+
+test("pernas restritas no dia do vôlei e na véspera; livres na terça e na sexta", () => {
+  // 2026-10-19 é segunda.
+  const semana = ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"];
+  assert.deepEqual(semana.map((d) => pernasRestritas(d, VOLEI)), [true, false, true, true, false, true, true]);
+  assert.equal(ehDiaDeVolei("2026-10-22", VOLEI), true);
+  assert.equal(pernasRestritas("2026-10-21", []), false, "sem dias de vôlei, nada muda");
+});
+
+test("vez de pernas na véspera do vôlei: faz o treino 5, pernas fica devida e entra no próximo dia livre", () => {
+  // Fez o 3 na terça; quarta (véspera de quinta) seria pernas.
+  let ultimo = { dia: 3, data: "2026-10-20" };
+  const quarta = determinarDiaDaSessao(ultimo, "2026-10-21", { diasVolei: VOLEI });
+  assert.equal(quarta, 5);
+  ultimo = { dia: quarta, data: "2026-10-21", ...estadoDaSequencia(ultimo, "2026-10-21", quarta) };
+  assert.equal(ultimo.pernasDevidas, true);
+
+  // Quinta é dia de vôlei: segue a rotação (1), pernas continua devida.
+  const quinta = determinarDiaDaSessao(ultimo, "2026-10-22", { diasVolei: VOLEI });
+  assert.equal(quinta, 1);
+  ultimo = { dia: quinta, data: "2026-10-22", ...estadoDaSequencia(ultimo, "2026-10-22", quinta) };
+  assert.equal(ultimo.pernasDevidas, true);
+
+  // Sexta é livre: pernas. Depois a rotação continua do 1 → 2.
+  const sexta = determinarDiaDaSessao(ultimo, "2026-10-23", { diasVolei: VOLEI });
+  assert.equal(sexta, 4);
+  ultimo = { dia: sexta, data: "2026-10-23", ...estadoDaSequencia(ultimo, "2026-10-23", sexta) };
+  assert.deepEqual([ultimo.pernasDevidas, ultimo.ponteiro], [false, 1]);
+  assert.equal(determinarDiaDaSessao(ultimo, "2026-10-24", { diasVolei: VOLEI }), 2);
+});
+
+test("no mesmo dia, o estado gravado não muda", () => {
+  const ultimo = { dia: 5, data: "2026-10-21", ponteiro: null, pernasDevidas: true };
+  assert.deepEqual(estadoDaSequencia(ultimo, "2026-10-21", 5), { ponteiro: null, pernasDevidas: true });
+  assert.equal(determinarDiaDaSessao(ultimo, "2026-10-21", { diasVolei: VOLEI }), 5);
+});

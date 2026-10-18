@@ -373,6 +373,18 @@ export async function trazerRevisoesDoRepositorio(db, fetchImpl = globalThis.fet
     }
   }
 
+  // Dias de vôlei do dono (seg, qui e dom, combinados em 17/10/2026): entram
+  // no perfil do celular só se ele ainda não tiver o campo — depois quem
+  // manda é a Config.
+  const perfilAtual = await get(db, "perfil", "1.0");
+  if (perfilAtual && perfilAtual.diasVolei === undefined && fichaAtual?.nome?.startsWith(PREFIXO_FICHA_DO_DONO)) {
+    const perfilRepo = await fetchImpl(ARQUIVOS_PESSOAIS.perfil).then((r) => r.json());
+    if (Array.isArray(perfilRepo?.diasVolei)) {
+      await put(db, "perfil", { ...perfilAtual, diasVolei: perfilRepo.diasVolei });
+      alterados.push("perfil");
+    }
+  }
+
   // Catálogo: compara o conteúdo sem o que é da pessoa — a observação que
   // ela pode ter reescrito e a imagem que ela subiu — e sem depender da ordem
   // das chaves (o servidor guarda em jsonb e devolve em outra ordem). A

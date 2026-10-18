@@ -17,8 +17,8 @@ import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarF
 import { statusPermissao, pedirPermissaoNotificacao } from "../lib/notificacoes.js";
 import { limparCronometroFlutuante } from "../lib/timerFlutuante.js";
 import { limparCardioEmAndamento } from "../data/cardioEmAndamento.js";
-import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
-import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
+import { registrarDiaDaSessao, determinarDiaDeHoje, getDiasVolei, salvarDiasVolei } from "../data/sequenciaSemanal.js";
+import { DIAS_SEQUENCIA, obterDiaPorNumero } from "../engine/sequenciaSemanal.js";
 import { TEMAS_VALIDOS, obterTemaSalvo, salvarTema } from "../lib/tema.js";
 import { getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco, inicioParaDeloadAgora, descreverSemana, DURACAO_BLOCO_SEMANAS, SEMANA_DELOAD } from "../engine/fichaFixa.js";
@@ -163,8 +163,7 @@ function criarSecaoBolhaFlutuante(db) {
 // a pessoa fica presa no dia 1 até destravar sozinha treinando de novo.
 async function criarSecaoDiaDoCiclo(db) {
   const hoje = dataDeHoje();
-  const ultimoRegistro = await getUltimoDiaRegistrado(db);
-  const diaAtual = determinarDiaDaSessao(ultimoRegistro, hoje);
+  const diaAtual = await determinarDiaDeHoje(db, hoje);
 
   const card = document.createElement("section");
   card.className = "exercise-card";
@@ -188,10 +187,40 @@ async function criarSecaoDiaDoCiclo(db) {
     const novoDia = Number(card.querySelector(".dia-ciclo-select").value);
     // concluido:false — corrige só qual dia é "hoje", não finge que a
     // sessão de hoje já foi feita.
-    await registrarDiaDaSessao(db, novoDia, hoje, false);
+    await registrarDiaDaSessao(db, novoDia, hoje, false, { manual: true });
     status.textContent = `Corrigido — "hoje" agora é o dia ${novoDia}.`;
   });
+  card.appendChild(await criarSecaoDiasVolei(db));
   return card;
+}
+
+// Dias fixos de vôlei: a Início mostra o card do jogo, o treino do dia vem
+// mais leve e pernas nunca cai no dia do jogo nem na véspera.
+async function criarSecaoDiasVolei(db) {
+  const NOMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  let dias = await getDiasVolei(db);
+  const bloco = document.createElement("div");
+  bloco.style.cssText = "padding:0 18px 18px; display:grid; gap:8px;";
+  bloco.innerHTML = `<div class="exercise-name" style="font-size:0.9rem;">Dias de vôlei</div>
+    <div class="prev-hint" style="padding:0;">Nesses dias a Início mostra o vôlei, o treino da academia vem mais leve e pernas nunca cai no dia do jogo nem na véspera.</div>
+    <div class="dias-volei" style="display:flex; gap:6px; flex-wrap:wrap;"></div>`;
+  const lista = bloco.querySelector(".dias-volei");
+  NOMES.forEach((nome, numero) => {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = "swap-pill";
+    botao.textContent = nome;
+    botao.classList.toggle("selecionada", dias.includes(numero));
+    botao.setAttribute("aria-pressed", String(dias.includes(numero)));
+    botao.addEventListener("click", async () => {
+      dias = dias.includes(numero) ? dias.filter((d) => d !== numero) : [...dias, numero];
+      await salvarDiasVolei(db, dias);
+      botao.classList.toggle("selecionada", dias.includes(numero));
+      botao.setAttribute("aria-pressed", String(dias.includes(numero)));
+    });
+    lista.appendChild(botao);
+  });
+  return bloco;
 }
 
 // Bloco de treino (auditoria 2026-09-24). A semana do mesociclo sai da data

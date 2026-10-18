@@ -25,7 +25,10 @@
         {
           "data": "2026-08-19",
           "valor": 62,
-          "faixaInformadaPeloUsuario": [60, 64],
+          "faixaInformadaPeloUsuario": [
+            60,
+            64
+          ],
           "confianca": "baixa",
           "obs": "medida inicial, ponto de partida para acompanhar tendência — métrica mais importante para o objetivo de gordura abdominal"
         }
@@ -62,7 +65,12 @@
   },
   "local": {
     "tipo": "academia_completa",
-    "equipamentosDisponiveis": ["halteres", "barras", "maquinas", "cabos_polias"]
+    "equipamentosDisponiveis": [
+      "halteres",
+      "barras",
+      "maquinas",
+      "cabos_polias"
+    ]
   },
   "restricoes": {
     "fisicasConhecidas": [],
@@ -70,5 +78,10 @@
       "evitar_cargas_muito_altas",
       "preferir_RIR_confortavel_2_em_vez_de_falha"
     ]
-  }
+  },
+  "diasVolei": [
+    0,
+    1,
+    4
+  ]
 }

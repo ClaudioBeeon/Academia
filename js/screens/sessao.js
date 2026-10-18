@@ -7,8 +7,8 @@ import {
   getPuladosDoDia, pularExercicioHoje, desfazerPuloHoje, getExtrasDoDia, adicionarExtraHoje,
   getSupersetsDoDia, criarSupersetHoje, desfazerSupersetHoje,
 } from "../data/ajustesSessao.js";
-import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
-import { obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
+import { getUltimoDiaRegistrado, registrarDiaDaSessao, getDiasVolei } from "../data/sequenciaSemanal.js";
+import { obterDiaPorNumero, determinarDiaDaSessao, ehDiaDeVolei } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { getFicha, getInicioDoBloco, definirInicioDoBloco } from "../data/ficha.js";
 import { calcularSemanaDoBloco } from "../engine/fichaFixa.js";
@@ -61,7 +61,8 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   // No modo preview (abrindo o card de um dia futuro pra só olhar/testar a
   // fila), a sessão nunca grava o ponteiro de rotação — abrir ou até
   // registrar séries aqui não pode mudar qual dia é "hoje" pro app.
-  const diaDaSessao = modoPreview ? diaForcado : determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+  const diasVolei = await getDiasVolei(db);
+  const diaDaSessao = modoPreview ? diaForcado : determinarDiaDaSessao(ultimoDiaRegistrado, hoje, { diasVolei });
   let diaPersistido = modoPreview || Boolean(ultimoDiaRegistrado && ultimoDiaRegistrado.data === hoje);
   const diaInfo = obterDiaPorNumero(diaDaSessao);
 
@@ -126,7 +127,8 @@ export async function montarFluxoSessao(db, { onVoltarParaHoje, onMinimizar, dia
   // dois pode pular direto pro relatório quando existe cardio prescrito
   // pra hoje e ainda não registrado.
   async function irParaRelatorioOuPerguntarCardio() {
-    const cardioDeHoje = modoPreview ? null : diaDaFicha?.cardio;
+    // Dia de vôlei: o jogo é o cardio do dia, sem cobrar o da academia.
+    const cardioDeHoje = modoPreview || ehDiaDeVolei(hoje, diasVolei) ? null : diaDaFicha?.cardio;
     if (cardioDeHoje) {
       const jaFeito = (await getCardioDoDia(db, hoje)).length > 0;
       if (!jaFeito) {

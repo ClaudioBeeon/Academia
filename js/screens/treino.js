@@ -4,7 +4,7 @@ import { getSeriesDoDia } from "../data/historico.js";
 import { getHabito, registrarHabito } from "../data/habitos.js";
 import { registrarCardio } from "../data/cardio.js";
 import { getUltimoDiaRegistrado } from "../data/sequenciaSemanal.js";
-import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
+import { DIAS_SEQUENCIA, obterDiaPorNumero, determinarDiaDaSessao, ehDiaDeVolei, proximoNaRotacao, DIA_PERNAS } from "../engine/sequenciaSemanal.js";
 import { prepararSessaoDoDia } from "../engine/contextoSessao.js";
 import { calcularEstatisticasSessao } from "../engine/sessao.js";
 import { calcularAtividadeMensal } from "../engine/atividade.js";
@@ -103,8 +103,13 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     proteinaAbaixoDaMeta,
     treinouHoje: seriesDeHoje.length > 0,
   });
-  const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+  const diasVolei = Array.isArray(perfil?.diasVolei) ? perfil.diasVolei : [];
+  const diaDaSessao = determinarDiaDaSessao(ultimoDiaRegistrado, hoje, { diasVolei });
   const diaInfo = obterDiaPorNumero(diaDaSessao);
+  const hojeTemVolei = ehDiaDeVolei(hoje, diasVolei);
+  const voleiDeHoje = todosCardios.find((c) => c.data === hoje && /v[oô]lei/i.test(c.modalidade ?? "")) ?? null;
+  const pernasAdiada = ultimoDiaRegistrado?.data !== hoje && proximoNaRotacao(ultimoDiaRegistrado) === DIA_PERNAS && diaDaSessao !== DIA_PERNAS;
+  const pernasPendenteHoje = ultimoDiaRegistrado?.data !== hoje && ultimoDiaRegistrado?.pernasDevidas && diaDaSessao === DIA_PERNAS;
   const atividade = calcularAtividadeMensal(todasAsSeries, hoje);
   // "Último cardio" só conta pra hoje se foi de fato lançado hoje — antes o
   // card mostrava o último registro de qualquer dia (ex.: bicicleta de
@@ -200,6 +205,17 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
     </div>
     <button type="button">${sessaoConcluidaHoje ? "Ver treino" : sessaoIniciadaHoje ? "Continuar treino" : "Começar treino"}</button>
   `;
+  const avisos = [];
+  if (hojeTemVolei && !sessaoConcluidaHoje) avisos.push("Dia de vôlei: treino mais leve — pare com 2 a 3 sobrando, use o Treino rápido se faltar tempo e pule o cardio da academia.");
+  if (pernasAdiada) avisos.push("Pernas ficou pra um dia longe do vôlei. Hoje vai o próximo treino.");
+  if (pernasPendenteHoje) avisos.push("Hoje é dia de pernas que tinha ficado pendente — longe do vôlei.");
+  if (avisos.length) {
+    const nota = document.createElement("p");
+    nota.className = "plano-aviso";
+    nota.style.cssText = "margin:10px 0 0; font-size:0.8rem; line-height:1.4; opacity:0.85;";
+    nota.textContent = avisos.join(" ");
+    planoCard.insertBefore(nota, planoCard.querySelector("button"));
+  }
   planoCard.classList.add("clicavel");
   planoCard.addEventListener("click", () => {
     if (onComecarTreino) onComecarTreino();
@@ -211,8 +227,12 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   // Card de cardio só quando hoje tem cardio prescrito ou já feito. Antes ele
   // aparecia todo dia ("Nenhum cardio hoje") e dava a impressão de que todo
   // treino tinha cardio. Cardio avulso continua no "+" do cabeçalho.
-  if (cardioDeHojeLogado || diaDaFichaHoje?.cardio) {
-    carrossel.appendChild(montarCardCardio(cardioDeHojeLogado, diaDaFichaHoje?.cardio, onIrParaCardio, onIniciarCardio, abrirFluxoNovaAtividade));
+  // Dia de vôlei: o card do jogo entra no lugar do cardio da academia.
+  if (hojeTemVolei || voleiDeHoje) carrossel.appendChild(montarCardVoleiDoDia(db, hoje, voleiDeHoje, seriesDeHoje.length > 0));
+  const cardioNaoVolei = cardioDeHojeLogado && !/v[oô]lei/i.test(cardioDeHojeLogado.modalidade ?? "") ? cardioDeHojeLogado : null;
+  const cardioPrescrito = hojeTemVolei ? null : diaDaFichaHoje?.cardio;
+  if (cardioNaoVolei || cardioPrescrito) {
+    carrossel.appendChild(montarCardCardio(cardioNaoVolei, cardioPrescrito, onIrParaCardio, onIniciarCardio, abrirFluxoNovaAtividade));
   }
   for (let passo = 1; passo < DIAS_SEQUENCIA.length; passo++) {
     const numero = ((diaDaSessao - 1 + passo) % DIAS_SEQUENCIA.length) + 1;
@@ -237,6 +257,40 @@ export async function montarTelaTreino(db, { onIrParaCardio, onIniciarCardio, on
   main.appendChild(montarCardHabitos(controladorHabitos));
 
   return root;
+}
+
+// Jogo de vôlei do dia (dias marcados na Config): registra com um toque
+// como cardio, escolhendo quanto tempo jogou.
+function montarCardVoleiDoDia(db, hoje, registrado, treinouHoje) {
+  const card = document.createElement("section");
+  card.className = registrado ? "plano-hero alt" : "plano-hero";
+  const desenhar = (registro) => {
+    card.className = registro ? "plano-hero alt" : "plano-hero";
+    card.innerHTML = `
+      <div class="rotulo">${registro ? "✓ Vôlei · registrado" : "Vôlei hoje"}</div>
+      <h2>${registro ? "Jogo registrado" : "Dia de jogo"}</h2>
+      <div class="meta">${registro
+        ? `<span><b>${registro.duracaoMinutos ?? "?"}</b> min de vôlei</span>`
+        : "<span>Quanto tempo você jogou?</span>"}</div>
+      <div class="volei-tempos" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;"></div>`;
+    if (registro) return;
+    const tempos = card.querySelector(".volei-tempos");
+    for (const [rotulo, minutos] of [["1h", 60], ["1h30", 90], ["2h", 120], ["3h", 180]]) {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "swap-pill";
+      botao.textContent = rotulo;
+      botao.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const novo = { data: hoje, modalidade: "Vôlei de quadra", duracaoMinutos: minutos, intensidadePercebida: 4, mesmoDiaDeTreino: treinouHoje };
+        await registrarCardio(db, novo);
+        desenhar(novo);
+      });
+      tempos.appendChild(botao);
+    }
+  };
+  desenhar(registrado);
+  return card;
 }
 
 // Treino de levantamento de vôlei (js/screens/volei.js): semana do

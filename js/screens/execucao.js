@@ -23,8 +23,8 @@ import { montarTelaHistorico } from "./historico.js";
 import { montarCaixaPerguntaIA } from "./caixaPerguntaIA.js";
 import { responderPerguntaExercicio } from "../ai/gemini.js";
 import { getPerguntaIAExercicio, salvarPerguntaIAExercicio } from "../data/perguntasIA.js";
-import { DIAS_SEQUENCIA, determinarDiaDaSessao } from "../engine/sequenciaSemanal.js";
-import { getUltimoDiaRegistrado, registrarDiaDaSessao } from "../data/sequenciaSemanal.js";
+import { DIAS_SEQUENCIA } from "../engine/sequenciaSemanal.js";
+import { registrarDiaDaSessao, determinarDiaDeHoje } from "../data/sequenciaSemanal.js";
 import { montarRelogioSessao } from "../lib/relogioSessao.js";
 import { abrirMenuExercicio, abrirVisorExercicio, abrirPersonalExercicio } from "./folhasExercicio.js";
 import { montarOrientacaoPersonal, recadoValido } from "../engine/personal.js";
@@ -405,8 +405,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
   diaCicloBtn.addEventListener("click", async () => {
     const abrindo = !painelDiaCiclo.classList.contains("aberto");
     if (abrindo) {
-      const ultimoDiaRegistrado = await getUltimoDiaRegistrado(db);
-      const diaAtual = determinarDiaDaSessao(ultimoDiaRegistrado, hoje);
+      const diaAtual = await determinarDiaDeHoje(db, hoje);
       painelDiaCiclo.innerHTML = `
         <div class="ferramentas-painel-corpo">
           <div class="set-field">
@@ -423,7 +422,7 @@ export async function montarTelaExecucao(db, contexto, callbacks) {
       const status = painelDiaCiclo.querySelector(".dia-ciclo-status");
       painelDiaCiclo.querySelector(".dia-ciclo-salvar").addEventListener("click", async () => {
         const novoDia = Number(painelDiaCiclo.querySelector(".dia-ciclo-select").value);
-        await registrarDiaDaSessao(db, novoDia, hoje, false);
+        await registrarDiaDaSessao(db, novoDia, hoje, false, { manual: true });
         status.textContent = `Salvo — volte pra fila (←) pra ver o dia ${novoDia}.`;
       });
     }

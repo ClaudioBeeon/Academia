@@ -24,6 +24,7 @@ import {
   registerWriteHook, withHooksSuspended, STORES_COM_CHAVE_NUMERICA,
 } from "./db.js";
 import { getClient, getUsuario, isConfigured } from "./supabaseClient.js";
+import { definirEstadoSync, obterEstadoSync } from "./syncStatus.js";
 
 const TABELA = "sync_records";
 const BUCKET_FOTOS = "fotos-postura";
@@ -67,10 +68,14 @@ export async function flushSyncQueue(db, deps = {}) {
     getClienteImpl = getClient,
     getUsuarioImpl = getUsuario,
     isConfiguredImpl = isConfigured,
+    semStatus = false, // sincronizarTudo cuida do estado do começo ao fim
   } = deps;
 
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return { enviados: 0 };
   if (!isConfiguredImpl()) return { enviados: 0 };
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    if (!semStatus) await marcarSemSinal(db);
+    return { enviados: 0 };
+  }
 
   const client = await getClienteImpl();
   if (!client) return { enviados: 0 };
@@ -79,6 +84,7 @@ export async function flushSyncQueue(db, deps = {}) {
 
   const fila = await getAll(db, "syncOutbox");
   fila.sort((a, b) => a.id - b.id);
+  if (!semStatus && fila.length > 0) definirEstadoSync({ fase: "sincronizando", pendentes: fila.length });
 
   let enviados = 0;
   for (const item of fila) {
@@ -113,7 +119,27 @@ export async function flushSyncQueue(db, deps = {}) {
       break;
     }
   }
+  if (!semStatus && fila.length > 0) {
+    const restantes = fila.length - enviados;
+    if (restantes === 0) definirEstadoSync({ fase: "ok", pendentes: 0, ultimoOk: Date.now() });
+    else definirEstadoSync({ fase: "erro", pendentes: restantes });
+  }
   return { enviados };
+}
+
+async function marcarSemSinal(db) {
+  const pendentes = await pendentesNaFila(db);
+  if (pendentes > 0) definirEstadoSync({ fase: "offline", pendentes });
+}
+
+// jsonb do Postgres reordena as chaves, então comparar por texto não serve.
+function valoresIguais(a, b) {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  if (ka.length !== kb.length || Array.isArray(a) !== Array.isArray(b)) return false;
+  return ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && valoresIguais(a[k], b[k]));
 }
 
 function converterChave(storeName, chaveTexto) {
@@ -132,11 +158,16 @@ async function baixarFotoPostura(client, caminho) {
 // Traz tudo do servidor pro banco local — uso principal: primeiro login num
 // dispositivo novo/vazio. Aplica com os write hooks suspensos, senão cada
 // registro puxado viraria uma nova entrada na fila de envio.
+//
+// Com `desde` (ISO), traz só o que mudou no servidor depois disso e pula o que
+// já está igual aqui (o que o próprio aparelho acabou de mandar volta na
+// busca) — assim "recebidos" quer dizer "chegou algo novo de verdade".
 export async function pullFromSupabase(db, deps = {}) {
   const {
     getClienteImpl = getClient,
     getUsuarioImpl = getUsuario,
     isConfiguredImpl = isConfigured,
+    desde = null,
   } = deps;
 
   if (!isConfiguredImpl()) return { recebidos: 0 };
@@ -145,10 +176,12 @@ export async function pullFromSupabase(db, deps = {}) {
   const usuario = await getUsuarioImpl();
   if (!usuario) return { recebidos: 0 };
 
-  const { data: linhas, error } = await client.from(TABELA).select("*").eq("user_id", usuario.id);
+  let consulta = client.from(TABELA).select("*").eq("user_id", usuario.id);
+  if (desde) consulta = consulta.gte("updated_at", desde);
+  const { data: linhas, error } = await consulta;
   if (error) {
     console.error("Sync: falha ao puxar dados do servidor:", error);
-    return { recebidos: 0 };
+    return { recebidos: 0, erro: true };
   }
 
   let recebidos = 0;
@@ -160,6 +193,9 @@ export async function pullFromSupabase(db, deps = {}) {
         continue;
       }
       let valor = linha.data ?? {};
+      const local = desde ? await get(db, linha.store_name, chave).catch(() => undefined) : undefined;
+      // Foto já está aqui: não baixa de novo (o blob nunca muda com a chave).
+      if (local && linha.store_name === "fotosPostura") continue;
       if (linha.store_name === "fotosPostura" && linha.storage_path) {
         const blob = await baixarFotoPostura(client, linha.storage_path);
         if (!blob) continue; // sem a foto, não grava metadado quebrado
@@ -167,6 +203,7 @@ export async function pullFromSupabase(db, deps = {}) {
       }
       // autoIncrement precisa da chave explícita pra não gerar uma nova.
       if (ehStoreNumerica(linha.store_name)) valor = { ...valor, id: chave };
+      if (local && valoresIguais(local, valor)) continue;
       await put(db, linha.store_name, valor);
       recebidos++;
     }
@@ -198,6 +235,74 @@ export async function enviarDadosPessoaisUmaVez(db, deps = {}) {
   await put(db, "config", { chave: CHAVE_PESSOAIS_ENVIADOS, valor: true });
   await flushImpl(db);
   return { enviados };
+}
+
+const CHAVE_ULTIMO_PULL = "ultimoPullSync";
+// Folga pro relógio do aparelho não ser exatamente o do servidor.
+const FOLGA_PULL_MS = 10 * 60 * 1000;
+let emAndamento = null;
+
+// Sincroniza de ponta a ponta: manda o que está na fila e traz o que mudou no
+// servidor (outro aparelho, análise do treino). Só puxa com a fila vazia —
+// puxar com envio pendente sobrescreveria uma alteração que ainda não subiu.
+// Chamadas simultâneas dividem a mesma execução. `aposPull` roda depois de
+// trazer dados (app.js usa pra voltar a ficha à revisão do repositório).
+export function sincronizarTudo(db, deps = {}) {
+  if (emAndamento) return emAndamento;
+  emAndamento = executarSincronizacao(db, deps).finally(() => { emAndamento = null; });
+  return emAndamento;
+}
+
+async function executarSincronizacao(db, deps) {
+  const {
+    flushImpl = flushSyncQueue,
+    pullImpl = pullFromSupabase,
+    getUsuarioImpl = getUsuario,
+    isConfiguredImpl = isConfigured,
+    aposPull = null,
+    agora = Date.now,
+  } = deps;
+
+  const semResultado = { recebidos: 0, sincronizado: false };
+  if (!isConfiguredImpl() || !(await getUsuarioImpl())) {
+    definirEstadoSync({ fase: "desligado", pendentes: 0 });
+    return semResultado;
+  }
+
+  definirEstadoSync({ fase: "sincronizando" });
+  try {
+    await flushImpl(db, { semStatus: true });
+    let pendentes = await pendentesNaFila(db);
+    if (pendentes > 0) {
+      const semSinal = typeof navigator !== "undefined" && navigator.onLine === false;
+      definirEstadoSync({ fase: semSinal ? "offline" : "erro", pendentes });
+      return semResultado;
+    }
+
+    const marca = await get(db, "config", CHAVE_ULTIMO_PULL);
+    const desde = marca?.valor ? new Date(Date.parse(marca.valor) - FOLGA_PULL_MS).toISOString() : null;
+    const inicio = new Date(agora()).toISOString();
+    const { recebidos, erro } = await pullImpl(db, { desde });
+    if (erro) {
+      definirEstadoSync({ fase: "erro", pendentes: 0 });
+      return semResultado;
+    }
+    await put(db, "config", { chave: CHAVE_ULTIMO_PULL, valor: inicio });
+
+    if (aposPull) {
+      await aposPull();
+      await flushImpl(db, { semStatus: true });
+      pendentes = await pendentesNaFila(db);
+    }
+    definirEstadoSync(pendentes > 0
+      ? { fase: "erro", pendentes }
+      : { fase: "ok", pendentes: 0, ultimoOk: agora() });
+    return { recebidos, sincronizado: pendentes === 0 };
+  } catch (err) {
+    console.error("Sync: falha na sincronização completa:", err);
+    definirEstadoSync({ fase: "erro", pendentes: obterEstadoSync().pendentes });
+    return semResultado;
+  }
 }
 
 let intervaloAtivo = null;

@@ -10,7 +10,7 @@ import {
   cadastrar, entrar, entrarComGoogle, sair, getUsuario,
   pedirLinkDeNovaSenha, definirNovaSenha, veioDoLinkDeNovaSenha, erroDoLinkDeLogin, entrarComLinkDoEmail,
 } from "../data/supabaseClient.js";
-import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync } from "../data/sync.js";
+import { flushSyncQueue, pullFromSupabase, pendentesNaFila, initAutoSync, sincronizarTudo } from "../data/sync.js";
 import { listarPerfisDisponiveis, semearPerfilNomeado, trazerRevisoesDoRepositorio } from "../data/seed.js";
 import { getMedidas } from "../data/medidas.js";
 import { calcularDataReavaliacaoSugerida, devePedirReavaliacaoFase, deveLembrarFotosMedidas, LEMBRETE_TREINO_PADRAO } from "../engine/lembretes.js";
@@ -604,10 +604,9 @@ async function criarSecaoSupabase(db) {
 
   botaoSync.addEventListener("click", async () => {
     status.textContent = "Sincronizando...";
-    await flushSyncQueue(db);
-    await pullFromSupabase(db);
-    await trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err));
-    await flushSyncQueue(db);
+    await sincronizarTudo(db, {
+      aposPull: () => trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err)),
+    });
     await atualizarStatus();
   });
 

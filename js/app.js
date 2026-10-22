@@ -2,7 +2,8 @@
 import { openDatabase, get, put } from "./data/db.js";
 import { seedIfNeeded, trazerRevisoesDoRepositorio } from "./data/seed.js";
 import { carregarCacheDeChaves } from "./data/chavesApi.js";
-import { initAutoSync, enviarDadosPessoaisUmaVez } from "./data/sync.js";
+import { initAutoSync, enviarDadosPessoaisUmaVez, sincronizarTudo } from "./data/sync.js";
+import { montarIndicadorSync } from "./screens/indicadorSync.js";
 import { isConfigured as supabaseConfigurado, veioDoLinkDeNovaSenha, erroDoLinkDeLogin } from "./data/supabaseClient.js";
 import { getHabito } from "./data/habitos.js";
 import { getCheckin } from "./data/checkin.js";
@@ -83,6 +84,26 @@ async function bootstrap() {
   const abaInicial = veioDoLinkDeNovaSenha() || erroDoLinkDeLogin() ? "config" : "hoje";
   const { renderTab, obterTabAtual, abaEstaNaFrente } = renderShell(db, { abaInicial });
   verificarEEnviarLembretes(db).catch((err) => console.error("Falha ao verificar lembretes:", err));
+
+  // Sincronização sozinha: ao abrir, ao voltar pro app e ao recuperar o sinal
+  // (no máximo 1x por minuto, fora o toque no ícone). Se chegou algo novo do
+  // servidor e a aba está à vista, redesenha pra mostrar — sem mexer numa
+  // tela de treino/cardio em andamento.
+  if (supabaseConfigurado()) {
+    let ultimaSync = 0;
+    const sincronizar = async ({ forcar = false } = {}) => {
+      if (!forcar && Date.now() - ultimaSync < 60 * 1000) return;
+      ultimaSync = Date.now();
+      const { recebidos } = await sincronizarTudo(db, {
+        aposPull: () => trazerRevisoesDoRepositorio(db).catch((err) => console.error("Falha ao atualizar a ficha:", err)),
+      });
+      if (recebidos > 0 && abaEstaNaFrente()) renderTab(obterTabAtual());
+    };
+    montarIndicadorSync({ aoTocar: () => sincronizar({ forcar: true }) });
+    sincronizar({ forcar: true });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sincronizar(); });
+    window.addEventListener("online", () => sincronizar({ forcar: true }));
+  }
 
   // Lembrete de treino: diferente dos outros, depende da hora — então
   // checa na abertura, ao voltar pro app e a cada 5 min com ele aberto.

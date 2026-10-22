@@ -235,3 +235,91 @@ test("ficha, protocolo e perfil sobem uma vez, só com a pessoa logada", async (
   assert.equal((await enviarDadosPessoaisUmaVez(db, { ...deps, getUsuarioImpl: async () => ({ id: "u" }) })).enviados, 0, "só uma vez");
   db.close();
 });
+
+// --- sincronizarTudo + estado ---
+
+import { sincronizarTudo } from "./sync.js";
+import { obterEstadoSync } from "./syncStatus.js";
+
+function depsTudo(extra = {}) {
+  return { getUsuarioImpl: async () => USUARIO, isConfiguredImpl: () => true, ...extra };
+}
+
+test("sincronizarTudo fica 'desligado' sem login e não toca em nada", async () => {
+  const db = await openDatabase();
+  const r = await sincronizarTudo(db, depsTudo({ getUsuarioImpl: async () => null }));
+  assert.equal(r.sincronizado, false);
+  assert.equal(obterEstadoSync().fase, "desligado");
+});
+
+test("sincronizarTudo envia a fila, puxa o servidor e termina em 'ok'", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "syncOutbox");
+  await clearStore(db, "config");
+  const chamadas = [];
+  const r = await sincronizarTudo(db, depsTudo({
+    flushImpl: async () => { chamadas.push("flush"); return { enviados: 0 }; },
+    pullImpl: async (_db, o) => { chamadas.push(["pull", o.desde]); return { recebidos: 2 }; },
+  }));
+  assert.deepEqual(chamadas, ["flush", ["pull", null]]);
+  assert.equal(r.recebidos, 2);
+  assert.equal(obterEstadoSync().fase, "ok");
+});
+
+test("sincronizarTudo não puxa com envio pendente (não sobrescreve o que ainda não subiu)", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "syncOutbox");
+  await enfileirar(db, "habitos", "2026-10-22", { creatina: true }, false);
+  let puxou = false;
+  const r = await sincronizarTudo(db, depsTudo({
+    flushImpl: async () => ({ enviados: 0 }),
+    pullImpl: async () => { puxou = true; return { recebidos: 0 }; },
+  }));
+  assert.equal(puxou, false);
+  assert.equal(r.sincronizado, false);
+  assert.equal(obterEstadoSync().fase === "erro" || obterEstadoSync().fase === "offline", true);
+  assert.equal(obterEstadoSync().pendentes, 1);
+  await clearStore(db, "syncOutbox");
+});
+
+test("sincronizarTudo: o segundo pull é incremental (usa a marca do primeiro)", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "syncOutbox");
+  await clearStore(db, "config");
+  const desdes = [];
+  const deps = depsTudo({
+    flushImpl: async () => ({ enviados: 0 }),
+    pullImpl: async (_db, o) => { desdes.push(o.desde); return { recebidos: 0 }; },
+  });
+  await sincronizarTudo(db, deps);
+  await sincronizarTudo(db, deps);
+  assert.equal(desdes[0], null);
+  assert.match(desdes[1], /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test("sincronizarTudo: falha no pull vira 'erro' e não grava a marca", async () => {
+  const db = await openDatabase();
+  await clearStore(db, "syncOutbox");
+  await clearStore(db, "config");
+  await sincronizarTudo(db, depsTudo({
+    flushImpl: async () => ({ enviados: 0 }),
+    pullImpl: async () => ({ recebidos: 0, erro: true }),
+  }));
+  assert.equal(obterEstadoSync().fase, "erro");
+  assert.equal(await get(db, "config", "ultimoPullSync"), undefined);
+});
+
+test("pullFromSupabase com 'desde' ignora o que já está igual aqui (eco do próprio envio)", async () => {
+  const db = await openDatabase();
+  await gravar(db, "habitos", { data: "2026-10-22", creatina: true });
+  const client = criarClienteFalso({ linhasIniciais: [
+    { store_name: "habitos", record_key: "2026-10-22", deleted: false, data: { creatina: true, data: "2026-10-22" } },
+    { store_name: "habitos", record_key: "2026-10-23", deleted: false, data: { data: "2026-10-23", creatina: false } },
+  ] });
+  client.from = ((orig) => (t) => {
+    const q = orig(t);
+    return { ...q, select: () => ({ eq: () => ({ gte: async () => ({ data: client.registros, error: null }) }) }) };
+  })(client.from.bind(client));
+  const r = await pullFromSupabase(db, { ...depsOk(client), desde: "2026-10-20T00:00:00.000Z" });
+  assert.equal(r.recebidos, 1);
+});
